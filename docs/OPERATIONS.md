@@ -8,4 +8,14 @@
 
 当前 Docker 配置是开发环境，非生产方案。P6 必须补齐：域名/TLS、Secure Cookie、CSP 与 SSE 超时复核、镜像 digest、非root和资源限制、最小数据库角色、外部存储权限、脱敏轮转日志、健康告警、备份加密及隔离恢复演练、JSON导出/导入、安全扫描和回归。生产部署/公网暴露/购买资源需用户明确确认。
 
+## 本机隔离WSL验收运行时（2026-11-15）
+
+Ubuntu已有WSL2，原生Windows只有失效Docker服务。依据[Docker官方静态二进制文档](https://docs.docker.com/engine/install/binaries/)下载Docker29.9.3，并用专用`/root/.cache/scarlet-nexus-p0-runtime`存放bin/config/data/exec及Unix socket；Compose5.7.1和Buildx0.39.0下载后校验官方SHA256，iptables依赖仅dpkg-deb提取，无apt安装/系统服务/全局PATH修改。工具包在项目.tools，运行辅助脚本在.runtime，均不入Git。
+
+本机复测入口（项目实际Linux路径）：`wsl -d Ubuntu --cd /tmp -- sh /mnt/d/MyStudy/幽默项目/ScarletNexus/.runtime/docker.sh info`。Compose入口将末尾改为`.runtime/compose.sh ps`；验收项目名`scarlet-nexus-p0-acceptance`，本机入口127.0.0.1:8088，密码保存在忽略的.runtime/compose-acceptance.env，不输出到聊天/仓库。该项目数据是验收数据，正式使用另建默认Compose项目和用户自行配置的凭据。
+
+WSL显式`--cd /tmp`避免本机Unicode当前目录导致的WSL启动E_UNEXPECTED。发行版初始Stopped，本轮曾仅重启自己启动的Ubuntu以排错，未触碰docker-desktop或修改WSL持久设置。WSL NAT不能使用Windows loopback代理，.runtime中的标准输入输出转发器连接现有127.0.0.1代理；Linux代理只监听127.0.0.1，Docker只开放Unix socket。
+
+在Linux Docker中运行`sh scripts/verify-testcontainers-in-docker.sh`可复用受测入口；非默认socket通过DOCKER_HOST传入，MAVEN_REPOSITORY可选缓存目录。它向测试容器挂载socket（仅限受信任测试），保持Ryuk启用，不用于运行不可信代码。停止验收Compose用其`down`且保留卷；不要清理整个Docker数据目录或其他项目。
+
 恢复演练计划：先备份数据库与附件清单 → 新隔离数据库恢复 → 校验 schema、数量、外键、UUID、文件checksum → 应用读路径验收 → 记录结果。未演练前不得声称备份可恢复。P0 未包含真实学习数据，不创建定时备份任务。

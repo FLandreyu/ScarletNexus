@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-P0 工程和本地功能验证已落地，整体状态为 **待环境验收**；P1–P6 未开始。剩余门禁是 Docker 引擎下的容器构建 / 干净卷启动和 Testcontainers；不将其标记完成，不跨过门禁。
+P0 **已验收通过**（2026-11-15）。本轮补齐隔离WSL2 Docker构建、空卷启动、数据库容器重建持久化、Testcontainers与Nginx生产构建浏览器验收。P1–P6尚未实现；接下来进入P1身份、技能和手动知识树。
 
 ## 初始环境检查
 
@@ -28,7 +28,7 @@ P0 工程和本地功能验证已落地，整体状态为 **待环境验收**；
 
 ## 正在执行
 
-- 当前无业务功能开发中；等待Docker环境关闭P0门禁。工程已形成可回滚本地检查点，详见P0_ACCEPTANCE。
+- P0门禁已关闭，整理验收检查点；P1按ROADMAP开展，先实现身份闭环。
 
 ## 已执行验证
 
@@ -43,7 +43,11 @@ P0 工程和本地功能验证已落地，整体状态为 **待环境验收**；
 | Docker Hub manifest HEAD | Maven / Temurin / Node / Nginx / PostgreSQL所用5个标签均返回200；这不代表镜像构建/运行通过 |
 | `npm audit --omit=dev` | 生产依赖0漏洞 |
 | `npm audit` | 5项moderate（开发依赖链Vue Test Utils/js-beautify/glob/minimatch/editorconfig），0 high/critical；ADR-008记录，未强制跨版本覆盖 |
-| Docker构建 / Testcontainers / 远端CI | 未运行：本机无引擎，也未配置远端仓库；CI仅完成定义 |
+| Docker构建 / Compose空卷启动 | 本轮通过：WSL2 Ubuntu隔离Docker29.9.3、Compose5.7.1，前后端镜像构建成功、三个服务Healthy |
+| PostgreSQL容器重建 / 后端重启 | 本轮通过：新建验收审计记录后重建DB容器并复用卷，记录保留；Flyway历史仍1条；后端重启后再次就绪 |
+| `mvn -B verify -Ptestcontainers`（Java21/Maven容器） | 本轮通过：2单元+5真实PG容器集成，0失败/0跳过，Ryuk正常启用 |
+| `PLAYWRIGHT_BASE_URL=http://127.0.0.1:8088 npm run test:e2e` | 本轮通过：2项桌面/手机直接访问Nginx生产构建，未启动Vite、未拦截API；API与HTML均200并含CSP |
+| 远端CI | 未运行：未配置远端仓库；本轮在本地执行实际容器和测试，不冒充远端结果 |
 
 集成测试真实覆盖：空库V1迁移、validate与重复migrate幂等、规范化email唯一约束、非法状态、审计JSON约束/不可改删/外键保护、未登录401/CSRF403/Basic无效、requestId、应用实例关闭后重新启动保留记录、实际OpenAPI只含已实现端点、停PG后status/readiness503且liveness200、不泄漏连接信息。
 
@@ -51,9 +55,9 @@ P0 工程和本地功能验证已落地，整体状态为 **待环境验收**；
 
 ## 阻塞与下一步
 
-- **P0剩余环境门禁**：在已有可用Docker引擎的环境运行 `mvn -B verify -Ptestcontainers`，再按README执行Compose空卷启动、网关健康、重启和浏览器回归；无需重复需求设计。安装/启用系统级虚拟化或Docker Desktop不在本轮自动变更范围。
+- P0无剩余验收阻塞。本轮发现现成WSL2 Ubuntu；提取Docker静态二进制和iptables运行依赖到专用缓存，没有安装系统包/服务、改全局PATH或修复残留Docker Desktop。发行版首次检查为Stopped，本轮仅启动Ubuntu，未触碰docker-desktop发行版。运行时详情见OPERATIONS。
 - 本机可按README使用临时真实PG预览；它不保留用户数据，不能作为长期使用部署。截图和日志在忽略目录，正式证据摘要进仓库。
 - 开发依赖5项中等级告警待上游兼容修复；生产依赖审计无发现不代表全栈安全审计完成。生产前重新评估Java依赖和容器漏洞。
 - GraphFlow恢复可用后执行context/plan/index，当前不能声称已索引。
-- P0全部门禁通过后进入P1：管理员安全引导/数据库会话/CSRF和限流 → 技能归档CRUD → 共享稳定节点/分类树/依赖DAG → 搜索与移动端 → 持久化和双用户隔离回归。
+- 下一步P1：管理员安全引导/数据库会话/CSRF和限流 → 技能归档CRUD → 共享稳定节点/分类树/依赖DAG → 搜索与移动端 → 持久化和双用户隔离回归。
 - 暂不调用付费AI，不生产部署，不自动安装系统服务，不执行不可逆数据操作。

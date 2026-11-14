@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       POSTGRES_PASSWORD: ci-disposable-database-only
-      API_PROXY_TARGET: http://127.0.0.1:8088
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:8088
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

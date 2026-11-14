@@ -25,7 +25,7 @@ docker compose restart
 docker compose down
 ```
 
-`down` 保留数据库卷；不要使用 `down -v`。后端与数据库不映射宿主机端口，迁移启动时自动执行；迁移失败则启动失败。本机无Docker，容器启动实测状态必须以PROGRESS为准。
+`down` 保留数据库卷；不要使用 `down -v`。后端与数据库不映射宿主机端口，迁移启动时自动执行；迁移失败则启动失败。本机已在隔离WSL2 Docker引擎通过容器构建、空卷启动、数据库容器重建后的持久化与浏览器验收，证据见PROGRESS。
 
 ## 启动方式 B：无 Docker 的 P0 验收预览
 
@@ -82,6 +82,10 @@ mvn -B verify
 # 或 mvn -B verify -Ptestcontainers
 ```
 
+项目`.mvn/settings.xml`将发行版依赖解析限定到Maven Central，避免上游POM引入的快照/里程碑仓库影响干净环境构建。Docker构建使用BuildKit缓存Maven依赖，不改全局Maven配置。
+
+Linux上只有Docker而没有Java/Maven时，可运行 `sh scripts/verify-testcontainers-in-docker.sh`；它在Java21/Maven容器中执行同一套真实测试，正确传递自定义Unix socket供Ryuk清理资源。需要已有本地Linux Docker权限；不会修改宿主机权限或停用Ryuk。
+
 后端默认测试使用隔离真实PG随机端口，包含数据库宕机503、迁移约束和应用重新启动的数据保留；不是H2。每次使用新集群且自动关闭。默认测试不调用外部AI。格式修正：前端 `npm run format`；后端 `mvn spotless:apply`。
 
 浏览器验收：先启动方式B后端（或 `API_PROXY_TARGET` 指向方式A入口），再执行：
@@ -93,6 +97,8 @@ npm run test:e2e
 ```
 
 Playwright自动启动Vite，真实请求后端，不拦截为假响应；覆盖桌面与手机，产物在test-results/playwright-report（不入Git）。首次需安装浏览器。CI包含前端检查、后端Testcontainers、Compose烟测和真实API浏览器测试；未推送并执行前不能声称远端CI已通过。
+
+验证Compose构建后的页面时，先在同一终端设置 `$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:8088'` 再运行 `npm run test:e2e`。此模式直接访问Nginx和生产构建产物，不启动Vite；CI也使用此模式。恢复开发模式可移除该环境变量。
 
 本机默认Node25不在当前Vitest支持范围内；可在项目根目录终端执行 `$env:PATH = (Resolve-Path './.tools/node-v24.22.3-win-x64').Path + ';' + $env:PATH`，再运行上述npm命令。`.tools`为当前机器隔离工具，不入Git；新环境应自行安装Node24 LTS。
 
