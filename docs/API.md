@@ -1,5 +1,26 @@
 # API 合同
 
+## P3实际学习接口
+
+以下均以`/api/v1/learning`为前缀，需要认证，写入需要CSRF，所有权从会话取得。分页`page>=0,size=1..100`，返回`{items,total,page,size}`。
+
+| 路径 | 方法及行为 |
+| --- | --- |
+| /goals、/goals/{id} | GET列表、POST创建、PATCH编辑（skillId不可变、revision）；含title/targetDescription/deadline/priority1..5/status |
+| /paths、/paths/{id} | GET列表/详情；POST `{skillId,goalId?,baseVersionId?,title,stages:[{title,nodes:[{nodeId,targetLevel,required}]}]}`；编辑追加版本，旧基版409 |
+| /enrollments、/enrollments/{id} | GET列表/含路线与进度的详情；POST `{pathId}`选择/恢复；PATCH `{status:ACTIVE|PAUSED|COMPLETED}`，必修未完成拒绝COMPLETED |
+| /enrollments/{id}/progress/{entry} | PUT `{status:NOT_STARTED|IN_PROGRESS|COMPLETED,revision}`；首次revision0、成功后1；已完成路线须重新选择才可修改进度 |
+| /tasks、/tasks/{id} | GET列表/详情；POST `{skillId,goalId?,nodeId,enrollmentId?,entryId?,title,plannedMinutes,dueDate?}`；PATCH标题/分钟/日期/状态/revision；路线引用创建后不可变 |
+| /tasks/{id}/workbench | GET返回任务、当前节点、原路线版本、先修节点、笔记及本人未结束时段 |
+| /sessions | POST `{taskId}`，Idempotency-Key必填；每用户最多一个未结束时段 |
+| /sessions/{id}/actions | POST `{action:PAUSE|RESUME|FINISH,revision}`，Idempotency-Key必填；同键同请求不重复累计，不同请求409 |
+| /tasks/{id}/sessions | GET分页时段及服务器elapsedSeconds/serverNow |
+| /tasks/{id}/note | PUT `{body,revision}`明文笔记<=20000字；首次revision0、成功后1，旧版本409 |
+| /nodes/{id}/resources、/resources/{id} | GET节点资料分页/POST创建；PATCH编辑/归档含revision；title/resourceType/url/status，无外部抓取 |
+| /dashboard | GET未结束时段、当前路线、独立查询的最近DOING/TODO继续任务及最近任务页 |
+
+时段响应`{session:{id,taskId,state,startedAt,segmentStartedAt,endedAt,accumulatedMillis,revision},elapsedSeconds,serverNow}`。幂等键1..100字符，仅字母数字下划线连字符。任务状态TODO/DOING/DONE/DEFERRED/CANCELLED；路线节点进度自报，不返回掌握度。SQL/审计故障沿用503，事务回滚。
+
 P2补全：POST `/api/v1/graph/drafts/{id}/transform`接收`{revision,kind:"MERGE"|"SPLIT",source,target?,titles?}`，转换并保存、revision冲突409。validate/publish可显式传`includeAffectedSkills:true`，须重新预览并确认才允许联合发布；改变的其他已发布技能追加快照，任何失败全部回滚。默认仍保护其他技能。
 
 草案document兼容V1和含mappings的V2；API增加草案origin/createdAt/updatedAt、版本publishedAt和预览warnings。名称重复仅为规范化提示，不自动合并。来源结构和证据边界见P2_DESIGN.md。

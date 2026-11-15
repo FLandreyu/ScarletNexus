@@ -5,12 +5,18 @@ import SkillsPage from '../pages/SkillsPage.vue'
 import SkillPage from '../pages/SkillPage.vue'
 import DraftPage from '../pages/DraftPage.vue'
 import JobsPage from '../pages/JobsPage.vue'
+import LearningPage from '../pages/LearningPage.vue'
+import PathsPage from '../pages/PathsPage.vue'
+import StudyPage from '../pages/StudyPage.vue'
 import { useAuthStore } from '../stores/auth'
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/skills' },
+    { path: '/', redirect: '/learn' },
+    { path: '/learn', component: LearningPage, meta: { private: true } },
+    { path: '/paths', component: PathsPage, meta: { private: true } },
+    { path: '/study/:id', component: StudyPage, meta: { private: true } },
     { path: '/system', name: 'system', component: SystemPage },
     { path: '/login', component: LoginPage },
     { path: '/skills', component: SkillsPage, meta: { private: true } },

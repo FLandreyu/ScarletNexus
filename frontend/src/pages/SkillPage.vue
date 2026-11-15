@@ -206,6 +206,7 @@ onMounted(async () => {
     <p class="eyebrow">KNOWLEDGE TREE</p>
     <h1>{{ graph?.skill.name ?? '知识树' }}</h1>
     <RouterLink :to="`/skills/${skillId}/drafts`">草案与版本历史 →</RouterLink>
+    <RouterLink to="/paths">安排学习目标与路线 →</RouterLink>
     <p>{{ graph?.skill.description }}</p>
   </section>
   <p v-if="error" role="alert" class="error-box">{{ error }}</p>

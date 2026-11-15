@@ -1,5 +1,9 @@
 # 数据库设计与迁移
 
+V8新增P3实际关系表：learning_goals；不可变learning_paths/learning_path_stages/learning_path_nodes（版本族、前版引用、标题快照）；path_enrollments/learning_progress；learning_tasks；learning_sessions/learning_session_commands；learning_notes；learning_resources/node_resources。均按owner复合FK隔离。路径修改追加版本，旧选择与记录不删除。选择+路径节点进度、任务笔记使用revision；初次PUT笔记/进度请求revision=0，创建后为1，避免首次并发写覆盖。
+
+每用户最多一个ACTIVE路线选择、一个RUNNING或PAUSED时段，由部分唯一索引保护。时段按服务器分段起点+累计毫秒计时；幂等操作记录不可修改，同键不同操作409。任务与选择/路径节点使用同版本复合FK；应用另校验目标、技能、节点相符。资源仅存http(s)链接、支持归档；不会发起远程抓取。所有V1–V7保持原样，细节见P3_DESIGN.md。
+
 V7新增ai_generation_inputs：当前用户提交的主题/修复上下文、root/parent任务和depth 0–2；每父任务至多一个子任务，复合所有权外键。与任务/token/货币预留同事务写入，仅服务端用于显式有限修复，不通过任务列表返回，不记录日志。已有V1–V6迁移保持不变。
 
 V6新增ai_money_days（owner/UTC日/币种预算）和ai_job_costs（任务价格快照与费用来源）。价格为配置费率，已知用量按BigDecimal计算；未知用量保守占用预留。旧任务不补造费用，跨币种不换算。详见AI_MONEY.md。

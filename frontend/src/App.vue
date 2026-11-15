@@ -38,6 +38,8 @@ onUnmounted(() => window.removeEventListener('session-expired', expired))
         >
       </RouterLink>
       <nav class="top-nav" aria-label="主导航">
+        <RouterLink to="/learn">学习首页</RouterLink>
+        <RouterLink v-if="auth.user" to="/paths">学习路线</RouterLink>
         <RouterLink to="/skills">技能空间</RouterLink
         ><RouterLink v-if="auth.user" to="/ai/jobs">生成任务</RouterLink
         ><RouterLink to="/system">系统状态</RouterLink
