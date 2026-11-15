@@ -24,6 +24,40 @@ interface Preview {
   relationCount: number
 }
 const skillId = String(useRoute().params.id)
+const generationEnabled = ref(false),
+  topic = ref(''),
+  generationConfirmed = ref(false)
+let pendingGeneration: { topic: string; key: string } | null = null
+async function generate() {
+  await run(async () => {
+    if (!generationEnabled.value || !generationConfirmed.value || dirty.value)
+      return
+    if (!pendingGeneration || pendingGeneration.topic !== topic.value)
+      pendingGeneration = {
+        topic: topic.value,
+        key: `gen-${crypto.randomUUID()}`,
+      }
+    const job = await api<{
+      state: string
+      draftId: string
+      errorCode: string | null
+    }>(
+      `/skills/${skillId}/graph/generation`,
+      'POST',
+      { topic: pendingGeneration.topic },
+      { 'Idempotency-Key': pendingGeneration.key },
+    )
+    pendingGeneration = null
+    await refresh()
+    const draft = drafts.value.find((d) => d.id === job.draftId)
+    if (draft) select(draft)
+    generationConfirmed.value = false
+    if (job.state === 'SUCCEEDED')
+      notice.value = '候选草案已生成，尚未发布，请校验并审核。'
+    else
+      error.value = `生成未完成：${job.errorCode ?? job.state}。请查看任务记录；手动草案仍可使用。`
+  })
+}
 const drafts = ref<Draft[]>([]),
   versions = ref<Version[]>([]),
   current = ref<Draft | null>(null),
@@ -127,6 +161,13 @@ async function refresh() {
   live.value = await api(`/skills/${skillId}/graph`)
   drafts.value = await api(`/skills/${skillId}/graph/drafts`)
   versions.value = await api(`/skills/${skillId}/graph/versions`)
+  try {
+    generationEnabled.value = (
+      await api<{ enabled: boolean }>('/ai/generation')
+    ).enabled
+  } catch {
+    generationEnabled.value = false
+  }
 }
 async function run(action: () => Promise<void>) {
   if (busy.value) return
@@ -266,6 +307,38 @@ onUnmounted(() => window.removeEventListener('beforeunload', beforeUnload))
   <div class="row-actions">
     <button :disabled="busy" @click="create">从当前图谱创建草案</button>
   </div>
+  <section class="editor" aria-label="AI候选生成">
+    <h2>AI 候选草案</h2>
+    <p v-if="!generationEnabled">生成尚未启用，可继续使用手动草案。</p>
+    <form v-else class="editor inline-editor" @submit.prevent="generate">
+      <label for="generation-topic">学习主题与目标</label>
+      <textarea
+        id="generation-topic"
+        v-model="topic"
+        required
+        maxlength="4000"
+        rows="3"
+        :disabled="busy"
+      ></textarea>
+      <p>
+        主题会发送给服务器配置的模型。生成可能产生费用，结果仅进入草案，不自动发布。
+      </p>
+      <label
+        ><input
+          v-model="generationConfirmed"
+          type="checkbox"
+          :disabled="busy"
+        />我确认使用已配置模型和预算生成候选草案</label
+      >
+      <button
+        class="primary"
+        :disabled="busy || dirty || !generationConfirmed || !topic.trim()"
+      >
+        生成候选草案
+      </button>
+    </form>
+    <RouterLink to="/ai/jobs">查看生成任务记录</RouterLink>
+  </section>
   <div class="workspace-columns">
     <section>
       <h2>草案列表</h2>

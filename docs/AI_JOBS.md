@@ -1,6 +1,6 @@
 # 生成任务与token预算账本
 
-P2内部应用服务`GenerationJobs`已实现同步编排，不提供生成HTTP入口。调用者必须是已认证用户；传入的token日限额、单次预留和Provider只能来自可信服务端策略，不能直接透传用户请求。V6已接入可选货币账本和价格快照，见[AI_MONEY.md](AI_MONEY.md)。默认禁用的Provider维持不变，供应商联调仍需授权。
+P2内部应用服务`GenerationJobs`已实现同步编排；默认关闭的生成HTTP入口通过ConfiguredGeneration读取服务端策略，见AI_GENERATION.md。调用者必须是已认证用户；token日限额、单次预留和Provider不能直接透传用户请求。V6已接入可选货币账本和价格快照，见[AI_MONEY.md](AI_MONEY.md)。供应商联调仍需授权。
 
 ## 流程
 

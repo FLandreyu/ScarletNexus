@@ -4,7 +4,7 @@ AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus
 
 **当前 P1 + P2手动草案基础**：已实现私有登录、技能/知识树管理，以及独立草案、校验、确认发布和不可变版本历史。P2整体仍进行中：AI生成、专用合并拆分及联合发布尚未实现；路线和学习记录属于后续阶段。所有业务数据真实写入PostgreSQL并审计，不预置学习进度。
 
-后端已加入默认禁用的结构化AI Provider、内部任务/token账本及可选货币预算和价格快照，见[AI_PROVIDER.md](docs/AI_PROVIDER.md)、[AI_JOBS.md](docs/AI_JOBS.md)、[AI_MONEY.md](docs/AI_MONEY.md)。页面生成入口和Schema兼容尚待实现，当前不提供端到端AI生成。
+已接入默认关闭的生成API和草案页入口、内置v1 Schema转换、字节估计token策略、任务及货币账本。配置和验证范围见[AI_GENERATION.md](docs/AI_GENERATION.md)。本地验收没有启用真实模型，不代表供应商联调或生成质量验收完成。
 
 登录后可从“生成任务”查看已有任务，并确认结束超过五分钟的中断任务：草案不变，预算按未知用量保守占用，不自动重新生成。
 

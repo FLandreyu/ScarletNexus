@@ -225,13 +225,11 @@ public class GenerationJobs {
     if (!created[0]) return job;
     AIProvider.Result result;
     try {
-      JsonNode schema =
-          json.readTree(getClass().getResourceAsStream("/schemas/graph-draft-v1.schema.json"));
       result =
           provider.generateStructured(
-              "Return a knowledge graph JSON candidate only. Use canonical UUID identifiers. Schema version is 1. Never publish data.",
+              GraphGenerationContract.INSTRUCTIONS,
               input,
-              schema);
+              new GraphGenerationContract(json).schema());
     } catch (Exception failure) {
       String code = failure instanceof AIProvider.Failure f ? f.code() : "AI_INTERNAL_FAILURE";
       finish(job, key, null, code);

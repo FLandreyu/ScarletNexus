@@ -137,6 +137,15 @@ public class MoneyLedger {
     return env.getRequiredProperty("app.ai.budget." + name);
   }
 
+  @Transactional(propagation = Propagation.SUPPORTS)
+  public void validateEstimate(long input, long output) {
+    DomainFailure.require(policy != null, "AI_MONEY_POLICY_REQUIRED", "请先配置服务端货币预算");
+    DomainFailure.require(
+        policy.reserve().compareTo(policy.calculate(input, output)) >= 0,
+        "AI_RESERVE_TOO_SMALL",
+        "货币预留不足以覆盖本次估计用量");
+  }
+
   public void reserve(UUID owner, UUID job, LocalDate day) {
     if (policy != null) reserve(owner, job, day, policy);
   }

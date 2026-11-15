@@ -351,6 +351,29 @@ class IdentityCatalogIT {
   void draftsValidateConflictPublishIdempotentlyAndRollbackOnFailure() throws Exception {
     Client c = owner();
     String skill = createSkill(c, "Draft acceptance");
+    assertThat(json(c.get("/ai/generation")).get("enabled").asBoolean()).isFalse();
+    String generationCsrf = json(c.get("/auth/csrf")).get("token").asText();
+    var disabledGeneration =
+        c.http.send(
+            HttpRequest.newBuilder(
+                    URI.create(
+                        "http://127.0.0.1:"
+                            + port
+                            + "/api/v1/skills/"
+                            + skill
+                            + "/graph/generation"))
+                .header("Content-Type", "application/json")
+                .header("X-CSRF-TOKEN", generationCsrf)
+                .header("Idempotency-Key", "disabled-generation")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"topic\":\"test topic\"}"))
+                .build(),
+            HttpResponse.BodyHandlers.ofString());
+    assertThat(disabledGeneration.statusCode()).isEqualTo(503);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT count(*) FROM ai_generation_jobs WHERE request_key='disabled-generation'",
+                Integer.class))
+        .isZero();
     String a = createNode(c, "Original"), b = createNode(c, "Second");
     attach(c, skill, a, null, 0);
     attach(c, skill, b, a, 1);

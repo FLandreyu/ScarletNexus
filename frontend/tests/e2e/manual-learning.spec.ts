@@ -132,6 +132,9 @@ test('authenticates, persists a manual knowledge tree, rejects cycles and logs o
   await page
     .getByRole('link', { name: '草案与版本历史 →', exact: true })
     .click()
+  await expect(
+    page.getByText('生成尚未启用，可继续使用手动草案。', { exact: true }),
+  ).toBeVisible()
   await page
     .getByRole('button', { name: '从当前图谱创建草案', exact: true })
     .click()

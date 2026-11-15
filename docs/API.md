@@ -1,5 +1,7 @@
 # API 合同
 
+POST `/api/v1/skills/{id}/graph/generation`：会话/CSRF、Idempotency-Key，JSON `{topic}`；服务器选择模型和预算，返回任务状态/草案ID，默认503/AI_NOT_CONFIGURED且不写任务。GET `/api/v1/ai/generation`返回`{enabled}`（需登录）。详见AI_GENERATION.md。系统状态aiConfigured反映生成配置开关，默认false，不代表供应商联调成功。
+
 GET `/api/v1/ai/jobs/{id}/cost`：本人任务的币种、模型、价格版本/日期、费率、预留/结算金额和来源；无费用记录返回`{cost:null}`，不是费用0。未知或他人任务404。此接口只读，不接受浏览器设置价格。
 
 P2任务记录：GET `/api/v1/ai/jobs?page=0&size=20`（owner隔离列表）、GET `/api/v1/ai/jobs/{id}`（其他用户/不存在404）、POST `/api/v1/ai/jobs/{id}/recover`（会话/CSRF及`{confirmed:true}`，五分钟内409，未确认422）。恢复将预留转为UNKNOWN消耗，保留草案，不重发模型请求。详见AI_JOBS.md；尚无创建生成任务的HTTP接口。

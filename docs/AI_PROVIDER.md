@@ -12,10 +12,10 @@
 
 Spring配置项为`app.ai.enabled`（默认false）、`app.ai.base-url`（包含/v1路径）、`app.ai.model`、`app.ai.key`、`app.ai.timeout-seconds`（默认60，范围0.1–120秒的传输构造器；环境配置使用整数秒）、`app.ai.retries`（默认0，最多2）。Spring环境变量对应`APP_AI_ENABLED`等。无默认供应商/模型/密钥；不提供真实Key示例，不在前端保存凭据。未启用时调用立即返回AI_NOT_CONFIGURED。启用但配置不全会启动失败。
 
-当前Compose不转发这些变量，亦无生成HTTP入口；后续接入任务持久化和预算预留后再开放。不得仅配置Key就绕过预算和付费授权。
+当前Compose不转发这些变量。生成HTTP入口默认关闭，需另配generation-enabled及服务端token/货币策略，见AI_GENERATION.md。不得仅配置Key就绕过预算和付费授权。
 
 只允许HTTPS（测试/本地模型允许loopback HTTP），拒绝URL凭据、query、fragment和重定向。请求整体deadline包含重试等待；仅429/502/503可重试，支持秒数或HTTP日期Retry-After，超出剩余deadline直接返回可恢复失败。网络异常/超时不自动重发，避免不明确的重复计费。响应最多2MB；错误仅返回固定代码，不回显上游正文/Key/prompt。超时或错误不表示供应商未计费。
 
 ## 尚待实现
 
-内部持久化任务、token/货币预留结算、价格快照和保守恢复已实现，见[AI_JOBS.md](AI_JOBS.md)、[AI_MONEY.md](AI_MONEY.md)。启用真实Provider必须配置货币策略且重试为0。尚待可信token策略、供应商对账、结构修复、Schema兼容转换、生成HTTP入口及UI。chatStream/analyzeImage/estimateUsage仍为后续合同，当前接口不提供占位成功实现。真实供应商联调需另行授权，当前测试不算真实联调。
+内部持久化任务、token/货币预留结算、价格快照和保守恢复已实现，见[AI_JOBS.md](AI_JOBS.md)、[AI_MONEY.md](AI_MONEY.md)。启用真实Provider必须配置货币策略且重试为0。内置v1 Schema转换、字节token估计及默认关闭的生成入口见AI_GENERATION.md；尚待供应商对账、结构修复、真实供应商验收。chatStream/analyzeImage/estimateUsage仍为后续合同，不提供占位成功实现。

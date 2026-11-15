@@ -76,7 +76,7 @@ class OpenAiCompatibleProviderTest {
   }
 
   private AIProvider.Result generate(AIProvider p) {
-    return p.generateStructured("Return JSON", "topic", json.createObjectNode());
+    return p.generateStructured("Return JSON", "topic", new GraphGenerationContract(json).schema());
   }
 
   @Test

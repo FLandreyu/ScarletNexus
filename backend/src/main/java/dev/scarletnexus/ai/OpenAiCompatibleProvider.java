@@ -6,7 +6,6 @@ import java.net.http.*;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 
 /** Chat Completions JSON-schema transport; never writes business data or logs payloads. */
 public final class OpenAiCompatibleProvider implements AIProvider {
@@ -59,25 +58,7 @@ public final class OpenAiCompatibleProvider implements AIProvider {
       throw new Failure("AI_INVALID_REQUEST", false);
     long deadline = System.nanoTime() + timeout.toNanos();
     try {
-      String body =
-          json.writeValueAsString(
-              Map.of(
-                  "model",
-                  model,
-                  "stream",
-                  false,
-                  "max_completion_tokens",
-                  8192,
-                  "messages",
-                  List.of(
-                      Map.of("role", "system", "content", instructions),
-                      Map.of("role", "user", "content", input)),
-                  "response_format",
-                  Map.of(
-                      "type",
-                      "json_schema",
-                      "json_schema",
-                      Map.of("name", "knowledge_draft", "strict", true, "schema", schema))));
+      String body = StructuredRequest.body(json, model, instructions, input, schema);
       for (int attempt = 0; ; attempt++) {
         long left = deadline - System.nanoTime();
         if (left <= 0) throw new Failure("AI_TIMEOUT", true);

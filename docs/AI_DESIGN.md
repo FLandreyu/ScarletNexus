@@ -1,6 +1,6 @@
 # AI 系统设计
 
-状态：P2已实现手动草案、结构化Provider、任务/token账本、可选货币预留结算和价格快照，默认禁用，未发送外部模型请求。可信token策略、Schema兼容和浏览器生成入口尚未实现，不能声称端到端AI生成可用。配置及边界见[AI_PROVIDER.md](AI_PROVIDER.md)、[AI_JOBS.md](AI_JOBS.md)、[AI_MONEY.md](AI_MONEY.md)。AI为可选能力；不得把未配置状态伪装为生成成功。
+状态：P2已接入默认关闭的生成API/UI、内置v1供应商Schema转换、保守字节token策略及任务/预算账本。本轮未发送外部模型请求，未验收启用状态的真实生成，P2仍进行中。配置及边界见[AI_GENERATION.md](AI_GENERATION.md)、[AI_PROVIDER.md](AI_PROVIDER.md)、[AI_JOBS.md](AI_JOBS.md)、[AI_MONEY.md](AI_MONEY.md)。AI为可选能力；不得把未配置状态伪装为生成成功。
 
 ## 服务边界
 
