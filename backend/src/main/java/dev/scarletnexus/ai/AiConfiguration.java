@@ -20,6 +20,7 @@ public class AiConfiguration {
         env.getRequiredProperty("app.ai.key"),
         Duration.ofSeconds(env.getProperty("app.ai.timeout-seconds", Integer.class, 60)),
         env.getProperty("app.ai.retries", Integer.class, 0),
-        json);
+        json,
+        env.getProperty("app.ai.protocol", "json-schema"));
   }
 }

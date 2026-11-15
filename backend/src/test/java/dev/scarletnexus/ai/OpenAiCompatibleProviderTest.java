@@ -91,6 +91,36 @@ class OpenAiCompatibleProviderTest {
   }
 
   @Test
+  void explicitDeepSeekProtocolUsesJsonObjectAndMatchingTokenReservationBody() throws Exception {
+    var provider =
+        new OpenAiCompatibleProvider(
+            URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/v1"),
+            "deepseek-flash",
+            "local-test-only",
+            Duration.ofSeconds(2),
+            0,
+            json,
+            "deepseek-json");
+    var result = generate(provider);
+    assertTrue(result.document().has("nodes"));
+    assertEquals("json_object", request.path("response_format").path("type").asText());
+    assertEquals(8192, request.path("max_tokens").asInt());
+    assertFalse(request.has("max_completion_tokens"));
+    assertEquals("disabled", request.path("thinking").path("type").asText());
+    assertTrue(request.path("messages").path(0).path("content").asText().contains("schemaVersion"));
+    assertEquals(
+        json.readTree(
+            StructuredRequest.body(
+                json,
+                "deepseek-flash",
+                "Return JSON",
+                "topic",
+                new GraphGenerationContract(json).schema(),
+                "deepseek-json")),
+        request);
+  }
+
+  @Test
   void boundsRetryAndDoesNotRetryAuthentication() {
     status = 429;
     assertEquals(

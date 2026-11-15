@@ -1,12 +1,14 @@
 # P2结构化Provider传输
 
-本轮交付后端传输边界，尚未开放浏览器生成入口，也未发送外部模型请求。生产代码包含真实HTTP适配器；本地协议服务只存在于测试。手动草案不依赖Provider。
+生产代码包含真实HTTP适配器与默认关闭的浏览器生成入口；本地协议服务只存在于测试。手动草案不依赖Provider。实际验收状态见P2_ACCEPTANCE.md。
 
 ## 合同
 
 `AIProvider.generateStructured(instructions,input,schema)`调用配置的`/chat/completions`，传递JSON Schema、固定单次输出上限8192 tokens，要求完整`stop`结果和JSON对象。返回候选文档和供应商用量；缺失用量为UNKNOWN，不填零或猜测价格。调用者仍须执行本地Schema和图规则验证，不能将结果直接写入正式图谱。
 
-协议参考：[Chat Completions](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)、[Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)。兼容供应商必须支持所传Schema；不支持时明确失败，不自动退回无Schema请求。仓库的v1合同尚未转换成各供应商支持的Schema子集，因此本轮不声称图谱生成已可用。
+协议参考：[Chat Completions](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)、[Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)。默认`app.ai.protocol=json-schema`发送内置v1合同转换后的严格Schema；不支持时明确失败，不自动切换协议。
+
+DeepSeek需显式配置`app.ai.protocol=deepseek-json`（环境变量`APP_AI_PROTOCOL`）：发送`response_format.type=json_object`、`max_tokens=8192`和`thinking.type=disabled`，Schema写入系统提示，服务端继续执行完整Schema与图校验。JSON模式不保证符合Schema，非法候选仍以失败结束，不能写正式图谱。估算与实际请求复用同一序列化，包括提示中的Schema。参考[DeepSeek JSON模式](https://api-docs.deepseek.com/guides/json_mode/)与[Chat接口](https://api-docs.deepseek.com/api/create-chat-completion/)。未知协议启动失败，不自动降级。V4.1 Flash的官方API模型ID为`deepseek-flash`，见[模型列表](https://api-docs.deepseek.com/api/list-models/)。
 
 ## 服务端配置
 
@@ -18,4 +20,4 @@ Spring配置项为`app.ai.enabled`（默认false）、`app.ai.base-url`（包含
 
 ## 尚待实现
 
-内部持久化任务、token/货币预留结算、价格快照和保守恢复已实现，见[AI_JOBS.md](AI_JOBS.md)、[AI_MONEY.md](AI_MONEY.md)。启用真实Provider必须配置货币策略且重试为0。内置v1 Schema转换、字节token估计及默认关闭的生成入口见AI_GENERATION.md；尚待供应商对账、结构修复、真实供应商验收。chatStream/analyzeImage/estimateUsage仍为后续合同，不提供占位成功实现。
+内部持久化任务、token/货币预留结算、价格快照、保守恢复和用户确认的有限结构修复已实现，见[AI_JOBS.md](AI_JOBS.md)、[AI_MONEY.md](AI_MONEY.md)。启用真实Provider必须配置货币策略且重试为0。内置v1 Schema转换、字节token估计及默认关闭的生成入口见AI_GENERATION.md；供应商账单对账仍待实现，真实模型验收见P2_ACCEPTANCE.md。chatStream/analyzeImage/estimateUsage仍为后续合同，不提供占位成功实现。

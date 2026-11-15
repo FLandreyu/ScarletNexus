@@ -70,7 +70,8 @@ public class ConfiguredGeneration {
               env.getRequiredProperty("app.ai.model"),
               GraphGenerationContract.INSTRUCTIONS,
               input,
-              contract.schema());
+              contract.schema(),
+              env.getProperty("app.ai.protocol", "json-schema"));
     } catch (Exception e) {
       throw new IllegalStateException("Cannot prepare generation request");
     }

@@ -16,9 +16,24 @@ public final class OpenAiCompatibleProvider implements AIProvider {
   private final int retries;
   private final HttpClient http;
   private final ObjectMapper json;
+  private final String protocol;
 
   public OpenAiCompatibleProvider(
       URI base, String model, String key, Duration timeout, int retries, ObjectMapper json) {
+    this(base, model, key, timeout, retries, json, "json-schema");
+  }
+
+  public OpenAiCompatibleProvider(
+      URI base,
+      String model,
+      String key,
+      Duration timeout,
+      int retries,
+      ObjectMapper json,
+      String protocol) {
+    if (!List.of("json-schema", "deepseek-json").contains(protocol))
+      throw new IllegalArgumentException("Unsupported AI protocol");
+    this.protocol = protocol;
     boolean loopback = List.of("127.0.0.1", "localhost", "[::1]").contains(base.getHost());
     if ((!"https".equals(base.getScheme()) && !(loopback && "http".equals(base.getScheme())))
         || base.getHost() == null
@@ -58,7 +73,7 @@ public final class OpenAiCompatibleProvider implements AIProvider {
       throw new Failure("AI_INVALID_REQUEST", false);
     long deadline = System.nanoTime() + timeout.toNanos();
     try {
-      String body = StructuredRequest.body(json, model, instructions, input, schema);
+      String body = StructuredRequest.body(json, model, instructions, input, schema, protocol);
       for (int attempt = 0; ; attempt++) {
         long left = deadline - System.nanoTime();
         if (left <= 0) throw new Failure("AI_TIMEOUT", true);

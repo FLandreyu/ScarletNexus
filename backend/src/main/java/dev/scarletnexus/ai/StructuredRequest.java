@@ -9,6 +9,43 @@ final class StructuredRequest {
   static String body(
       ObjectMapper json, String model, String instructions, String input, JsonNode schema)
       throws com.fasterxml.jackson.core.JsonProcessingException {
+    return body(json, model, instructions, input, schema, "json-schema");
+  }
+
+  static String body(
+      ObjectMapper json,
+      String model,
+      String instructions,
+      String input,
+      JsonNode schema,
+      String protocol)
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    if ("deepseek-json".equals(protocol)) {
+      return json.writeValueAsString(
+          Map.of(
+              "model",
+              model,
+              "stream",
+              false,
+              "max_tokens",
+              OUTPUT_LIMIT,
+              "thinking",
+              Map.of("type", "disabled"),
+              "response_format",
+              Map.of("type", "json_object"),
+              "messages",
+              List.of(
+                  Map.of(
+                      "role",
+                      "system",
+                      "content",
+                      instructions
+                          + "\nReturn JSON matching this schema (server validation remains mandatory):\n"
+                          + schema),
+                  Map.of("role", "user", "content", input))));
+    }
+    if (!"json-schema".equals(protocol))
+      throw new IllegalArgumentException("Unsupported AI protocol");
     return json.writeValueAsString(
         Map.of(
             "model",
