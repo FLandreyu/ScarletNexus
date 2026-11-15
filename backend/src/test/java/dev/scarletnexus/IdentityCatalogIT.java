@@ -369,6 +369,8 @@ class IdentityCatalogIT {
         "0".repeat(64),
         UUID.fromString(id));
     assertThat(c.get("/ai/jobs").statusCode()).isEqualTo(200);
+    assertThat(json(c.get("/ai/jobs/" + jobId + "/cost")).get("cost").isNull()).isTrue();
+    assertThat(c.get("/ai/jobs/" + UUID.randomUUID() + "/cost").statusCode()).isEqualTo(404);
     assertThat(json(c.get("/ai/jobs/" + jobId)).get("recoverable").asBoolean()).isFalse();
     assertThat(
             c.write("POST", "/ai/jobs/" + jobId + "/recover", Map.of("confirmed", false))

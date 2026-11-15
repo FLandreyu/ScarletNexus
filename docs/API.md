@@ -1,5 +1,7 @@
 # API 合同
 
+GET `/api/v1/ai/jobs/{id}/cost`：本人任务的币种、模型、价格版本/日期、费率、预留/结算金额和来源；无费用记录返回`{cost:null}`，不是费用0。未知或他人任务404。此接口只读，不接受浏览器设置价格。
+
 P2任务记录：GET `/api/v1/ai/jobs?page=0&size=20`（owner隔离列表）、GET `/api/v1/ai/jobs/{id}`（其他用户/不存在404）、POST `/api/v1/ai/jobs/{id}/recover`（会话/CSRF及`{confirmed:true}`，五分钟内409，未确认422）。恢复将预留转为UNKNOWN消耗，保留草案，不重发模型请求。详见AI_JOBS.md；尚无创建生成任务的HTTP接口。
 
 前缀 `/api/v1`，JSON UTF-8；时间为 ISO-8601 UTC，日期 YYYY-MM-DD；UUID 字符串。私有请求从会话识别用户，禁止相信客户端 userId。所有错误包含 `code`, `message`, `details`（数组）, `requestId`，并回显 X-Request-ID；内部异常不返回 SQL / 栈 / 连接信息。
@@ -8,7 +10,7 @@ P2任务记录：GET `/api/v1/ai/jobs?page=0&size=20`（owner隔离列表）、G
 
 | 方法 / 路径 | 访问 | 响应 |
 | --- | --- | --- |
-| GET /api/v1/system/status | public | 200 `{service:"scarlet-nexus",status:"UP",database:"UP",schemaVersion:"5",phase:"P1",aiConfigured:false}`；phase为最近完整验收阶段，P2部分实现不冒充整阶段完成；通过MyBatis实查Flyway，DB不可用503 |
+| GET /api/v1/system/status | public | 200 `{service:"scarlet-nexus",status:"UP",database:"UP",schemaVersion:"6",phase:"P1",aiConfigured:false}`；phase为最近完整验收阶段，P2部分实现不冒充整阶段完成；通过MyBatis实查Flyway，DB不可用503 |
 | GET /actuator/health | public | 200 `{status:"UP",groups:["liveness","readiness"]}`，故障503；不公开组件细节 |
 | GET /actuator/health/liveness | public | 进程存活，不依赖 DB |
 | GET /actuator/health/readiness | public | 应用就绪且 DB 可查询 |

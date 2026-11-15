@@ -1,6 +1,6 @@
 # 生成任务与token预算账本
 
-P2内部应用服务`GenerationJobs`已实现同步编排，不提供生成HTTP入口。调用者必须是已认证用户；传入的日限额、单次预留和Provider只能来自可信服务端策略，不能直接透传用户请求。默认禁用的Provider维持不变。货币预算、价格配置和真实供应商联调尚未完成，不应开启付费使用。
+P2内部应用服务`GenerationJobs`已实现同步编排，不提供生成HTTP入口。调用者必须是已认证用户；传入的token日限额、单次预留和Provider只能来自可信服务端策略，不能直接透传用户请求。V6已接入可选货币账本和价格快照，见[AI_MONEY.md](AI_MONEY.md)。默认禁用的Provider维持不变，供应商联调仍需授权。
 
 ## 流程
 
@@ -32,4 +32,4 @@ V5新增ai_generation_jobs、ai_daily_budgets；任务和草案使用复合所�
 
 使用真实PostgreSQL验证账本、幂等、非法结果、草案落库和事务边界；注入的Provider仅在测试方法中存在，不证明真实供应商生成可用。传输层HTTP测试保留在OpenAiCompatibleProviderTest。
 
-下一步：服务端预算策略/模型价格版本与货币预留、Schema供应商兼容、供应商证据对账与恢复、更完整的状态筛选、生成入口和授权后的供应商联调。当前不应直接把内部generate方法映射为公网API。
+下一步：可信token预留策略、Schema供应商兼容、供应商证据对账与恢复、更完整的状态筛选、生成入口和授权后的供应商联调。当前不应直接把内部generate方法映射为公网API。

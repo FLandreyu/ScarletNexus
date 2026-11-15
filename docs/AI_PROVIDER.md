@@ -18,4 +18,4 @@ Spring配置项为`app.ai.enabled`（默认false）、`app.ai.base-url`（包含
 
 ## 尚待实现
 
-内部持久化生成任务、token配额预留/结算及候选到草案落库已实现，见[AI_JOBS.md](AI_JOBS.md)。尚待货币预算与价格配置、崩溃恢复和结构修复、Schema兼容转换、生成HTTP入口及UI。chatStream/analyzeImage/estimateUsage仍为后续合同，当前接口不提供占位成功实现。真实供应商联调需另行授权，当前测试不算真实联调。
+内部持久化任务、token/货币预留结算、价格快照和保守恢复已实现，见[AI_JOBS.md](AI_JOBS.md)、[AI_MONEY.md](AI_MONEY.md)。启用真实Provider必须配置货币策略且重试为0。尚待可信token策略、供应商对账、结构修复、Schema兼容转换、生成HTTP入口及UI。chatStream/analyzeImage/estimateUsage仍为后续合同，当前接口不提供占位成功实现。真实供应商联调需另行授权，当前测试不算真实联调。

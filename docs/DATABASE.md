@@ -1,5 +1,7 @@
 # 数据库设计与迁移
 
+V6新增ai_money_days（owner/UTC日/币种预算）和ai_job_costs（任务价格快照与费用来源）。价格为配置费率，已知用量按BigDecimal计算；未知用量保守占用预留。旧任务不补造费用，跨币种不换算。详见AI_MONEY.md。
+
 状态：本文件包含完整目标模型。P0实际迁移users/audit_events；P1增加Spring Session及手动目录；P2的V4增加草案/版本，V5增加生成任务/token账本。其他目标表仍待实现。数据库为PostgreSQL17，业务实体UUID、时间timestamptz，应用读写UTC，前端按用户时区显示。migration history是实际结构的权威记录。
 
 V5新增ai_generation_jobs和ai_daily_budgets，持久化UTC日token预留/消耗、错误码和候选草案关联。用户行锁串行化预留，结果与草案/审计/结算同事务；计费未知不自动释放。token配额不是货币支出保证，崩溃遗留任务不自动重发，详见AI_JOBS.md。

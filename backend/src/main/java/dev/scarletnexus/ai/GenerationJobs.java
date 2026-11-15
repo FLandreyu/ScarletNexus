@@ -87,6 +87,7 @@ public class GenerationJobs {
   private final ObjectMapper json;
   private final AuditLog audit;
   private final TransactionTemplate tx;
+  private final MoneyLedger money;
 
   public GenerationJobs(
       Store db,
@@ -95,7 +96,9 @@ public class GenerationJobs {
       GraphValidator validator,
       ObjectMapper json,
       AuditLog audit,
-      PlatformTransactionManager manager) {
+      PlatformTransactionManager manager,
+      MoneyLedger money) {
+    this.money = money;
     this.db = db;
     this.catalog = catalog;
     this.drafts = drafts;
@@ -150,6 +153,7 @@ public class GenerationJobs {
                 "任务未超过五分钟，请稍后刷新");
           Job j = db.byId(owner, id);
           db.settle(owner, j.budgetDay(), j.reservedTokens(), j.reservedTokens());
+          money.settle(owner, id, null, false);
           db.finish(owner, id, "FAILED", "UNKNOWN", j.reservedTokens(), "AI_INTERRUPTED_UNKNOWN");
           audit.record(
               "AI_JOB",
@@ -213,6 +217,7 @@ public class GenerationJobs {
               var draft = drafts.create(skill);
               UUID id = UUID.randomUUID();
               db.insert(id, owner, skill, key, hash, day, reservation, draft.id());
+              money.reserve(owner, id, day);
               audit.record("AI_JOB", id, "STARTED", null, Map.of("reservedTokens", reservation));
               created[0] = true;
               return db.find(owner, key);
@@ -277,6 +282,11 @@ public class GenerationJobs {
             if (error == null) drafts.save(job.draftId(), 0, result.document());
           }
           db.settle(owner, job.budgetDay(), job.reservedTokens(), charged);
+          money.settle(
+              owner,
+              job.id(),
+              result == null ? null : result.usage(),
+              "AI_NOT_CONFIGURED".equals(failure));
           db.finish(
               owner, job.id(), error == null ? "SUCCEEDED" : "FAILED", source, charged, error);
           audit.record(

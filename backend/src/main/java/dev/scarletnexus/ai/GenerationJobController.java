@@ -7,9 +7,19 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/ai/jobs")
 public class GenerationJobController {
   private final GenerationJobs jobs;
+  private final MoneyLedger.Store costs;
 
-  public GenerationJobController(GenerationJobs jobs) {
+  public GenerationJobController(GenerationJobs jobs, MoneyLedger.Store costs) {
     this.jobs = jobs;
+    this.costs = costs;
+  }
+
+  public record JobCost(MoneyLedger.Cost cost) {}
+
+  @GetMapping("/{id}/cost")
+  public JobCost cost(@PathVariable UUID id) {
+    jobs.view(id);
+    return new JobCost(costs.cost(dev.scarletnexus.identity.CurrentUser.id(), id));
   }
 
   @GetMapping

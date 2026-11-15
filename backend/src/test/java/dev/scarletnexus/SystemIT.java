@@ -62,6 +62,10 @@ class SystemIT {
   @Autowired Flyway flyway;
   @Autowired dev.scarletnexus.ai.GenerationJobs jobs;
   @Autowired com.fasterxml.jackson.databind.ObjectMapper json;
+  @Autowired dev.scarletnexus.ai.MoneyLedger money;
+  @Autowired dev.scarletnexus.ai.MoneyLedger.Store costs;
+  @Autowired org.springframework.transaction.PlatformTransactionManager manager;
+  @Autowired org.springframework.context.ApplicationContext context;
 
   @Test
   @Order(5)
@@ -219,6 +223,91 @@ class SystemIT {
               });
       assertThat(late.state()).isEqualTo("FAILED");
       assertThat(late.chargedTokens()).isEqualTo(100);
+      var moneyTx = new org.springframework.transaction.support.TransactionTemplate(manager);
+      var price =
+          new dev.scarletnexus.ai.MoneyLedger.Price(
+              "USD",
+              "local-test",
+              "test-model",
+              "test-v1",
+              java.time.LocalDate.of(2026, 1, 1),
+              new java.math.BigDecimal("2"),
+              new java.math.BigDecimal("4"),
+              new java.math.BigDecimal("0.01"),
+              new java.math.BigDecimal("0.02"));
+      moneyTx.executeWithoutResult(
+          s -> {
+            money.reserve(owner, success.id(), success.budgetDay(), price);
+            money.settle(
+                owner,
+                success.id(),
+                new dev.scarletnexus.ai.AIProvider.Usage(1000L, 500L, "PROVIDER"),
+                false);
+            money.settle(owner, success.id(), null, false);
+          });
+      assertThat(costs.cost(owner, success.id()).charged()).isEqualByComparingTo("0.004");
+      assertThat(costs.cost(owner, success.id()).priceVersion()).isEqualTo("test-v1");
+      moneyTx.executeWithoutResult(
+          s -> {
+            money.reserve(owner, failed.id(), failed.budgetDay(), price);
+            money.settle(owner, failed.id(), null, false);
+          });
+      assertThat(costs.cost(owner, failed.id()).source()).isEqualTo("UNKNOWN");
+      assertThatThrownBy(
+              () ->
+                  moneyTx.executeWithoutResult(
+                      s -> money.reserve(owner, late.id(), late.budgetDay(), price)))
+          .isInstanceOf(dev.scarletnexus.common.DomainFailure.class);
+      assertThat(costs.cost(owner, late.id())).isNull();
+      assertThat(costs.cost(UUID.randomUUID(), success.id())).isNull();
+      var policyEnv =
+          new org.springframework.mock.env.MockEnvironment()
+              .withProperty("app.ai.budget.enabled", "true")
+              .withProperty("app.ai.model", "test-model")
+              .withProperty("app.ai.budget.currency", "USD")
+              .withProperty("app.ai.budget.provider-label", "local-test")
+              .withProperty("app.ai.budget.price-version", "test-v2")
+              .withProperty("app.ai.budget.price-date", "2026-01-02")
+              .withProperty("app.ai.budget.input-per-million", "2")
+              .withProperty("app.ai.budget.output-per-million", "4")
+              .withProperty("app.ai.budget.per-job-reserve", "0.01")
+              .withProperty("app.ai.budget.daily-limit", "0.02");
+      var policyMoney =
+          new dev.scarletnexus.ai.MoneyLedger(
+              costs, policyEnv, context.getBean(dev.scarletnexus.skill.CatalogMapper.class));
+      var fundedJobs =
+          new dev.scarletnexus.ai.GenerationJobs(
+              context.getBean(dev.scarletnexus.ai.GenerationJobs.Store.class),
+              context.getBean(dev.scarletnexus.skill.CatalogMapper.class),
+              context.getBean(dev.scarletnexus.knowledge.DraftService.class),
+              context.getBean(dev.scarletnexus.knowledge.GraphValidator.class),
+              json,
+              context.getBean(dev.scarletnexus.common.AuditLog.class),
+              manager,
+              policyMoney);
+      int draftCount = jdbc.queryForObject("SELECT count(*) FROM graph_drafts", Integer.class);
+      var paidCalls = new java.util.concurrent.atomic.AtomicInteger();
+      assertThatThrownBy(
+              () ->
+                  fundedJobs.generate(
+                      skill,
+                      "money-rejected",
+                      "topic",
+                      100,
+                      1000,
+                      (a, b, c) -> {
+                        paidCalls.incrementAndGet();
+                        return null;
+                      }))
+          .isInstanceOf(dev.scarletnexus.common.DomainFailure.class);
+      assertThat(paidCalls.get()).isZero();
+      assertThat(jdbc.queryForObject("SELECT count(*) FROM graph_drafts", Integer.class))
+          .isEqualTo(draftCount);
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT count(*) FROM ai_generation_jobs WHERE request_key='money-rejected'",
+                  Integer.class))
+          .isZero();
       assertThat(
               jdbc.queryForObject(
                   "SELECT revision FROM graph_drafts WHERE id=?", Integer.class, late.draftId()))
@@ -237,7 +326,7 @@ class SystemIT {
     var response = http.getForEntity("/api/v1/system/status", Map.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody())
-        .containsEntry("schemaVersion", "5")
+        .containsEntry("schemaVersion", "6")
         .containsEntry("database", "UP");
     assertThat(response.getBody()).containsEntry("aiConfigured", false);
     assertThat(response.getHeaders().getFirst("X-Request-ID")).isNotBlank();
