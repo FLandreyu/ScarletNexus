@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 @Configuration
 public class SecurityConfiguration {
@@ -17,6 +18,7 @@ public class SecurityConfiguration {
   SecurityFilterChain securityFilterChain(
       HttpSecurity http,
       ObjectMapper mapper,
+      SecurityContextRepository contexts,
       @Value("${springdoc.api-docs.enabled:true}") boolean docsEnabled)
       throws Exception {
     http.authorizeHttpRequests(
@@ -24,11 +26,13 @@ public class SecurityConfiguration {
               rules
                   .requestMatchers(
                       HttpMethod.GET,
+                      "/api/v1/auth/csrf",
                       "/api/v1/system/status",
                       "/actuator/health",
                       "/actuator/health/liveness",
                       "/actuator/health/readiness")
                   .permitAll();
+              rules.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll();
               if (docsEnabled) {
                 rules
                     .requestMatchers(
@@ -38,6 +42,7 @@ public class SecurityConfiguration {
               rules.anyRequest().authenticated();
             })
         .csrf(Customizer.withDefaults())
+        .securityContext(context -> context.securityContextRepository(contexts))
         .requestCache(cache -> cache.disable())
         .formLogin(form -> form.disable())
         .httpBasic(basic -> basic.disable())

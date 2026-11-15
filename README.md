@@ -2,22 +2,28 @@
 
 AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus_Codex_Master_Plan.md)，阶段实况见 [PROGRESS](docs/PROGRESS.md)。
 
-**当前 P0 工程基线**：Vue 前端通过 Spring Boot / MyBatis 查询真实 PostgreSQL 与 Flyway 状态；默认保护私有接口。登录、技能管理与 AI 等业务尚未开放。无预置账号、模拟学习进度或真实模型调用。
+**当前 P1 手动学习基础**：已实现私有登录/退出、数据库持久会话、技能创建/编辑/归档、稳定知识节点、跨技能引用、分类树与先修依赖、搜索及移动端浏览。所有数据真实写入PostgreSQL并保留审计。AI、草案版本发布、路线和学习记录尚未实现；不预置账号或学习进度。
 
 ## 启动方式 A：Docker 本地持久环境
 
-前置：Docker Engine/Desktop 已运行，Docker Compose v2，Git；首次构建需要网络。无需宿主机 Java / Node / PostgreSQL。仅监听本机127.0.0.1，不是生产配置。
+前置：Docker Engine/Desktop 已运行，Docker Compose v2+，Git；首次构建需要网络。无需宿主机 Java / Node / PostgreSQL。仅监听本机127.0.0.1，不是生产配置。
 
 ```powershell
 Copy-Item .env.example .env
 # 编辑 .env，设置自行生成的 POSTGRES_PASSWORD；不能留空或提交该文件
+./scripts/Set-LocalAdmin.ps1 -Email 'you@example.com'
+# 根据脚本提示设置.env中的ADMIN_EMAIL和ADMIN_PASSWORD_FILE；密码通过本地安全提示输入
 docker compose config --quiet
 docker compose up --build -d
 docker compose ps
 Invoke-RestMethod http://127.0.0.1:8088/api/v1/system/status
 ```
 
-打开 http://127.0.0.1:8088 。首次构建需要下载依赖和镜像；就绪后页面显示数据库已连接、迁移V1。数据库初始化后密码来自持久卷中的角色，不能只改.env就完成轮换。
+打开 http://127.0.0.1:8088 ，使用自己配置的邮箱/密码登录。首次构建需要下载依赖和镜像；/system显示数据库已连接、迁移V3。已有用户不会因重启或更换密码文件被重置。初始化后可取消ADMIN_EMAIL/ADMIN_PASSWORD_FILE环境变量；当前不提供密码重置接口，不能靠修改引导文件重置。数据库密码同样来自持久卷中的角色，不能只改.env就完成轮换。
+
+本机原生docker不在PATH时，可用 `./scripts/Invoke-Compose.ps1 -Action up`，脚本优先使用原生Docker，否则使用已准备的隔离WSL引擎；其他Action包括config/ps/logs/restart/down。它不自动安装服务、不覆盖.env、不删除卷。需要先按上述步骤准备.env和管理员文件。测试项目使用独立名称/卷，不是你的正式工作空间。
+
+密码文件是仅开发机持有的UTF-8单行文件（12+字符、最多72字节）；保存在忽略目录.runtime/dev-secrets并只读挂载，不粘贴到聊天、不写入.env、不入Git。Set-LocalAdmin不会覆盖已有文件。HTTPS部署时SESSION_COOKIE_SECURE=true，本地HTTP保持false。
 
 ```powershell
 docker compose logs --tail=100 backend
@@ -96,7 +102,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright自动启动Vite，真实请求后端，不拦截为假响应；覆盖桌面与手机，产物在test-results/playwright-report（不入Git）。首次需安装浏览器。CI包含前端检查、后端Testcontainers、Compose烟测和真实API浏览器测试；未推送并执行前不能声称远端CI已通过。
+完整Playwright需要**隔离验收数据库/账号**，在终端设置E2E_EMAIL，并从本地验收密码文件读取E2E_PASSWORD（不要在命令中粘贴真实密码）。它会创建验收技能和节点，不要对个人真实库运行。默认启动Vite并真实请求后端；覆盖桌面/手机登录、手动图谱、环拒绝、刷新持久化、退出，以及系统状态。产物在test-results/playwright-report（不入Git）。CI使用临时随机密码文件/独立数据库；未推送并执行前不能声称远端CI已通过。
 
 验证Compose构建后的页面时，先在同一终端设置 `$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:8088'` 再运行 `npm run test:e2e`。此模式直接访问Nginx和生产构建产物，不启动Vite；CI也使用此模式。恢复开发模式可移除该环境变量。
 
@@ -108,4 +114,4 @@ Playwright自动启动Vite，真实请求后端，不拦截为假响应；覆盖
 - [AI设计](docs/AI_DESIGN.md)、[安全](docs/SECURITY.md)、[决策](docs/DECISIONS.md)
 - [路线](docs/ROADMAP.md)、[测试](docs/TEST_PLAN.md)、[运维](docs/OPERATIONS.md)、[进度](docs/PROGRESS.md)
 
-开发OpenAPI：http://127.0.0.1:8080/v3/api-docs 。只包含实际端点，Compose默认关闭。P0验收通过后进入P1身份、技能和手动知识树；生产部署、付费AI及不可逆操作另行确认。
+开发OpenAPI：http://127.0.0.1:8080/v3/api-docs 。只包含实际端点，Compose默认关闭。接下来P2为可编辑草案、校验、版本发布与可配置AI；生产部署、付费AI及不可逆操作另行确认。

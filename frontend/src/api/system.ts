@@ -3,7 +3,7 @@ export interface SystemStatus {
   status: 'UP'
   database: 'UP'
   schemaVersion: string
-  phase: 'P0'
+  phase: 'P0' | 'P1'
   aiConfigured: boolean
 }
 
@@ -47,7 +47,7 @@ export async function fetchSystemStatus(): Promise<SystemStatus> {
     data.status !== 'UP' ||
     data.database !== 'UP' ||
     typeof data.schemaVersion !== 'string' ||
-    data.phase !== 'P0' ||
+    !['P0', 'P1'].includes(data.phase ?? '') ||
     typeof data.aiConfigured !== 'boolean'
   ) {
     throw new ApiFailure('服务返回了无法识别的状态。')

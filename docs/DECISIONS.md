@@ -41,3 +41,15 @@ npm审计发现Vue Test Utils的js-beautify → glob/minimatch/editorconfig开�
 现成Ubuntu发行版可运行，无需重装Docker Desktop或启用系统虚拟化。官方Docker静态二进制与iptables依赖包只提取到专用缓存；进程、Unix socket、数据根和Compose项目独立，不注册系统服务。Windows代理只监听loopback，使用标准输入输出转发到WSL的loopback，未开放未认证Docker TCP API。Docker运行产生正常的临时桥接网络规则；不改持久系统网络配置。
 
 Testcontainers在Maven容器内运行时传递TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE为宿主机真实socket，供Ryuk清理资源；保持Ryuk启用。浏览器以PLAYWRIGHT_BASE_URL直接访问Nginx产物，保证包含构建输出和CSP验证。测试数据只在独立验收卷，不当作用户进度。
+
+## ADR-011 — P1身份与管理员引导
+
+JSON登录通过AuthenticationManager校验，显式轮换会话ID、CSRF并保存SecurityContext；Cookie不进入localStorage。Spring Session JDBC使用Flyway管理的官方表结构，不让框架自行建表。管理员邮箱/密码文件成对配置，只在users为空时创建，已有账号不重置；本地脚本通过SecureString输入、CreateNew写文件，不覆盖.env或已有秘密。测试账号仅位于隔离测试库。
+
+采用BCrypt12与72 UTF-8字节上限，避免截断；登录限流10次/IP/5分钟，内存容量1000来源，过期回收，超限返回Retry-After。初期单用户单实例足够；P6再复核代理与分布式限流。认证DTO诊断字符串脱敏，覆盖本机DEBUG环境误开日志的已知情形。
+
+## ADR-012 — P1手动图谱与一致性
+
+节点定义、技能位置、关系分表。parent_node_id使用稳定知识节点UUID，通过同owner/skill的复合FK保证父节点属于当前技能；同节点在不同技能的位置独立。每次图写入先锁当前用户行，事务内检查分类环/全用户先修DAG并审计，避免同时添加相反边绕过校验。单用户低并发优先正确性，后续确有性能瓶颈再细化锁粒度。
+
+技能/节点采用ACTIVE/ARCHIVED，保留引用与关系，恢复不换UUID；移出技能仅删除关联且拒绝遗留子节点，不静默丢弃节点。PATCH使用完整表单，不隐式清空缺失字段。前端创建定义和技能引用为两个显式步骤；引用失败时保留定义并提示通过节点库重试。客户端等待CSRF前冻结提交值，不自动重试写入。P1的CatalogService集中处理小型手动目录事务，P2再按版本发布边界拆分knowledge模块。

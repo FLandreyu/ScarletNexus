@@ -40,12 +40,14 @@ flowchart LR
 | resource | 资料、附件、校验与带权限下载 |
 | analytics | 聚合查询、导入导出边界；不维护另一套学习事实 |
 
-各模块按需使用 controller/application/domain/infrastructure；通过应用服务调用其他模块，禁止跨模块直接修改表。P0 实现 common 和 identity 的表基线，其余责任在设计中冻结，随阶段加入实际代码，避免空类伪实现。
+各模块按需使用controller/application/domain/infrastructure；通过应用服务交互，保持明确边界。当前P1实现common、identity和skill手动目录，其余责任随阶段加入真实代码，避免空类伪实现。
 
 ## 状态与事务
 
 PostgreSQL 是唯一业务事实源。前端 Pinia 仅保存视图状态；刷新重新读取 API。AI 对话不是业务状态。服务端数据库事务包住图谱发布、确认计划、作答与证据写入；外部模型调用不放在长事务中。P2 发布使用草案 revision / 版本唯一约束与幂等键，锁定技能版本计数；冲突返回 409。关系发布前用全图 DFS / 拓扑排序检测先修和分类环。
 
-会话认证采用 HttpOnly Cookie、CSRF token、同源代理，不把 token 写入 localStorage。P1 加入 PostgreSQL 会话持久化和 BCrypt 管理员引导；P0 所有非公开接口已默认拒绝，尚不提供登录功能。
+会话认证采用HttpOnly Cookie、CSRF token、同源代理，不把凭据写入localStorage。P1已实现PostgreSQL Spring Session和BCrypt12管理员引导；JSON登录由AuthenticationManager校验，并显式执行会话ID轮换、CSRF轮换和SecurityContextRepository保存。全部私有API按SessionUser UUID限定。依据[Spring Security CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)与[Spring Session JDBC](https://docs.spring.io/spring-session/reference/configuration/jdbc.html)设计；登录后必须重新获取CSRF。
+
+P1 skill模块暂承载技能/手动知识树应用服务，CatalogMapper集中实现这组小型事务的MyBatis持久化；节点/关系/位置数据结构明确分离，P2按版本发布边界再拆出knowledge模块，避免现在制造空分层。所有用户图写入先锁用户行再校验，保证并发创建相反先修边时至多一条提交。P1无版本发布功能，不把手动编辑冒充已发布图谱。
 
 错误统一 `code/message/details/requestId`，响应回显 X-Request-ID。日志仅写技术上下文和 requestId，不记录 Key / 密码 / 附件正文。健康检查只公开服务存活和就绪状态，不包含连接配置。

@@ -1,6 +1,14 @@
 # 数据库设计与迁移
 
-状态：本文件包含完整目标模型。P0 实际迁移仅 users、audit_events；后续按业务阶段新增 Flyway 迁移，不提前创建尚无应用约束的空业务表。数据库为 PostgreSQL 17，所有实体 UUID、时间 timestamptz，默认 now()，应用读写 UTC，前端按用户时区显示。migration history 是实际结构的权威记录。
+状态：本文件包含完整目标模型。P0实际迁移users/audit_events；P1增加Spring Session表及skills/knowledge_nodes/skill_nodes/knowledge_relations。V1–V3已真实验证，其余目标表尚未实现。数据库为PostgreSQL17，业务实体UUID、时间timestamptz，应用读写UTC，前端按用户时区显示。migration history是实际结构的权威记录。
+
+## P1 实际结构细节
+
+- V2按Spring Session JDBC官方PostgreSQL结构创建spring_session和spring_session_attributes，principal_name扩展为254字符。匿名CSRF会话允许principal为空；认证归属来自服务端序列化SecurityContext。基础设施表采用框架CHAR(36)键，不充当业务实体；会话过期/退出可物理清理，业务审计不删除。
+- V3技能与节点均含(owner_id,id)唯一约束；skill_nodes的(owner_id,skill_id)/(owner_id,node_id)复合FK约束跨用户引用，parent_node_id明确指向同技能中父知识节点UUID。每技能同节点仅一个位置；与其他技能的位置独立。
+- 节点类型CATEGORY/CONCEPT/PRACTICE；技能/节点ACTIVE或ARCHIVED。归档保留UUID、引用及审计，可恢复。技能移除节点仅删除关联行，必须先移走子节点。
+- 关系方向固定先修source→后继target；DB拒绝自引用和重复关系，事务应用层校验全用户先修DAG。所有图写入先锁当前用户行，串行化分类/依赖检测与变更，低并发单用户下优先数据正确性。
+- 业务写入同事务追加before/after审计；失败回滚。核心关系未存入JSON；JSON只用于审计快照。没有创建示例技能或掌握度种子。
 
 ## 领域 ERD（目标）
 

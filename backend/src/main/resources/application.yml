@@ -14,6 +14,18 @@ spring:
     validate-on-migrate: true
   jackson:
     time-zone: UTC
+  session:
+    timeout: 30m
+    jdbc:
+      initialize-schema: never
+mybatis:
+  type-handlers-package: dev.scarletnexus.common
+app:
+  bootstrap:
+    email: ${ADMIN_EMAIL:}
+    password-file: ${ADMIN_PASSWORD_FILE:}
+  login:
+    attempts-per-window: 10
 server:
   address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${SERVER_PORT:8080}
@@ -45,5 +57,9 @@ springdoc:
   swagger-ui:
     enabled: ${API_DOCS_ENABLED:true}
 logging:
+  level:
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    dev.scarletnexus.identity: INFO
   pattern:
     level: '%5p [requestId=%X{requestId:-}]'

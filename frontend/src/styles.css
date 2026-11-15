@@ -238,6 +238,259 @@ dd {
 .skip-link:focus {
   top: 10px;
 }
+.workspace-heading {
+  padding: 45px 0 28px;
+}
+.workspace-heading > a {
+  display: inline-block;
+  color: #e7b7c5;
+  margin-bottom: 25px;
+}
+.workspace-heading h1 {
+  font-size: clamp(26px, 4vw, 38px);
+  overflow-wrap: anywhere;
+}
+.workspace-heading p:not(.eyebrow) {
+  color: #c0b7c9;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.top-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 15px;
+  font-size: 13px;
+}
+.top-nav a {
+  padding: 10px 0;
+}
+.workspace-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+  gap: 25px;
+  padding-bottom: 45px;
+  align-items: start;
+}
+.workspace-columns > * {
+  min-width: 0;
+}
+.editor {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #4c3e52;
+  background: #211e29;
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.editor h2 {
+  margin-bottom: 9px;
+}
+.editor label {
+  font-size: 13px;
+  color: #d0c4d8;
+}
+.editor input,
+.editor select,
+.editor textarea,
+.search-bar input,
+.search-bar select {
+  border: 1px solid #6e5e7a;
+  border-radius: 5px;
+  padding: 10px;
+  width: 100%;
+  min-width: 0;
+  background: #17151d;
+  color: #eeeaf1;
+  font: inherit;
+  font-size: 16px;
+}
+.editor textarea {
+  resize: vertical;
+}
+.editor button,
+.row-actions button,
+.search-bar button,
+.pagination button,
+.top-nav button {
+  border: 1px solid #80647b;
+  border-radius: 5px;
+  padding: 10px 13px;
+  min-height: 42px;
+  background: #302538;
+  color: #f0deeb;
+  cursor: pointer;
+}
+button.primary {
+  background: #98364f;
+  border-color: #b55970;
+  color: #fff;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.login-form {
+  max-width: 440px;
+  margin-bottom: 70px;
+}
+.login-form > a,
+.text-link {
+  color: #edafbd;
+  font-size: 13px;
+}
+.help-text {
+  color: #c4b5ce;
+  line-height: 1.8;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.search-bar {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+.search-bar select {
+  max-width: 125px;
+}
+.search-bar button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.skill-list,
+.tree,
+.relation-list {
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+.skill-card {
+  border: 1px solid #4c3e52;
+  background: #211e29;
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 14px;
+  overflow-wrap: anywhere;
+}
+.skill-card .eyebrow {
+  display: block;
+  margin-bottom: 13px;
+  font-size: 10px;
+}
+.skill-card h2 {
+  color: #f2cedc;
+  line-height: 1.6;
+}
+.skill-card p {
+  color: #c0b7c9;
+  white-space: pre-wrap;
+  line-height: 1.75;
+  font-size: 14px;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.skill-card .row-actions {
+  justify-content: space-between;
+}
+.empty-state {
+  padding: 30px 15px;
+  color: #c0b7c9;
+  line-height: 1.8;
+}
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 9px;
+  margin-top: 22px;
+  font-size: 12px;
+  color: #c9b8d2;
+}
+.tree-panel {
+  border: 1px solid #4c3e52;
+  border-radius: 10px;
+  padding: 22px;
+  margin-bottom: 22px;
+  background: #211e29;
+}
+.tree {
+  margin-top: 18px;
+}
+.node-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-left: 2px solid #91546e;
+  background: #292232;
+  padding: 13px;
+  margin-bottom: 10px;
+  overflow-wrap: anywhere;
+}
+.node-row > div {
+  min-width: 0;
+}
+.node-row small {
+  display: block;
+  font-size: 11px;
+  color: #c4b5ce;
+  margin-top: 8px;
+}
+.node-row strong {
+  font-weight: 550;
+}
+.relation-list li {
+  padding: 13px 0;
+  border-bottom: 1px solid #493c50;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.relation-list small {
+  color: #d4acc0;
+}
+.relation-list .row-actions {
+  margin-top: 9px;
+}
+.inline-editor {
+  padding: 0;
+  border: 0;
+  margin: 22px 0 0;
+  background: transparent;
+}
+@media (max-width: 760px) {
+  .workspace-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .top-nav {
+    gap: 10px;
+    font-size: 12px;
+  }
+  .site-header {
+    flex-wrap: wrap;
+    padding: 20px 0;
+  }
+  .editor,
+  .tree-panel {
+    padding: 18px;
+  }
+  .search-bar {
+    flex-wrap: wrap;
+  }
+  .search-bar input {
+    flex-basis: 100%;
+  }
+  .pagination {
+    flex-wrap: wrap;
+  }
+}
 @media (max-width: 640px) {
   .app-shell {
     padding: 0 22px;

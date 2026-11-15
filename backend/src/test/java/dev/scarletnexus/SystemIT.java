@@ -70,7 +70,7 @@ class SystemIT {
     var response = http.getForEntity("/api/v1/system/status", Map.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody())
-        .containsEntry("schemaVersion", "1")
+        .containsEntry("schemaVersion", "3")
         .containsEntry("database", "UP");
     assertThat(response.getBody()).containsEntry("aiConfigured", false);
     assertThat(response.getHeaders().getFirst("X-Request-ID")).isNotBlank();
@@ -190,7 +190,7 @@ class SystemIT {
           .isEqualTo(before);
     }
     String spec = http.getForObject("/v3/api-docs", String.class);
-    assertThat(spec).contains("/api/v1/system/status").doesNotContain("/api/v1/skills");
+    assertThat(spec).contains("/api/v1/system/status", "/api/v1/skills", "/api/v1/auth/login");
   }
 
   @Test

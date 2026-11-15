@@ -1,3 +1,32 @@
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from './stores/auth'
+import { errorMessage } from './api/client'
+const auth = useAuthStore(),
+  router = useRouter(),
+  error = ref(''),
+  logoutBusy = ref(false)
+function expired() {
+  auth.clear()
+  void router.replace('/login')
+}
+async function logout() {
+  if (logoutBusy.value) return
+  logoutBusy.value = true
+  error.value = ''
+  try {
+    await auth.logout()
+    await router.replace('/login')
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    logoutBusy.value = false
+  }
+}
+onMounted(() => window.addEventListener('session-expired', expired))
+onUnmounted(() => window.removeEventListener('session-expired', expired))
+</script>
 <template>
   <div class="app-shell">
     <a class="skip-link" href="#main">跳到主要内容</a>
@@ -8,11 +37,18 @@
           >SCARLET <strong>NEXUS</strong><small>个人终身学习系统</small></span
         >
       </RouterLink>
-      <span class="header-label"
-        >PRIVATE WORKSPACE <span aria-hidden="true">/</span> P0</span
-      >
+      <nav class="top-nav" aria-label="主导航">
+        <RouterLink to="/skills">技能空间</RouterLink
+        ><RouterLink to="/system">系统状态</RouterLink
+        ><button v-if="auth.user" :disabled="logoutBusy" @click="logout">
+          退出登录
+        </button>
+      </nav>
     </header>
-    <main id="main" tabindex="-1"><RouterView /></main>
+    <main id="main" tabindex="-1">
+      <p v-if="error" role="alert" class="error-box">{{ error }}</p>
+      <RouterView :key="$route.path" />
+    </main>
     <footer class="site-footer">
       Scarlet Nexus <span>让每一步学习都有迹可循。</span>
     </footer>

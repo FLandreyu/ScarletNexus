@@ -44,6 +44,9 @@ jobs:
     env:
       POSTGRES_PASSWORD: ci-disposable-database-only
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:8088
+      ADMIN_EMAIL: ci-acceptance@example.test
+      ADMIN_PASSWORD_FILE: /run/secrets/admin.password
+      E2E_EMAIL: ci-acceptance@example.test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,12 +54,22 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Prepare isolated acceptance credentials
+        run: |
+          mkdir -p .runtime/dev-secrets
+          python3 - <<'PY'
+          import os, pathlib, secrets
+          password = secrets.token_urlsafe(32)
+          pathlib.Path('.runtime/dev-secrets/admin.password').write_text(password)
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('E2E_PASSWORD=' + password + '\n')
+          PY
       - run: docker compose config --quiet
       - run: docker compose up --build -d --wait --wait-timeout 240
       - name: Check gateway and restart persistence
         run: |
           curl --fail http://127.0.0.1:8088/ | grep 'Scarlet Nexus'
-          curl --fail http://127.0.0.1:8088/api/v1/system/status | grep '"schemaVersion":"1"'
+          curl --fail http://127.0.0.1:8088/api/v1/system/status | grep '"schemaVersion":"3"'
           docker compose restart backend
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:8088/api/v1/system/status > /tmp/status.json; then break; fi

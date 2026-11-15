@@ -10,15 +10,15 @@ onMounted(() => system.refresh())
 <template>
   <section class="hero">
     <p class="eyebrow">A FOUNDATION FOR LIFELONG LEARNING</p>
-    <h1>把学习，连接成体系。</h1>
+    <h1>系统连接状态</h1>
     <p class="hero-description">
-      从一个目标开始，让知识、实践与证据相互连接。<br
+      技能与知识树可以手动管理。<br
         class="hidden sm:block"
-      />你的私人学习空间，正在建立。
+      />这里显示服务与数据连接的实际状态。
     </p>
     <div class="phase-line">
-      <ElTag effect="dark" type="info">P0 · 工程基线</ElTag
-      ><span>后续功能按阶段验收开放</span>
+      <ElTag effect="dark" type="info">P1 · 手动知识树</ElTag
+      ><span>AI 功能尚未接入</span>
     </div>
   </section>
 
@@ -72,10 +72,10 @@ onMounted(() => system.refresh())
     <div class="next-number" aria-hidden="true">01</div>
     <div>
       <p class="eyebrow">NEXT MILESTONE</p>
-      <h2 id="next-title">身份、技能与手动知识树</h2>
-      <p>下一阶段建立私有登录与技能管理，再把知识点组织成可持续维护的结构。</p>
+      <h2 id="next-title">AI 知识草案与版本发布</h2>
+      <p>下一阶段增加可编辑草案、变更预览和用户确认发布。</p>
       <p class="scope-note">
-        当前尚未开放学习业务；不会生成示例进度，也不会调用外部 AI。
+        当前不调用外部 AI。知识节点与依赖关系由你手动管理。
       </p>
     </div>
   </section>

@@ -22,6 +22,11 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       SERVER_ADDRESS: 0.0.0.0
       API_DOCS_ENABLED: 'false'
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD_FILE: ${ADMIN_PASSWORD_FILE:-}
+    volumes:
+      - ./.runtime/dev-secrets:/run/secrets:ro
     depends_on:
       db:
         condition: service_healthy

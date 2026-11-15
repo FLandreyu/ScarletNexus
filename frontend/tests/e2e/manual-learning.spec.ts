@@ -1,0 +1,121 @@
+import { expect, test } from '@playwright/test'
+
+test('authenticates, persists a manual knowledge tree, rejects cycles and logs out', async ({
+  page,
+  context,
+}, testInfo) => {
+  const email = process.env.E2E_EMAIL
+  const password = process.env.E2E_PASSWORD
+  expect(
+    email,
+    'Set E2E_EMAIL for an isolated acceptance administrator',
+  ).toBeTruthy()
+  expect(
+    password,
+    'Set E2E_PASSWORD locally; never put a real password in test source',
+  ).toBeTruthy()
+  const pageErrors: string[] = []
+  page.on('pageerror', (error) => pageErrors.push(error.message))
+  await page.goto('/skills')
+  await expect(page).toHaveURL(/\/login$/)
+  await page.screenshot({
+    path: testInfo.outputPath('login.png'),
+    fullPage: true,
+  })
+  await page.getByLabel('邮箱', { exact: true }).fill(email!)
+  await page.getByLabel('密码', { exact: true }).fill(password!)
+  const skillsLoaded = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/v1/skills?') &&
+      response.request().method() === 'GET' &&
+      response.status() === 200,
+  )
+  await page.getByRole('button', { name: '登录', exact: true }).click()
+  await expect(page).toHaveURL(/\/skills$/)
+  await skillsLoaded
+  const searchButton = await page
+    .getByRole('button', { name: '搜索', exact: true })
+    .boundingBox()
+  const searchInput = await page
+    .getByLabel('搜索技能', { exact: true })
+    .boundingBox()
+  expect(searchButton).not.toBeNull()
+  expect(searchInput).not.toBeNull()
+  expect(searchButton!.height).toBeLessThanOrEqual(searchInput!.height + 4)
+  await page.screenshot({ path: testInfo.outputPath('skills.png') })
+  const cookie = (await context.cookies()).find(
+    (cookie) => cookie.name === 'SCARLET_SESSION',
+  )
+  expect(cookie?.httpOnly).toBe(true)
+  expect(cookie?.sameSite).toBe('Lax')
+  const skill = `Java 后端 ${testInfo.project.name} ${Date.now()}`
+  await page.getByRole('button', { name: '新建技能', exact: true }).click()
+  await expect(page.getByLabel('技能名称', { exact: true })).toBeFocused()
+  await page.getByLabel('技能名称', { exact: true }).fill(skill)
+  await page.getByLabel('分类', { exact: true }).fill('工程验收')
+  await page
+    .getByLabel('描述与学习目标')
+    .fill('仅用于自动化验收，验证手动知识树持久化。')
+  await page.getByRole('button', { name: '创建技能', exact: true }).click()
+  await page.getByRole('link', { name: skill, exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(skill)
+  for (const [title, parent] of [
+    ['Java SE', ''],
+    ['集合框架', 'Java SE'],
+    ['线程与并发', 'Java SE'],
+  ]) {
+    await page.getByRole('button', { name: '添加节点', exact: true }).click()
+    await expect(page.getByLabel('节点名称', { exact: true })).toBeFocused()
+    await page.getByLabel('节点名称', { exact: true }).fill(title!)
+    if (parent)
+      await page
+        .getByLabel('父节点', { exact: true })
+        .selectOption({ label: parent })
+    await page
+      .getByRole('button', { name: '添加到知识树', exact: true })
+      .click()
+    await expect(
+      page.getByRole('button', { name: `编辑节点 ${title}`, exact: true }),
+    ).toBeVisible()
+  }
+  for (const [source, target] of [
+    ['Java SE', '集合框架'],
+    ['集合框架', '线程与并发'],
+  ]) {
+    await page.getByLabel('起点 / 先修节点').selectOption({ label: source })
+    await page.getByLabel('终点 / 后继节点').selectOption({ label: target })
+    await page.getByRole('button', { name: '建立关系', exact: true }).click()
+  }
+  await expect(page.locator('.relation-list li')).toHaveCount(2)
+  await page.getByLabel('起点 / 先修节点').selectOption({ label: '线程与并发' })
+  await page.getByLabel('终点 / 后继节点').selectOption({ label: 'Java SE' })
+  await page.getByRole('button', { name: '建立关系', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('先修依赖不能形成环')
+  await page.reload()
+  await expect(page.locator('.node-row')).toHaveCount(3)
+  await expect(page.locator('.relation-list li')).toHaveCount(2)
+  await page
+    .getByRole('button', { name: '编辑节点 集合框架', exact: true })
+    .click()
+  await expect(page.getByLabel('节点名称', { exact: true })).toBeFocused()
+  await page.getByLabel('节点名称', { exact: true }).fill('集合与泛型')
+  await page.getByRole('button', { name: '保存节点定义', exact: true }).click()
+  await expect(
+    page.getByRole('button', { name: '编辑节点 集合与泛型', exact: true }),
+  ).toBeVisible()
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBeTruthy()
+  await page.screenshot({
+    path: testInfo.outputPath('manual-knowledge.png'),
+    fullPage: true,
+  })
+  await page.getByRole('button', { name: '退出登录', exact: true }).click()
+  await expect(page).toHaveURL(/\/login$/)
+  await page.reload()
+  await page.goto('/skills')
+  await expect(page).toHaveURL(/\/login$/)
+  expect(pageErrors).toEqual([])
+})

@@ -31,7 +31,7 @@ public class SystemController {
   })
   @GetMapping("/status")
   public SystemStatus status() {
-    return new SystemStatus("scarlet-nexus", "UP", "UP", mapper.schemaVersion(), "P0", false);
+    return new SystemStatus("scarlet-nexus", "UP", "UP", mapper.schemaVersion(), "P1", false);
   }
 
   public record SystemStatus(

@@ -10,15 +10,15 @@ test('shows actual backend and database state on desktop and mobile', async ({
   expect(response.ok()).toBeTruthy()
   expect(await response.json()).toMatchObject({
     database: 'UP',
-    schemaVersion: '1',
+    schemaVersion: '3',
     aiConfigured: false,
   })
-  await page.goto('/')
+  await page.goto('/system')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    '把学习，连接成体系。',
+    '系统连接状态',
   )
   await expect(page.getByText('已连接', { exact: true })).toHaveCount(2)
-  await expect(page.getByText('V1', { exact: true })).toBeVisible()
+  await expect(page.getByText('V3', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '刷新状态' }).click()
   await expect(page.getByText('已连接', { exact: true })).toHaveCount(2)
   expect(
