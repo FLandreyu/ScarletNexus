@@ -4,6 +4,10 @@ const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testMatch:
+    process.env.GENERATION_ACCEPTANCE === '1'
+      ? '**/generation-enabled.acceptance.ts'
+      : '**/*.spec.ts',
   fullyParallel: true,
   workers: 1,
   forbidOnly: !!process.env.CI,

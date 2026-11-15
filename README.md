@@ -8,6 +8,8 @@ AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus
 
 登录后可从“生成任务”查看已有任务，并确认结束超过五分钟的中断任务：草案不变，预算按未知用量保守占用，不自动重新生成。
 
+启用状态已通过独立本地HTTP协议、真实PG及桌面/手机验收，复现见[GENERATION_ACCEPTANCE.md](docs/GENERATION_ACCEPTANCE.md)。协议响应是测试数据，不代表真实模型产出或供应商联调完成。
+
 ## 启动方式 A：Docker 本地持久环境
 
 前置：Docker Engine/Desktop 已运行，Docker Compose v2+，Git；首次构建需要网络。无需宿主机 Java / Node / PostgreSQL。仅监听本机127.0.0.1，不是生产配置。
