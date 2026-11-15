@@ -1,5 +1,7 @@
 # 数据库设计与迁移
 
+V7新增ai_generation_inputs：当前用户提交的主题/修复上下文、root/parent任务和depth 0–2；每父任务至多一个子任务，复合所有权外键。与任务/token/货币预留同事务写入，仅服务端用于显式有限修复，不通过任务列表返回，不记录日志。已有V1–V6迁移保持不变。
+
 V6新增ai_money_days（owner/UTC日/币种预算）和ai_job_costs（任务价格快照与费用来源）。价格为配置费率，已知用量按BigDecimal计算；未知用量保守占用预留。旧任务不补造费用，跨币种不换算。详见AI_MONEY.md。
 
 状态：本文件包含完整目标模型。P0实际迁移users/audit_events；P1增加Spring Session及手动目录；P2的V4增加草案/版本，V5增加生成任务/token账本。其他目标表仍待实现。数据库为PostgreSQL17，业务实体UUID、时间timestamptz，应用读写UTC，前端按用户时区显示。migration history是实际结构的权威记录。

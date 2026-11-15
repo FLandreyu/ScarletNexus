@@ -6,9 +6,29 @@ import java.util.List;
 import java.util.UUID;
 
 public record GraphDocument(
-    @Min(1) @Max(1) int schemaVersion,
+    @Min(1) @Max(2) int schemaVersion,
     @NotNull @Size(max = 500) List<@NotNull @Valid Node> nodes,
-    @NotNull @Size(max = 1500) List<@NotNull @Valid Relation> relations) {
+    @NotNull @Size(max = 1500) List<@NotNull @Valid Relation> relations,
+    @com.fasterxml.jackson.annotation.JsonInclude(
+            com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY)
+        @Size(max = 100)
+        List<@NotNull @Valid Mapping> mappings) {
+  public GraphDocument {
+    if (mappings == null) mappings = List.of();
+  }
+
+  public GraphDocument(int version, List<Node> nodes, List<Relation> relations) {
+    this(version, nodes, relations, List.of());
+  }
+
+  public record Mapping(
+      @NotNull UUID id,
+      @NotNull @Pattern(regexp = "MERGE|SPLIT") String kind,
+      @NotNull @Pattern(regexp = "MANUAL_DRAFT") String origin,
+      @NotNull @Size(min = 1, max = 1) List<@NotNull @Valid Node> originals,
+      @NotNull @Size(min = 1, max = 8) List<@NotNull UUID> targets,
+      @NotNull @Size(max = 1500) List<@NotNull @Valid Relation> previousRelations) {}
+
   public record Node(
       @NotNull UUID id,
       @NotBlank @Size(max = 160) String title,

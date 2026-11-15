@@ -15,9 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * Internal orchestration; intentionally no HTTP generation endpoint until monetary budgets exist.
- */
+/** Transaction boundaries for budgeted generation and explicit repair requests. */
 @Service
 public class GenerationJobs {
   public record Job(
@@ -35,11 +33,23 @@ public class GenerationJobs {
   @Mapper
   public interface Store {
     @Select(
-        "SELECT id,skill_id,state,usage_source,reserved_tokens,charged_tokens,error_code,draft_id,created_at,(state='RUNNING' AND created_at<=now()-interval '5 minutes') AS recoverable FROM ai_generation_jobs WHERE owner_id=#{owner} ORDER BY created_at DESC,id DESC LIMIT #{size} OFFSET #{offset}")
+        "SELECT input_text,root_job_id,parent_job_id,depth FROM ai_generation_inputs WHERE owner_id=#{owner} AND job_id=#{id}")
+    JobInput input(UUID owner, UUID id);
+
+    @Insert(
+        "INSERT INTO ai_generation_inputs(job_id,owner_id,input_text,root_job_id,parent_job_id,depth) VALUES(#{id},#{owner},#{input},#{root},#{parent},#{depth})")
+    void inputInsert(UUID id, UUID owner, String input, UUID root, UUID parent, int depth);
+
+    @Select(
+        "SELECT id,skill_id,input_hash,budget_day,reserved_tokens,state,usage_source,charged_tokens,error_code,draft_id FROM ai_generation_jobs WHERE owner_id=#{owner} AND id=(SELECT job_id FROM ai_generation_inputs WHERE owner_id=#{owner} AND parent_job_id=#{parent})")
+    Job child(UUID owner, UUID parent);
+
+    @Select(
+        "SELECT id,skill_id,state,usage_source,reserved_tokens,charged_tokens,error_code,draft_id,created_at,(state='RUNNING' AND created_at<=now()-interval '5 minutes') AS recoverable,(state='FAILED' AND error_code IN ('AI_INVALID_GRAPH','AI_INVALID_OUTPUT','AI_INCOMPLETE_OUTPUT') AND EXISTS(SELECT 1 FROM ai_generation_inputs i WHERE i.owner_id=ai_generation_jobs.owner_id AND i.job_id=ai_generation_jobs.id AND i.depth<2) AND NOT EXISTS(SELECT 1 FROM ai_generation_inputs c WHERE c.owner_id=ai_generation_jobs.owner_id AND c.parent_job_id=ai_generation_jobs.id)) AS repairable,COALESCE((SELECT depth FROM ai_generation_inputs i WHERE i.owner_id=ai_generation_jobs.owner_id AND i.job_id=ai_generation_jobs.id),0) AS repair_depth,(SELECT parent_job_id FROM ai_generation_inputs i WHERE i.owner_id=ai_generation_jobs.owner_id AND i.job_id=ai_generation_jobs.id) AS parent_job_id FROM ai_generation_jobs WHERE owner_id=#{owner} ORDER BY created_at DESC,id DESC LIMIT #{size} OFFSET #{offset}")
     List<View> list(UUID owner, int size, int offset);
 
     @Select(
-        "SELECT id,skill_id,state,usage_source,reserved_tokens,charged_tokens,error_code,draft_id,created_at,(state='RUNNING' AND created_at<=now()-interval '5 minutes') AS recoverable FROM ai_generation_jobs WHERE owner_id=#{owner} AND id=#{id}")
+        "SELECT id,skill_id,state,usage_source,reserved_tokens,charged_tokens,error_code,draft_id,created_at,(state='RUNNING' AND created_at<=now()-interval '5 minutes') AS recoverable,(state='FAILED' AND error_code IN ('AI_INVALID_GRAPH','AI_INVALID_OUTPUT','AI_INCOMPLETE_OUTPUT') AND EXISTS(SELECT 1 FROM ai_generation_inputs i WHERE i.owner_id=ai_generation_jobs.owner_id AND i.job_id=ai_generation_jobs.id AND i.depth<2) AND NOT EXISTS(SELECT 1 FROM ai_generation_inputs c WHERE c.owner_id=ai_generation_jobs.owner_id AND c.parent_job_id=ai_generation_jobs.id)) AS repairable,COALESCE((SELECT depth FROM ai_generation_inputs i WHERE i.owner_id=ai_generation_jobs.owner_id AND i.job_id=ai_generation_jobs.id),0) AS repair_depth,(SELECT parent_job_id FROM ai_generation_inputs i WHERE i.owner_id=ai_generation_jobs.owner_id AND i.job_id=ai_generation_jobs.id) AS parent_job_id FROM ai_generation_jobs WHERE owner_id=#{owner} AND id=#{id}")
     View view(UUID owner, UUID id);
 
     @Select(
@@ -81,6 +91,15 @@ public class GenerationJobs {
   }
 
   private final Store db;
+
+  public record JobInput(String inputText, UUID rootJobId, UUID parentJobId, int depth) {}
+
+  public JobInput input(UUID id) {
+    var request = db.input(CurrentUser.id(), id);
+    if (request == null) throw DomainFailure.missing();
+    return request;
+  }
+
   private final CatalogMapper catalog;
   private final DraftService drafts;
   private final GraphValidator validator;
@@ -124,7 +143,10 @@ public class GenerationJobs {
       String errorCode,
       UUID draftId,
       java.time.OffsetDateTime createdAt,
-      boolean recoverable) {}
+      boolean recoverable,
+      boolean repairable,
+      int repairDepth,
+      UUID parentJobId) {}
 
   public List<View> list(int page, int size) {
     DomainFailure.require(
@@ -175,6 +197,19 @@ public class GenerationJobs {
       long reservation,
       long dailyLimit,
       AIProvider provider) {
+    return generate(skill, key, input, reservation, dailyLimit, provider, null);
+  }
+
+  @org.springframework.transaction.annotation.Transactional(
+      propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+  public Job generate(
+      UUID skill,
+      String key,
+      String input,
+      long reservation,
+      long dailyLimit,
+      AIProvider provider,
+      UUID parent) {
     DomainFailure.require(
         key != null
             && key.matches("[A-Za-z0-9._-]{1,128}")
@@ -193,7 +228,9 @@ public class GenerationJobs {
           HexFormat.of()
               .formatHex(
                   MessageDigest.getInstance("SHA-256")
-                      .digest((skill + "\n" + input).getBytes(StandardCharsets.UTF_8)));
+                      .digest(
+                          (skill + "\n" + (parent == null ? "" : "repair:" + parent + "\n") + input)
+                              .getBytes(StandardCharsets.UTF_8)));
     } catch (Exception e) {
       throw new IllegalStateException("Cannot fingerprint generation");
     }
@@ -208,6 +245,22 @@ public class GenerationJobs {
                     old.inputHash().equals(hash), "AI_KEY_CONFLICT", "幂等键已用于其他输入");
                 return old;
               }
+              JobInput previous = null;
+              if (parent != null) {
+                var p = db.byId(owner, parent);
+                previous = db.input(owner, parent);
+                if (p == null || previous == null) throw DomainFailure.missing();
+                DomainFailure.require(
+                    p.skillId().equals(skill)
+                        && "FAILED".equals(p.state())
+                        && Set.of("AI_INVALID_GRAPH", "AI_INVALID_OUTPUT", "AI_INCOMPLETE_OUTPUT")
+                            .contains(p.errorCode())
+                        && previous.depth() < 2,
+                    "AI_REPAIR_UNAVAILABLE",
+                    "此任务不支持修复或已达两次上限");
+                var existing = db.child(owner, parent);
+                if (existing != null) return existing;
+              }
               LocalDate day = LocalDate.now(ZoneOffset.UTC);
               db.day(owner, day);
               DomainFailure.require(
@@ -217,6 +270,13 @@ public class GenerationJobs {
               var draft = drafts.create(skill);
               UUID id = UUID.randomUUID();
               db.insert(id, owner, skill, key, hash, day, reservation, draft.id());
+              db.inputInsert(
+                  id,
+                  owner,
+                  input,
+                  previous == null ? id : previous.rootJobId(),
+                  parent,
+                  previous == null ? 0 : previous.depth() + 1);
               money.reserve(owner, id, day);
               audit.record("AI_JOB", id, "STARTED", null, Map.of("reservedTokens", reservation));
               created[0] = true;
@@ -269,7 +329,9 @@ public class GenerationJobs {
           String error = failure == null && result == null ? "AI_INVALID_OUTPUT" : failure;
           if (result != null) {
             try {
-              if (!validator.validate(validator.parse(result.document()), List.of()).isEmpty())
+              if (result.document() == null
+                  || result.document().path("schemaVersion").asInt() != 1
+                  || !validator.validate(validator.parse(result.document()), List.of()).isEmpty())
                 error = "AI_INVALID_GRAPH";
             } catch (Exception e) {
               error = "AI_INVALID_GRAPH";

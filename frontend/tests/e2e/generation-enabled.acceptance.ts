@@ -24,7 +24,9 @@ test('uses the enabled local protocol fixture to generate, review and publish', 
   const skill = await created.json()
   await page.goto(`/skills/${skill.id}/drafts`)
   await expect(page.getByLabel('学习主题与目标', { exact: true })).toBeVisible()
-  await page.getByLabel('学习主题与目标', { exact: true }).fill('success')
+  await page
+    .getByLabel('学习主题与目标', { exact: true })
+    .fill('Blender 3D 入门')
   await page
     .getByRole('checkbox', {
       name: '我确认使用已配置模型和预算生成候选草案',
@@ -38,11 +40,61 @@ test('uses the enabled local protocol fixture to generate, review and publish', 
   await expect(
     page.getByLabel('高级 JSON 编辑（节点、位置与关系）'),
   ).toHaveValue(/本地协议验收节点/)
+  await page.getByLabel('转换操作', { exact: true }).selectOption('SPLIT')
+  await page
+    .getByLabel('转换源节点', { exact: true })
+    .selectOption({ label: '本地协议验收节点' })
+  await page
+    .getByLabel('拆分名称（每行一个）', { exact: true })
+    .fill('Blender基础\nBlender实践')
+  await page
+    .getByRole('button', { name: '应用转换并保存草案', exact: true })
+    .click()
+  await expect(page.getByLabel('节点来源映射')).toContainText('拆分')
+  await page.getByText('编辑依赖与关联', { exact: true }).click()
+  await page
+    .getByLabel('草案关系起点', { exact: true })
+    .selectOption({ label: 'Blender基础' })
+  await page
+    .getByLabel('草案关系终点', { exact: true })
+    .selectOption({ label: 'Blender实践' })
+  await page.getByRole('button', { name: '应用关系编辑', exact: true }).click()
+  await page.getByRole('button', { name: '保存草案', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('草案已保存')
+  await page.getByLabel('转换操作', { exact: true }).selectOption('MERGE')
+  await page
+    .getByLabel('转换源节点', { exact: true })
+    .selectOption({ label: 'Blender实践' })
+  await page
+    .getByLabel('合并保留节点', { exact: true })
+    .selectOption({ label: 'Blender基础' })
+  await page
+    .getByRole('button', { name: '应用转换并保存草案', exact: true })
+    .click()
+  await expect(page.getByLabel('节点来源映射')).toContainText('合并')
+  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await expect(
+    page.getByLabel('高级 JSON 编辑（节点、位置与关系）'),
+  ).not.toHaveValue(/"kind": "MERGE"/)
+  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await expect(
+    page.getByLabel('高级 JSON 编辑（节点、位置与关系）'),
+  ).toHaveValue(/"kind": "MERGE"/)
+  await page.getByText('编辑节点与位置', { exact: true }).click()
+  await page
+    .getByLabel('选择编辑节点', { exact: true })
+    .selectOption({ label: 'Blender基础' })
+  await page
+    .getByLabel('草案节点名称', { exact: true })
+    .fill('Blender基础（已审核）')
+  await page.getByRole('button', { name: '应用节点编辑', exact: true }).click()
+  await page.getByRole('button', { name: '保存草案', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('草案已保存')
   await page
     .getByRole('button', { name: '校验与发布预览', exact: true })
     .click()
   await expect(page.getByLabel('发布预览')).toContainText(
-    '新增节点：本地协议验收节点',
+    '新增节点：Blender基础（已审核）',
   )
   await page
     .getByRole('checkbox', {
@@ -79,5 +131,12 @@ test('uses the enabled local protocol fixture to generate, review and publish', 
   await expect(
     page.getByText('错误代码：AI_INVALID_GRAPH', { exact: true }).first(),
   ).toBeVisible()
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: /确认修复并重试任务/ })
+    .first()
+    .click()
+  await expect(page.getByRole('status')).toContainText('修复候选已保存')
+  await expect(page.getByText(/修复第 1 次/).first()).toBeVisible()
   expect(errors).toEqual([])
 })

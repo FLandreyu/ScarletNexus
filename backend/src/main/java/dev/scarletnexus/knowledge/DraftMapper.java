@@ -14,18 +14,32 @@ public interface DraftMapper {
   boolean relationPublishedElsewhere(UUID owner, UUID source, UUID target, UUID skill);
 
   record Draft(
-      UUID id, UUID skillId, String document, int revision, String baseHash, String status) {}
+      UUID id,
+      UUID skillId,
+      String document,
+      int revision,
+      String baseHash,
+      String status,
+      java.time.OffsetDateTime createdAt,
+      java.time.OffsetDateTime updatedAt,
+      String origin) {}
 
-  record Version(UUID id, UUID skillId, UUID draftId, int versionNumber, String document) {}
+  record Version(
+      UUID id,
+      UUID skillId,
+      UUID draftId,
+      int versionNumber,
+      String document,
+      java.time.OffsetDateTime publishedAt) {}
 
   record PublishKey(UUID draftId, int revision, UUID versionId) {}
 
   @Select(
-      "SELECT id,skill_id,draft_json::text,revision,base_hash,status FROM graph_drafts WHERE owner_id=#{owner} AND id=#{id}")
+      "SELECT id,skill_id,draft_json::text,revision,base_hash,status,created_at,updated_at,CASE WHEN EXISTS(SELECT 1 FROM ai_generation_jobs j WHERE j.owner_id=graph_drafts.owner_id AND j.draft_id=graph_drafts.id AND j.state='SUCCEEDED') THEN 'AI_ASSISTED' WHEN EXISTS(SELECT 1 FROM ai_generation_jobs j WHERE j.owner_id=graph_drafts.owner_id AND j.draft_id=graph_drafts.id) THEN 'AI_BASE' WHEN EXISTS(SELECT 1 FROM audit_events a WHERE a.entity_id=graph_drafts.id AND a.action='JOINT_PUBLISHED') THEN 'JOINT_PUBLISHED' ELSE 'MANUAL' END AS origin FROM graph_drafts WHERE owner_id=#{owner} AND id=#{id}")
   Draft draft(UUID owner, UUID id);
 
   @Select(
-      "SELECT id,skill_id,draft_json::text,revision,base_hash,status FROM graph_drafts WHERE owner_id=#{owner} AND skill_id=#{skill} ORDER BY created_at DESC")
+      "SELECT id,skill_id,draft_json::text,revision,base_hash,status,created_at,updated_at,CASE WHEN EXISTS(SELECT 1 FROM ai_generation_jobs j WHERE j.owner_id=graph_drafts.owner_id AND j.draft_id=graph_drafts.id AND j.state='SUCCEEDED') THEN 'AI_ASSISTED' WHEN EXISTS(SELECT 1 FROM ai_generation_jobs j WHERE j.owner_id=graph_drafts.owner_id AND j.draft_id=graph_drafts.id) THEN 'AI_BASE' WHEN EXISTS(SELECT 1 FROM audit_events a WHERE a.entity_id=graph_drafts.id AND a.action='JOINT_PUBLISHED') THEN 'JOINT_PUBLISHED' ELSE 'MANUAL' END AS origin FROM graph_drafts WHERE owner_id=#{owner} AND skill_id=#{skill} ORDER BY created_at DESC")
   List<Draft> drafts(UUID owner, UUID skill);
 
   @Insert(
@@ -65,15 +79,15 @@ public interface DraftMapper {
   void version(UUID id, UUID owner, UUID skill, UUID draft, int number, String document);
 
   @Select(
-      "SELECT id,skill_id,draft_id,version_number,snapshot_json::text FROM knowledge_graph_versions WHERE owner_id=#{owner} AND skill_id=#{skill} ORDER BY version_number DESC")
+      "SELECT id,skill_id,draft_id,version_number,snapshot_json::text,published_at FROM knowledge_graph_versions WHERE owner_id=#{owner} AND skill_id=#{skill} ORDER BY version_number DESC")
   List<Version> versions(UUID owner, UUID skill);
 
   @Select(
-      "SELECT id,skill_id,draft_id,version_number,snapshot_json::text FROM knowledge_graph_versions WHERE owner_id=#{owner} AND id=#{id}")
+      "SELECT id,skill_id,draft_id,version_number,snapshot_json::text,published_at FROM knowledge_graph_versions WHERE owner_id=#{owner} AND id=#{id}")
   Version versionById(UUID owner, UUID id);
 
   @Select(
-      "SELECT id,skill_id,draft_id,version_number,snapshot_json::text FROM knowledge_graph_versions WHERE owner_id=#{owner} AND draft_id=#{draft}")
+      "SELECT id,skill_id,draft_id,version_number,snapshot_json::text,published_at FROM knowledge_graph_versions WHERE owner_id=#{owner} AND draft_id=#{draft}")
   Version publishedVersion(UUID owner, UUID draft);
 
   @Select(

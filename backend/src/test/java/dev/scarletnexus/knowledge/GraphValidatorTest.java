@@ -42,7 +42,7 @@ class GraphValidatorTest {
       unknown.put("executeSQL", "bad");
       assertThatThrownBy(() -> validator.parse(unknown))
           .isInstanceOf(IllegalArgumentException.class);
-      valid.put("schemaVersion", 2);
+      valid.put("schemaVersion", 3);
       assertThatThrownBy(() -> validator.parse(valid)).isInstanceOf(IllegalArgumentException.class);
     }
   }

@@ -16,6 +16,7 @@ public class GraphValidator {
 
   private final ObjectMapper json;
   private final Validator validator;
+  private final Map<Integer, com.networknt.schema.JsonSchema> schemas = new HashMap<>();
 
   public GraphValidator(ObjectMapper json, Validator validator) {
     this.json =
@@ -23,6 +24,24 @@ public class GraphValidator {
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT);
     this.validator = validator;
+    var factory =
+        com.networknt.schema.JsonSchemaFactory.getInstance(
+            com.networknt.schema.SpecVersion.VersionFlag.V202012);
+    var config =
+        com.networknt.schema.SchemaValidatorsConfig.builder().formatAssertionsEnabled(true).build();
+    for (int version = 1; version <= 2; version++) {
+      try (var stream =
+          getClass().getResourceAsStream("/schemas/graph-draft-v" + version + ".schema.json")) {
+        schemas.put(
+            version,
+            factory.getSchema(
+                new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8),
+                com.networknt.schema.InputFormat.JSON,
+                config));
+      } catch (Exception e) {
+        throw new IllegalStateException("Cannot compile graph schema");
+      }
+    }
   }
 
   public GraphDocument parse(JsonNode value) {
@@ -34,6 +53,30 @@ public class GraphValidator {
           || value.toString().length() > 1_000_000) throw new IllegalArgumentException();
       if (!value.path("nodes").isArray() || !value.path("relations").isArray())
         throw new IllegalArgumentException();
+      var schema = schemas.get(value.path("schemaVersion").asInt());
+      if (schema == null || !schema.validate(value).isEmpty()) throw new IllegalArgumentException();
+      if (value.path("schemaVersion").asInt() == 1 && value.has("mappings"))
+        throw new IllegalArgumentException();
+      if (value.path("schemaVersion").asInt() == 2
+          && (!value.path("mappings").isArray() || value.path("mappings").isEmpty()))
+        throw new IllegalArgumentException();
+      if (value.has("mappings"))
+        for (var mapping : value.get("mappings")) {
+          var snapshot = json.createObjectNode().put("schemaVersion", 1);
+          snapshot.set("nodes", mapping.path("originals"));
+          snapshot.set("relations", mapping.path("previousRelations"));
+          parse(snapshot);
+          if (!validUuid(mapping.path("id"))
+              || !mapping.path("kind").isTextual()
+              || !mapping.path("origin").isTextual()) throw new IllegalArgumentException();
+          for (var target : mapping.path("targets"))
+            if (!validUuid(target)) throw new IllegalArgumentException();
+          for (var original : mapping.path("originals"))
+            if (!validUuid(original.path("id"))
+                || (original.hasNonNull("parentNodeId")
+                    && !validUuid(original.get("parentNodeId"))))
+              throw new IllegalArgumentException();
+        }
       for (var node : value.get("nodes")) {
         if (!validUuid(node.path("id"))
             || (node.hasNonNull("parentNodeId") && !validUuid(node.get("parentNodeId"))))
@@ -53,8 +96,17 @@ public class GraphValidator {
       }
       var document = json.treeToValue(value, GraphDocument.class);
       if (!validator.validate(document).isEmpty()) throw new IllegalArgumentException();
+      Set<UUID> mappingIds = new HashSet<>();
+      for (var m : document.mappings()) {
+        if (!mappingIds.add(m.id())
+            || new HashSet<>(m.targets()).size() != m.targets().size()
+            || m.targets().contains(m.originals().getFirst().id())
+            || ("MERGE".equals(m.kind()) && m.targets().size() != 1)
+            || ("SPLIT".equals(m.kind()) && m.targets().size() < 2))
+          throw new IllegalArgumentException();
+      }
       return new GraphDocument(
-          1,
+          document.schemaVersion(),
           document.nodes().stream()
               .map(
                   n ->
@@ -67,7 +119,8 @@ public class GraphValidator {
                           n.parentNodeId(),
                           n.displayOrder()))
               .toList(),
-          document.relations());
+          document.relations(),
+          document.mappings());
     } catch (Exception error) {
       throw new IllegalArgumentException("草案格式无效：检查版本、必填字段、类型和长度限制");
     }
@@ -132,5 +185,22 @@ public class GraphValidator {
     }
     if (count != degree.size()) errors.add("全局先修依赖成环");
     return errors.stream().distinct().toList();
+  }
+
+  public List<String> duplicateCandidates(GraphDocument doc) {
+    Map<String, List<UUID>> groups = new LinkedHashMap<>();
+    for (var n : doc.nodes()) {
+      String key =
+          java.text.Normalizer.normalize(n.title(), java.text.Normalizer.Form.NFKC)
+              .strip()
+              .replaceAll("\\s+", " ")
+              .toLowerCase(Locale.ROOT);
+      groups.computeIfAbsent(key, k -> new ArrayList<>()).add(n.id());
+    }
+    return groups.entrySet().stream()
+        .filter(e -> e.getValue().size() > 1)
+        .map(
+            e -> "疑似重复名称：" + e.getKey() + "（" + e.getValue().size() + "个节点），可审核后合并：" + e.getValue())
+        .toList();
   }
 }

@@ -326,7 +326,7 @@ class SystemIT {
     var response = http.getForEntity("/api/v1/system/status", Map.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody())
-        .containsEntry("schemaVersion", "6")
+        .containsEntry("schemaVersion", "7")
         .containsEntry("database", "UP");
     assertThat(response.getBody()).containsEntry("aiConfigured", false);
     assertThat(response.getHeaders().getFirst("X-Request-ID")).isNotBlank();

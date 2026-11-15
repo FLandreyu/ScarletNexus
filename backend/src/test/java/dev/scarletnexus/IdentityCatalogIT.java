@@ -557,6 +557,59 @@ class IdentityCatalogIT {
                 .get("valid")
                 .asBoolean())
         .isFalse();
+    String jointId = protectedDraft.get("id").asText();
+    assertThat(
+            json(c.write(
+                    "POST",
+                    "/graph/drafts/" + jointId + "/validate",
+                    Map.of("includeAffectedSkills", true)))
+                .get("valid")
+                .asBoolean())
+        .isTrue();
+    var jointRequest =
+        HttpRequest.newBuilder(
+                URI.create(
+                    "http://127.0.0.1:" + port + "/api/v1/graph/drafts/" + jointId + "/publish"))
+            .headers(
+                "Content-Type",
+                "application/json",
+                "X-CSRF-TOKEN",
+                json(c.get("/auth/csrf")).get("token").asText(),
+                "Idempotency-Key",
+                "joint-acceptance")
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    JSON.writeValueAsString(
+                        Map.of("revision", 1, "confirmed", true, "includeAffectedSkills", true))))
+            .build();
+    int beforeJoint =
+        jdbc.queryForObject("SELECT count(*) FROM knowledge_graph_versions", Integer.class);
+    jdbc.execute(
+        "CREATE FUNCTION fail_joint_version() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.skill_id='"
+            + otherSkill
+            + "'::uuid THEN RAISE EXCEPTION 'injected joint publish failure'; END IF; RETURN NEW; END $$");
+    jdbc.execute(
+        "CREATE TRIGGER fail_joint_version BEFORE INSERT ON knowledge_graph_versions FOR EACH ROW EXECUTE FUNCTION fail_joint_version()");
+    try {
+      assertThat(c.http.send(jointRequest, HttpResponse.BodyHandlers.ofString()).statusCode())
+          .isEqualTo(503);
+      assertThat(
+              jdbc.queryForObject("SELECT count(*) FROM knowledge_graph_versions", Integer.class))
+          .isEqualTo(beforeJoint);
+      assertThat(json(c.get("/graph/drafts/" + jointId)).get("status").asText())
+          .isEqualTo("EDITING");
+    } finally {
+      jdbc.execute("DROP TRIGGER fail_joint_version ON knowledge_graph_versions");
+      jdbc.execute("DROP FUNCTION fail_joint_version()");
+    }
+    assertThat(c.http.send(jointRequest, HttpResponse.BodyHandlers.ofString()).statusCode())
+        .isEqualTo(200);
+    assertThat(json(c.get("/skills/" + otherSkill + "/graph/versions")).size()).isEqualTo(2);
+    assertThat(c.get("/skills/" + otherSkill + "/graph").body())
+        .contains("Forbidden shared change");
+    assertThat(c.http.send(jointRequest, HttpResponse.BodyHandlers.ofString()).statusCode())
+        .isEqualTo(200);
+    assertThat(json(c.get("/skills/" + otherSkill + "/graph/versions")).size()).isEqualTo(2);
   }
 
   @Test

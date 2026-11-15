@@ -1,5 +1,11 @@
 # API 合同
 
+P2补全：POST `/api/v1/graph/drafts/{id}/transform`接收`{revision,kind:"MERGE"|"SPLIT",source,target?,titles?}`，转换并保存、revision冲突409。validate/publish可显式传`includeAffectedSkills:true`，须重新预览并确认才允许联合发布；改变的其他已发布技能追加快照，任何失败全部回滚。默认仍保护其他技能。
+
+草案document兼容V1和含mappings的V2；API增加草案origin/createdAt/updatedAt、版本publishedAt和预览warnings。名称重复仅为规范化提示，不自动合并。来源结构和证据边界见P2_DESIGN.md。
+
+POST `/api/v1/ai/jobs/{id}/repair`：会话/CSRF、Idempotency-Key、`{confirmed:true}`。允许已知结构/截断失败、最多两个线性子任务；重复返回已有子任务，各自预算预留，保留原草案。旧任务无请求记录或超过上限拒绝，不自动重发未知费用。任务增加repairable/repairDepth/parentJobId，不返回存储的主题。
+
 POST `/api/v1/skills/{id}/graph/generation`：会话/CSRF、Idempotency-Key，JSON `{topic}`；服务器选择模型和预算，返回任务状态/草案ID，默认503/AI_NOT_CONFIGURED且不写任务。GET `/api/v1/ai/generation`返回`{enabled}`（需登录）。详见AI_GENERATION.md。系统状态aiConfigured反映生成配置开关，默认false，不代表供应商联调成功。
 
 GET `/api/v1/ai/jobs/{id}/cost`：本人任务的币种、模型、价格版本/日期、费率、预留/结算金额和来源；无费用记录返回`{cost:null}`，不是费用0。未知或他人任务404。此接口只读，不接受浏览器设置价格。
@@ -12,7 +18,7 @@ P2任务记录：GET `/api/v1/ai/jobs?page=0&size=20`（owner隔离列表）、G
 
 | 方法 / 路径 | 访问 | 响应 |
 | --- | --- | --- |
-| GET /api/v1/system/status | public | 200 `{service:"scarlet-nexus",status:"UP",database:"UP",schemaVersion:"6",phase:"P1",aiConfigured:false}`；phase为最近完整验收阶段，P2部分实现不冒充整阶段完成；通过MyBatis实查Flyway，DB不可用503 |
+| GET /api/v1/system/status | public | 200 `{service:"scarlet-nexus",status:"UP",database:"UP",schemaVersion:"7",phase:"P1",aiConfigured:false}`；phase为最近完整验收阶段，P2部分实现不冒充整阶段完成；通过MyBatis实查Flyway，DB不可用503 |
 | GET /actuator/health | public | 200 `{status:"UP",groups:["liveness","readiness"]}`，故障503；不公开组件细节 |
 | GET /actuator/health/liveness | public | 进程存活，不依赖 DB |
 | GET /actuator/health/readiness | public | 应用就绪且 DB 可查询 |

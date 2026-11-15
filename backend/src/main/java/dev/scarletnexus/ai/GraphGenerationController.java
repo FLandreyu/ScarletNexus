@@ -18,6 +18,16 @@ public class GraphGenerationController {
 
   public record Input(@NotBlank @Size(max = 50000) String topic) {}
 
+  public record Repair(boolean confirmed) {}
+
+  @PostMapping("/ai/jobs/{id}/repair")
+  public GenerationJobs.View repair(
+      @PathVariable UUID id,
+      @RequestHeader("Idempotency-Key") String key,
+      @RequestBody Repair request) {
+    return generation.repair(id, key, request.confirmed());
+  }
+
   @GetMapping("/ai/generation")
   public Availability status() {
     return new Availability(generation.enabled());

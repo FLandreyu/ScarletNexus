@@ -41,6 +41,24 @@ public class ConfiguredGeneration {
   }
 
   public GenerationJobs.View generate(UUID skill, String key, String input) {
+    return generate(skill, key, input, null);
+  }
+
+  public GenerationJobs.View repair(UUID parent, String key, boolean confirmed) {
+    DomainFailure.require(confirmed, "CONFIRMATION_REQUIRED", "修复会再次请求模型并占用预算，请明确确认");
+    var job = jobs.view(parent);
+    var input = jobs.input(parent);
+    DomainFailure.require(input.depth() < 2, "AI_REPAIR_LIMIT", "已达到两次修复上限");
+    String topic =
+        input.inputText()
+            + "\n[Repair request: previous output failed validation with "
+            + job.errorCode()
+            + ". Return a complete graph matching the JSON schema and graph constraints.]";
+    DomainFailure.require(topic.length() <= 50000, "AI_REPAIR_INPUT_TOO_LARGE", "原主题过长，请手动调整后重新生成");
+    return generate(job.skillId(), key, topic, parent);
+  }
+
+  private GenerationJobs.View generate(UUID skill, String key, String input, UUID parent) {
     if (!enabled())
       throw new DomainFailure(
           HttpStatus.SERVICE_UNAVAILABLE, "AI_NOT_CONFIGURED", "AI生成尚未启用，手动草案可继续使用");
@@ -60,6 +78,6 @@ public class ConfiguredGeneration {
     money.validateEstimate(
         reservation - StructuredRequest.OUTPUT_LIMIT, StructuredRequest.OUTPUT_LIMIT);
     return jobs.view(
-        jobs.generate(skill, key, input, reservation, tokens.dailyLimit(), provider).id());
+        jobs.generate(skill, key, input, reservation, tokens.dailyLimit(), provider, parent).id());
   }
 }

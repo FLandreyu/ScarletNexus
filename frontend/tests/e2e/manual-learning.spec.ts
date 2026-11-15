@@ -150,7 +150,12 @@ test('authenticates, persists a manual knowledge tree, rejects cycles and logs o
   await expect(page.getByLabel('发布预览')).toContainText(
     '新增节点：草案实践节点',
   )
-  await page.getByRole('checkbox').check()
+  await page
+    .getByRole('checkbox', {
+      name: '我已审核节点、关系与跨技能影响，确认发布',
+      exact: true,
+    })
+    .check()
   await page.getByRole('button', { name: '确认发布版本', exact: true }).click()
   await expect(page.getByRole('status')).toContainText('版本已发布')
   await page.getByRole('button', { name: '查看版本 1', exact: true }).click()

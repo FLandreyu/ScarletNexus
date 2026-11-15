@@ -18,6 +18,21 @@ function render() {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('system connection page', () => {
+  it('shows enabled generation from server configuration', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ ...healthy, aiConfigured: true })),
+        ),
+    )
+    const view = render()
+    await flushPromises()
+    expect(view.text()).toContain('生成已配置')
+    expect(view.text()).not.toContain('生成未启用')
+    view.unmount()
+  })
   it('reads the real API contract and shows no learning statistics', async () => {
     let respond!: (response: Response) => void
     const fetcher = vi.fn().mockImplementation(
@@ -34,7 +49,7 @@ describe('system connection page', () => {
     await flushPromises()
     expect(fetcher.mock.calls[0]?.[0]).toBe('/api/v1/system/status')
     expect(view.text()).toContain('V1')
-    expect(view.text()).toContain('尚未接入')
+    expect(view.text()).toContain('生成未启用')
     expect(view.text()).not.toContain('%')
     view.unmount()
   })

@@ -17,8 +17,12 @@ onMounted(() => system.refresh())
       />这里显示服务与数据连接的实际状态。
     </p>
     <div class="phase-line">
-      <ElTag effect="dark" type="info">P1 · 手动知识树</ElTag
-      ><span>AI 功能尚未接入</span>
+      <ElTag effect="dark" type="info">知识草案与版本管理</ElTag
+      ><span>{{
+        system.status?.aiConfigured
+          ? '生成已配置，候选仍需审核'
+          : '未启用生成时，可继续手动管理'
+      }}</span>
     </div>
   </section>
 
@@ -58,7 +62,9 @@ onMounted(() => system.refresh())
           </div>
           <div>
             <dt>AI 系统</dt>
-            <dd class="muted">尚未接入</dd>
+            <dd class="muted">
+              {{ system.status.aiConfigured ? '生成已配置' : '生成未启用' }}
+            </dd>
           </div>
         </dl>
         <p class="checked-at">
@@ -72,10 +78,13 @@ onMounted(() => system.refresh())
     <div class="next-number" aria-hidden="true">01</div>
     <div>
       <p class="eyebrow">NEXT MILESTONE</p>
-      <h2 id="next-title">AI 知识草案生成</h2>
-      <p>手动草案和版本发布已经可用，AI 生成仍在后续开发范围内。</p>
+      <h2 id="next-title">学习路线与学习记录</h2>
+      <p>
+        草案生成、编辑和版本发布链路已实现。后续将加入目标、路线和学习记录。
+      </p>
       <p class="scope-note">
-        当前不调用外部 AI。知识节点与依赖关系由你手动管理。
+        模型调用由服务器配置及预算控制，候选不会自动发布；无 AI
+        配置时仍可手动编辑。
       </p>
     </div>
   </section>

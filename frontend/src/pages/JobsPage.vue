@@ -12,6 +12,9 @@ interface Job {
   draftId: string
   createdAt: string
   recoverable: boolean
+  repairable: boolean
+  repairDepth: number
+  parentJobId: string | null
 }
 const jobs = ref<Job[]>([]),
   page = ref(0),
@@ -19,12 +22,18 @@ const jobs = ref<Job[]>([]),
   error = ref(''),
   notice = ref('')
 const confirmed = ref<Record<string, boolean>>({})
+const generationEnabled = ref(false)
 async function load(next = page.value) {
   if (busy.value) return
   busy.value = true
   error.value = ''
   try {
-    jobs.value = await api(`/ai/jobs?page=${next}&size=20`)
+    const [records, availability] = await Promise.all([
+      api<Job[]>(`/ai/jobs?page=${next}&size=20`),
+      api<{ enabled: boolean }>('/ai/generation'),
+    ])
+    jobs.value = records
+    generationEnabled.value = availability.enabled
     page.value = next
     confirmed.value = {}
   } catch (e) {
@@ -51,12 +60,41 @@ async function recover(job: Job) {
   }
 }
 onMounted(() => load())
+async function repair(job: Job) {
+  if (busy.value || !generationEnabled.value || !job.repairable) return
+  if (
+    !window.confirm(
+      '修复会新建任务，再次调用模型并单独占用预算，最多两次。原草案保留，不自动发布。确认继续？',
+    )
+  )
+    return
+  busy.value = true
+  error.value = ''
+  notice.value = ''
+  try {
+    const child = await api<Job>(
+      `/ai/jobs/${job.id}/repair`,
+      'POST',
+      { confirmed: true },
+      { 'Idempotency-Key': `repair-${job.id}` },
+    )
+    jobs.value = await api(`/ai/jobs?page=${page.value}&size=20`)
+    notice.value =
+      child.state === 'SUCCEEDED'
+        ? '修复候选已保存，请进入相关草案审核。'
+        : `修复未完成：${child.errorCode ?? child.state}。原草案保留，可手动继续。`
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
+}
 </script>
 <template>
   <section class="workspace-heading">
     <RouterLink to="/skills">← 技能空间</RouterLink>
     <h1>生成任务记录</h1>
-    <p>这里显示已有任务。生成入口尚未开放。Token 配额不代表货币费用。</p>
+    <p>这里显示已有任务。生成由服务器配置启用，Token 配额不代表货币费用。</p>
   </section>
   <p v-if="error" role="alert" class="error-box">{{ error }}</p>
   <p v-if="notice" role="status">{{ notice }}</p>
@@ -90,6 +128,17 @@ onMounted(() => load())
         }}
       </p>
       <p v-if="job.errorCode">错误代码：{{ job.errorCode }}</p>
+      <p v-if="job.parentJobId">
+        修复第 {{ job.repairDepth }} 次 · 来源任务
+        {{ job.parentJobId.slice(0, 8) }}
+      </p>
+      <button
+        v-if="job.repairable"
+        :disabled="busy || !generationEnabled"
+        @click="repair(job)"
+      >
+        确认修复并重试任务 {{ job.id.slice(0, 8) }}
+      </button>
       <RouterLink :to="`/skills/${job.skillId}/drafts`"
         >查看相关草案</RouterLink
       >

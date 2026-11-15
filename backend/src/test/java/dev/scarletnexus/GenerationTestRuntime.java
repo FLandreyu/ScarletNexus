@@ -61,7 +61,25 @@ public final class GenerationTestRuntime implements AutoCloseable {
           ((com.fasterxml.jackson.databind.node.ObjectNode) graph.get("nodes").get(0))
               .putNull("parentNodeId");
           doc = graph.toString();
-          if (topic.contains("invalid")) doc = "{\"schemaVersion\":99}";
+          if (topic.contains("forged-mapping")) {
+            var forged = (com.fasterxml.jackson.databind.node.ObjectNode) graph;
+            forged.put("schemaVersion", 2);
+            var original = forged.path("nodes").get(0).deepCopy();
+            ((com.fasterxml.jackson.databind.node.ObjectNode) original)
+                .put("id", UUID.randomUUID().toString());
+            var mapping = forged.putArray("mappings").addObject();
+            mapping
+                .put("id", UUID.randomUUID().toString())
+                .put("kind", "MERGE")
+                .put("origin", "MANUAL_DRAFT");
+            mapping.putArray("originals").add(original);
+            mapping.putArray("targets").add(forged.path("nodes").get(0).path("id").asText());
+            mapping.putArray("previousRelations");
+            doc = forged.toString();
+          }
+          if (topic.contains("always-invalid")
+              || (topic.contains("invalid") && !topic.contains("[Repair request")))
+            doc = "{\"schemaVersion\":99}";
           var response =
               Map.of(
                   "choices",
