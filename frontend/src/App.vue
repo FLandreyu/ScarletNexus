@@ -39,6 +39,7 @@ onUnmounted(() => window.removeEventListener('session-expired', expired))
       </RouterLink>
       <nav class="top-nav" aria-label="主导航">
         <RouterLink to="/skills">技能空间</RouterLink
+        ><RouterLink v-if="auth.user" to="/ai/jobs">生成任务</RouterLink
         ><RouterLink to="/system">系统状态</RouterLink
         ><button v-if="auth.user" :disabled="logoutBusy" @click="logout">
           退出登录

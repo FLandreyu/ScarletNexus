@@ -356,6 +356,46 @@ class IdentityCatalogIT {
     attach(c, skill, b, a, 1);
     var draft = json(c.write("POST", "/skills/" + skill + "/graph/drafts", Map.of()));
     String id = draft.get("id").asText();
+    UUID jobId = UUID.randomUUID();
+    UUID ownerId = jdbc.queryForObject("SELECT id FROM users WHERE email=?", UUID.class, EMAIL);
+    jdbc.update(
+        "INSERT INTO ai_daily_budgets(owner_id,budget_day,reserved_tokens) VALUES(?,CURRENT_DATE,100)",
+        ownerId);
+    jdbc.update(
+        "INSERT INTO ai_generation_jobs(id,owner_id,skill_id,request_key,input_hash,budget_day,reserved_tokens,state,draft_id) VALUES(?,?,?,'recover-test',?,CURRENT_DATE,100,'RUNNING',?)",
+        jobId,
+        ownerId,
+        UUID.fromString(skill),
+        "0".repeat(64),
+        UUID.fromString(id));
+    assertThat(c.get("/ai/jobs").statusCode()).isEqualTo(200);
+    assertThat(json(c.get("/ai/jobs/" + jobId)).get("recoverable").asBoolean()).isFalse();
+    assertThat(
+            c.write("POST", "/ai/jobs/" + jobId + "/recover", Map.of("confirmed", false))
+                .statusCode())
+        .isEqualTo(422);
+    assertThat(
+            c.write("POST", "/ai/jobs/" + jobId + "/recover", Map.of("confirmed", true))
+                .statusCode())
+        .isEqualTo(409);
+    jdbc.update(
+        "UPDATE ai_generation_jobs SET created_at=now()-interval '6 minutes' WHERE id=?", jobId);
+    var recovered =
+        json(c.write("POST", "/ai/jobs/" + jobId + "/recover", Map.of("confirmed", true)));
+    assertThat(recovered.get("state").asText()).isEqualTo("FAILED");
+    assertThat(recovered.get("chargedTokens").asInt()).isEqualTo(100);
+    assertThat(
+            c.write("POST", "/ai/jobs/" + jobId + "/recover", Map.of("confirmed", true))
+                .statusCode())
+        .isEqualTo(200);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT consumed_tokens FROM ai_daily_budgets WHERE owner_id=?",
+                Long.class,
+                ownerId))
+        .isEqualTo(100);
+    assertThat(c.get("/ai/jobs/" + UUID.randomUUID()).statusCode()).isEqualTo(404);
+    assertThat(c.get("/ai/jobs?size=101").statusCode()).isEqualTo(422);
     var document =
         (com.fasterxml.jackson.databind.node.ObjectNode)
             JSON.readTree(draft.get("document").asText());

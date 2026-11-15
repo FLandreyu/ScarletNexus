@@ -201,6 +201,28 @@ class SystemIT {
                     owner))
             .isEqualTo(245);
       }
+      var late =
+          jobs.generate(
+              skill,
+              "late-result",
+              "topic",
+              100,
+              1000,
+              (a, b, c) -> {
+                var running = jobs.get("late-result");
+                jdbc.update(
+                    "UPDATE ai_generation_jobs SET created_at=now()-interval '6 minutes' WHERE id=?",
+                    running.id());
+                assertThat(jobs.recover(running.id(), true).state()).isEqualTo("FAILED");
+                return new dev.scarletnexus.ai.AIProvider.Result(
+                    valid, new dev.scarletnexus.ai.AIProvider.Usage(1L, 1L, "PROVIDER"));
+              });
+      assertThat(late.state()).isEqualTo("FAILED");
+      assertThat(late.chargedTokens()).isEqualTo(100);
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT revision FROM graph_drafts WHERE id=?", Integer.class, late.draftId()))
+          .isZero();
     } finally {
       org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }

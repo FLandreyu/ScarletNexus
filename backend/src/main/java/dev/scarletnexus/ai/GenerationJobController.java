@@ -1,0 +1,32 @@
+package dev.scarletnexus.ai;
+
+import java.util.*;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/ai/jobs")
+public class GenerationJobController {
+  private final GenerationJobs jobs;
+
+  public GenerationJobController(GenerationJobs jobs) {
+    this.jobs = jobs;
+  }
+
+  @GetMapping
+  public List<GenerationJobs.View> list(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+    return jobs.list(page, size);
+  }
+
+  @GetMapping("/{id}")
+  public GenerationJobs.View get(@PathVariable UUID id) {
+    return jobs.view(id);
+  }
+
+  public record Recovery(boolean confirmed) {}
+
+  @PostMapping("/{id}/recover")
+  public GenerationJobs.View recover(@PathVariable UUID id, @RequestBody Recovery request) {
+    return jobs.recover(id, request.confirmed());
+  }
+}

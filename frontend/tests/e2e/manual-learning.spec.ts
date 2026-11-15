@@ -33,6 +33,23 @@ test('authenticates, persists a manual knowledge tree, rejects cycles and logs o
   await page.getByRole('button', { name: '登录', exact: true }).click()
   await expect(page).toHaveURL(/\/skills$/)
   await skillsLoaded
+  await page.getByRole('link', { name: '生成任务', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    '生成任务记录',
+  )
+  await expect(page.getByText('暂无生成任务。', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '刷新任务', exact: true }).click()
+  await expect(page.getByText('暂无生成任务。', { exact: true })).toBeVisible()
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBeTruthy()
+  await page.screenshot({
+    path: testInfo.outputPath('generation-jobs.png'),
+    fullPage: true,
+  })
+  await page.getByRole('link', { name: '技能空间', exact: true }).click()
   const searchButton = await page
     .getByRole('button', { name: '搜索', exact: true })
     .boundingBox()

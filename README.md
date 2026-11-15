@@ -6,6 +6,8 @@ AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus
 
 后端已加入默认禁用的结构化AI Provider传输适配器及内部生成任务/token配额账本，见[AI_PROVIDER.md](docs/AI_PROVIDER.md)和[AI_JOBS.md](docs/AI_JOBS.md)。货币预算和页面生成入口尚未接入，当前不提供端到端AI生成。
 
+登录后可从“生成任务”查看已有任务，并确认结束超过五分钟的中断任务：草案不变，预算按未知用量保守占用，不自动重新生成。
+
 ## 启动方式 A：Docker 本地持久环境
 
 前置：Docker Engine/Desktop 已运行，Docker Compose v2+，Git；首次构建需要网络。无需宿主机 Java / Node / PostgreSQL。仅监听本机127.0.0.1，不是生产配置。

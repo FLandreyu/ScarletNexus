@@ -35,7 +35,20 @@ public class GenerationJobs {
   @Mapper
   public interface Store {
     @Select(
+        "SELECT id,skill_id,state,usage_source,reserved_tokens,charged_tokens,error_code,draft_id,created_at,(state='RUNNING' AND created_at<=now()-interval '5 minutes') AS recoverable FROM ai_generation_jobs WHERE owner_id=#{owner} ORDER BY created_at DESC,id DESC LIMIT #{size} OFFSET #{offset}")
+    List<View> list(UUID owner, int size, int offset);
+
+    @Select(
+        "SELECT id,skill_id,state,usage_source,reserved_tokens,charged_tokens,error_code,draft_id,created_at,(state='RUNNING' AND created_at<=now()-interval '5 minutes') AS recoverable FROM ai_generation_jobs WHERE owner_id=#{owner} AND id=#{id}")
+    View view(UUID owner, UUID id);
+
+    @Select(
+        "SELECT id,skill_id,input_hash,budget_day,reserved_tokens,state,usage_source,charged_tokens,error_code,draft_id FROM ai_generation_jobs WHERE owner_id=#{owner} AND id=#{id}")
+    Job byId(UUID owner, UUID id);
+
+    @Select(
         "SELECT id,skill_id,input_hash,budget_day,reserved_tokens,state,usage_source,charged_tokens,error_code,draft_id FROM ai_generation_jobs WHERE owner_id=#{owner} AND request_key=#{key}")
+    @Options(flushCache = Options.FlushCachePolicy.TRUE)
     Job find(UUID owner, String key);
 
     @Insert(
@@ -96,6 +109,56 @@ public class GenerationJobs {
     Job j = db.find(CurrentUser.id(), key);
     if (j == null) throw DomainFailure.missing();
     return j;
+  }
+
+  public record View(
+      UUID id,
+      UUID skillId,
+      String state,
+      String usageSource,
+      long reservedTokens,
+      Long chargedTokens,
+      String errorCode,
+      UUID draftId,
+      java.time.OffsetDateTime createdAt,
+      boolean recoverable) {}
+
+  public List<View> list(int page, int size) {
+    DomainFailure.require(
+        page >= 0 && page <= 10000 && size >= 1 && size <= 100, "INVALID_PAGE", "分页参数无效");
+    return db.list(CurrentUser.id(), size, page * size);
+  }
+
+  public View view(UUID id) {
+    View v = db.view(CurrentUser.id(), id);
+    if (v == null) throw DomainFailure.missing();
+    return v;
+  }
+
+  public View recover(UUID id, boolean confirmed) {
+    DomainFailure.require(confirmed, "CONFIRMATION_REQUIRED", "请确认结束任务且保留预算占用");
+    return tx.execute(
+        s -> {
+          UUID owner = CurrentUser.id();
+          catalog.lockOwner(owner);
+          View v = view(id);
+          if (!"RUNNING".equals(v.state())) return v;
+          if (!v.recoverable())
+            throw new DomainFailure(
+                org.springframework.http.HttpStatus.CONFLICT,
+                "AI_JOB_STILL_ACTIVE",
+                "任务未超过五分钟，请稍后刷新");
+          Job j = db.byId(owner, id);
+          db.settle(owner, j.budgetDay(), j.reservedTokens(), j.reservedTokens());
+          db.finish(owner, id, "FAILED", "UNKNOWN", j.reservedTokens(), "AI_INTERRUPTED_UNKNOWN");
+          audit.record(
+              "AI_JOB",
+              id,
+              "RECOVERED",
+              null,
+              Map.of("chargedTokens", j.reservedTokens(), "usageSource", "UNKNOWN"));
+          return view(id);
+        });
   }
 
   // Budget limits and reservations must come from trusted server policy, never request JSON.
