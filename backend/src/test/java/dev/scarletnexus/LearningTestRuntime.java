@@ -12,14 +12,21 @@ import org.testcontainers.containers.PostgreSQLContainer;
 public final class LearningTestRuntime implements AutoCloseable {
   final String email = "learning@example.test", password = UUID.randomUUID().toString();
   final Path passwordFile;
+  final Path attachmentsDirectory;
   final EmbeddedPostgres pg;
   final PostgreSQLContainer<?> container;
   final ServletWebServerApplicationContext app;
   final int port;
 
   LearningTestRuntime(int port) throws Exception {
+    this(port, Map.of());
+  }
+
+  LearningTestRuntime(int port, Map<String, String> overrides) throws Exception {
     passwordFile = Files.createTempFile("scarlet-learning-", ".secret");
     Files.writeString(passwordFile, password);
+    attachmentsDirectory =
+        Files.createTempDirectory("scarlet-attachment-test-").toAbsolutePath().normalize();
     String url, user, pass;
     if ("container".equals(System.getProperty("test.database"))) {
       pg = null;
@@ -35,20 +42,29 @@ public final class LearningTestRuntime implements AutoCloseable {
       user = "postgres";
       pass = "";
     }
+    var arguments =
+        new ArrayList<>(
+            List.of(
+                "--server.address=127.0.0.1",
+                "--server.port=" + port,
+                "--debug=false",
+                "--spring.datasource.url=" + url,
+                "--spring.datasource.username=" + user,
+                "--spring.datasource.password=" + pass,
+                "--app.bootstrap.email=" + email,
+                "--app.bootstrap.password-file=" + passwordFile,
+                "--app.ai.enabled=false",
+                "--app.attachments.directory=" + attachmentsDirectory,
+                "--app.ai.generation-enabled=false"));
+    overrides.forEach(
+        (key, value) -> {
+          arguments.removeIf(arg -> arg.startsWith("--" + key + "="));
+          arguments.add("--" + key + "=" + value);
+        });
     app =
         (ServletWebServerApplicationContext)
             new SpringApplicationBuilder(ScarletNexusApplication.class)
-                .run(
-                    "--server.address=127.0.0.1",
-                    "--server.port=" + port,
-                    "--debug=false",
-                    "--spring.datasource.url=" + url,
-                    "--spring.datasource.username=" + user,
-                    "--spring.datasource.password=" + pass,
-                    "--app.bootstrap.email=" + email,
-                    "--app.bootstrap.password-file=" + passwordFile,
-                    "--app.ai.enabled=false",
-                    "--app.ai.generation-enabled=false");
+                .run(arguments.toArray(String[]::new));
     this.port = app.getWebServer().getPort();
   }
 
@@ -59,6 +75,13 @@ public final class LearningTestRuntime implements AutoCloseable {
       if (pg != null) pg.close();
       if (container != null) container.stop();
       Files.deleteIfExists(passwordFile);
+      try (var paths = Files.walk(attachmentsDirectory)) {
+        for (var path : paths.sorted(Comparator.reverseOrder()).toList()) {
+          if (!path.toAbsolutePath().normalize().startsWith(attachmentsDirectory))
+            throw new IllegalStateException("Unexpected test attachment path");
+          Files.deleteIfExists(path);
+        }
+      }
     }
   }
 

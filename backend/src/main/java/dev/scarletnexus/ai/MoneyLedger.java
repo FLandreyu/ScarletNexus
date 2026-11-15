@@ -138,6 +138,12 @@ public class MoneyLedger {
   }
 
   @Transactional(propagation = Propagation.SUPPORTS)
+  public Price configuredPrice() {
+    DomainFailure.require(policy != null, "AI_MONEY_POLICY_REQUIRED", "请先配置服务端货币预算");
+    return policy;
+  }
+
+  @Transactional(propagation = Propagation.SUPPORTS)
   public void validateEstimate(long input, long output) {
     DomainFailure.require(policy != null, "AI_MONEY_POLICY_REQUIRED", "请先配置服务端货币预算");
     DomainFailure.require(

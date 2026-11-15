@@ -7,7 +7,9 @@ export default defineConfig({
   testMatch:
     process.env.GENERATION_ACCEPTANCE === '1'
       ? '**/generation-enabled.acceptance.ts'
-      : '**/*.spec.ts',
+      : process.env.TUTOR_ACCEPTANCE === '1'
+        ? '**/tutor-enabled.acceptance.ts'
+        : '**/*.spec.ts',
   fullyParallel: true,
   workers: 1,
   forbidOnly: !!process.env.CI,

@@ -1,5 +1,28 @@
 # API 合同
 
+## P4实际练习与导师接口
+
+均需认证，写入需CSRF。下述列表支持page/size（1..100）；写入从认证用户导出owner，不接受user_id。
+
+| 路径（/api/v1前缀） | 方法与行为 |
+| --- | --- |
+| /practice/tasks/{task}/questions | GET仅公开题干/类型/状态；POST作者创建 `{title,prompt,questionType:EXACT_TEXT|PROOF|PROJECT,answerKey,hintText}`，不返回答案/提示 |
+| /practice/questions/{id} | PATCH `{status:ACTIVE|ARCHIVED}`，不覆盖旧题答案或作答 |
+| /practice/tasks/{task}/attempts | GET历史；POST `{questionId,content,declaredIndependent,attachmentIds}`，Idempotency-Key必填、提交不可变 |
+| /practice/attempts/{id} | GET作答、题干、附件与当前曝光等级，无参考答案 |
+| /practice/attempts/{id}/hint | POST `{level:ONE_HINT|FULL_SOLUTION,confirmed}`，须先有作答，完整解析需确认 |
+| /practice/attempts/{id}/check | POST、幂等键；精确文本比对，证明/作品/纯图片UNSURE |
+| /practice/attempts/{id}/reviews | GET历史；POST `{verdict,feedback,confirmed,tutorTurnId?}`，幂等键，人工自评/确认本人同作答AI建议 |
+| /practice/reviews/{id}/evidence | POST `{confirmed:true}`，同复核仅一条证据；不确定结果不冒充正确验证 |
+| /practice/tasks/{task}/evidence | GET当前节点证据（跨任务仍为同稳定节点） |
+| /practice/tasks/{task}/assessments | GET历史；POST `{assessorType:SELF|RULE,level,reason,evidenceIds}`，追加评估/依据关联；RULE最多L2 |
+| /learning/tasks/{task}/attachments | GET本人图片列表；POST multipart `file`，PNG/JPEG最多5MiB，返回处理后元数据 |
+| /attachments/{id}/content | GET鉴权PNG，no-store/nosniff、无路径/原始文件名；归档/隔离404 |
+| /attachments/{id} | PATCH `{status:READY|ARCHIVED}`，204，不物理删除文件 |
+| /tutor/... | status、对话/记录、POST SSE及恢复，详见AI_TUTOR.md |
+
+所有题目/作答/附件/复核/证据的嵌套引用校验当前用户、任务和节点。RULE_CHECKED仅指文本规则比对；SELF_REVIEW和REVIEWED_AI均为SELF_REPORTED。自评L0–L5/LOW、规则L0–L2/LOW或MEDIUM，不把进度当能力。新导师请求需confirmed=true；同幂等键重取snapshot不再调用模型。导师文本不执行、不自动写入学习状态。
+
 ## P3实际学习接口
 
 以下均以`/api/v1/learning`为前缀，需要认证，写入需要CSRF，所有权从会话取得。分页`page>=0,size=1..100`，返回`{items,total,page,size}`。

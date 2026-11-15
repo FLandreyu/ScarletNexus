@@ -1,5 +1,9 @@
 # 数据库设计与迁移
 
+V9新增questions/question_exposures、learning_attempts、attachments/attempt_attachments、ai_conversations/tutor_turns、attempt_reviews、learning_evidence、mastery_assessments/assessment_evidence，共11表；给任务增加owner/id/node复合唯一约束支持同节点FK。作答、复核、证据、评估及关联不可修改或删除。参考答案不进入独立练习DTO；曝光持久化且只升不降，提交时保存自报独立与曝光快照。
+
+Tutor运行记录保存私有上下文和费用快照，与P2共享每日token/货币账本，不创建虚假图谱草案。文件使用独立私有卷，DB保存随机键、归属、校验和与READY/ARCHIVED状态；文件不进Git/数据库。V1–V8不修改。复核与评估始终区分RULE/SELF/REVIEWED_AI来源；REVIEWED_AI需同作答本人成功turn，仍为SELF_REPORTED。
+
 V8新增P3实际关系表：learning_goals；不可变learning_paths/learning_path_stages/learning_path_nodes（版本族、前版引用、标题快照）；path_enrollments/learning_progress；learning_tasks；learning_sessions/learning_session_commands；learning_notes；learning_resources/node_resources。均按owner复合FK隔离。路径修改追加版本，旧选择与记录不删除。选择+路径节点进度、任务笔记使用revision；初次PUT笔记/进度请求revision=0，创建后为1，避免首次并发写覆盖。
 
 每用户最多一个ACTIVE路线选择、一个RUNNING或PAUSED时段，由部分唯一索引保护。时段按服务器分段起点+累计毫秒计时；幂等操作记录不可修改，同键不同操作409。任务与选择/路径节点使用同版本复合FK；应用另校验目标、技能、节点相符。资源仅存http(s)链接、支持归档；不会发起远程抓取。所有V1–V7保持原样，细节见P3_DESIGN.md。

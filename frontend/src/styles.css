@@ -296,7 +296,9 @@ dd {
 .editor select,
 .editor textarea,
 .search-bar input,
-.search-bar select {
+.search-bar select,
+.tree-panel select,
+.tree-panel input[type='file'] {
   border: 1px solid #6e5e7a;
   border-radius: 5px;
   padding: 10px;
@@ -506,6 +508,23 @@ button:disabled {
 .plain-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.math-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.math-fragment {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+.practice-image {
+  max-width: min(100%, 520px);
+  max-height: 360px;
+  object-fit: contain;
+  display: block;
 }
 @media (max-width: 760px) {
   .workspace-columns {

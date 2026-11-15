@@ -24,6 +24,12 @@ public class ApiExceptionHandler {
         .body(ApiError.of(error.code(), error.getMessage(), request));
   }
 
+  @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+  ResponseEntity<ApiError> oversizedImage(HttpServletRequest request) {
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+        .body(ApiError.of("IMAGE_SIZE", "图片文件不能超过5MiB", request));
+  }
+
   @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
   ResponseEntity<ApiError> conflict(HttpServletRequest request) {
     return ResponseEntity.status(HttpStatus.CONFLICT)

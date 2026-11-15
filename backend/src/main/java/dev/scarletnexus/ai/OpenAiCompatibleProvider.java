@@ -64,6 +64,29 @@ public final class OpenAiCompatibleProvider implements AIProvider {
   }
 
   @Override
+  public Usage chatStream(List<Message> messages, java.util.function.Consumer<String> delta) {
+    if (messages == null
+        || messages.isEmpty()
+        || messages.size() > 30
+        || messages.stream()
+            .anyMatch(
+                m ->
+                    m == null
+                        || m.content() == null
+                        || m.content().length() > 60000
+                        || !List.of("system", "user", "assistant").contains(m.role())))
+      throw new Failure("AI_INVALID_REQUEST", false);
+    return ChatStreamTransport.send(
+        http,
+        endpoint,
+        key,
+        ChatStreamTransport.body(json, model, protocol, messages),
+        timeout,
+        json,
+        delta);
+  }
+
+  @Override
   public Result generateStructured(String instructions, String input, JsonNode schema) {
     if (instructions == null
         || input == null

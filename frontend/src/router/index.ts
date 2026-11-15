@@ -8,6 +8,7 @@ import JobsPage from '../pages/JobsPage.vue'
 import LearningPage from '../pages/LearningPage.vue'
 import PathsPage from '../pages/PathsPage.vue'
 import StudyPage from '../pages/StudyPage.vue'
+import PracticePage from '../pages/PracticePage.vue'
 import { useAuthStore } from '../stores/auth'
 
 export const router = createRouter({
@@ -17,6 +18,7 @@ export const router = createRouter({
     { path: '/learn', component: LearningPage, meta: { private: true } },
     { path: '/paths', component: PathsPage, meta: { private: true } },
     { path: '/study/:id', component: StudyPage, meta: { private: true } },
+    { path: '/practice/:id', component: PracticePage, meta: { private: true } },
     { path: '/system', name: 'system', component: SystemPage },
     { path: '/login', component: LoginPage },
     { path: '/skills', component: SkillsPage, meta: { private: true } },

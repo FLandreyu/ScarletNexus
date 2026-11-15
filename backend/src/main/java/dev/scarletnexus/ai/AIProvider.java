@@ -6,6 +6,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 public interface AIProvider {
   Result generateStructured(String instructions, String input, JsonNode schema);
 
+  record Message(String role, String content) {}
+
+  default Usage chatStream(
+      java.util.List<Message> messages, java.util.function.Consumer<String> delta) {
+    throw new Failure("AI_STREAM_UNSUPPORTED", false);
+  }
+
+  default Result analyzeImage(String instructions, byte[] image) {
+    throw new Failure("AI_IMAGE_UNSUPPORTED", false);
+  }
+
   record Usage(Long inputTokens, Long outputTokens, String source) {}
 
   record Result(JsonNode document, Usage usage) {}

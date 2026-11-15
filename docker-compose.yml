@@ -27,6 +27,7 @@ services:
       ADMIN_PASSWORD_FILE: ${ADMIN_PASSWORD_FILE:-}
     volumes:
       - ./.runtime/dev-secrets:/run/secrets:ro
+      - attachments-data:/var/lib/scarlet/attachments
     depends_on:
       db:
         condition: service_healthy
@@ -47,3 +48,4 @@ services:
     restart: unless-stopped
 volumes:
   postgres-data:
+  attachments-data:

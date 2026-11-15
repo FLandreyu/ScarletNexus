@@ -19,6 +19,10 @@ spring:
     timeout: 30m
     jdbc:
       initialize-schema: never
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 mybatis:
   type-handlers-package: dev.scarletnexus.common
 app:

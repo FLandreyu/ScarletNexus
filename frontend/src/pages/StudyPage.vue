@@ -12,6 +12,7 @@ import type {
   Resource,
 } from '../types/learning'
 import { taskStates, progressStates } from '../types/learning'
+import TutorPanel from '../components/TutorPanel.vue'
 const id = String(useRoute().params.id),
   data = ref<Workbench | null>(null),
   error = ref(''),
@@ -257,6 +258,7 @@ onUnmounted(() => {
     <h1>{{ data?.task.title ?? '学习工作台' }}</h1>
     <div class="row-actions">
       <RouterLink to="/learn">返回学习首页</RouterLink
+      ><RouterLink :to="`/practice/${id}`">练习与能力证据</RouterLink
       ><button :disabled="busy" @click="refresh">刷新工作台</button>
     </div>
   </section>
@@ -481,5 +483,6 @@ onUnmounted(() => {
         </div>
       </section>
     </fieldset>
+    <TutorPanel :task-id="id" />
   </template>
 </template>

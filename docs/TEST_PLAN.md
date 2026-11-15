@@ -1,5 +1,7 @@
 # 测试策略与 P0 验收
 
+P4实际结果见[P4_ACCEPTANCE](P4_ACCEPTANCE.md)：Windows最终28单元+35PG集成=63，Linux Testcontainers62（新增413用例前），前端11单元，真实Nginx桌面/手机8项、导师启用独立协议2项。新增超限行为在Windows及真实Linux容器浏览器覆盖；预算/恢复/隔离/不可变历史、UTF-8分片与deadline、数学HTML攻击输入均有实证。未调用本轮真实模型，不以协议数据代替教学质量验收。
+
 P3实际门禁和结果见[P3_ACCEPTANCE](P3_ACCEPTANCE.md)：最终Linux25单元+23真实PG集成，前端9单元，真实Nginx桌面/手机6项E2E；覆盖退出恢复、路线历史、计时并发与幂等、初次写入和旧revision防覆盖、所有权FK及故障回滚。后续阶段不能用本轮结果冒充AI导师/附件/证据验收。
 
 使用真实 PostgreSQL，不用内存 SQL 替身。所有测试结果以 PROGRESS 记录和工具报告为准，本文件是计划。
