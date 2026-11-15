@@ -1,5 +1,28 @@
 # API 合同
 
+## P5实际计划与复习接口
+
+前缀`/api/v1`，均认证隔离；写入需CSRF。`page=0,size=50`，size最大100。请求revision从当前对象读取，过期409；非法预算/重复技能/旧复测证据422。没有模型请求，规则v1生成真实草案。
+
+| 路径 | 方法与请求 |
+| --- | --- |
+| /planner/drafts | POST `{planDate,timeZone,budgetMinutes:0..1440,skillLimits:[{skillId,maxMinutes:0..1440}]}`，1..100个不同技能；GET `?date=`分页列表 |
+| /planner/drafts/{id} | GET快照、选择总分钟、sourceChanged；PATCH `{revision,itemIds:[草案项UUID]}`，保存顺序/选择并重新校验预算，不修改任务 |
+| /planner/drafts/{id}/confirm | POST `{revision,dayRevision,confirmed:true}`，Idempotency-Key必填；源指纹、草案/当天revision均须匹配；创建不可变计划和必要复习任务，切换当天指针 |
+| /planner/days/{date} | GET `{planDate,revision,activePlan}`，无计划时activePlan为null |
+| /planner/days/{date}/cancel | POST `{revision,confirmed:true,reason}`，取消当天当前指针，保留历史 |
+| /planner/days/{date}/history | GET每日不可变计划版本分页列表 |
+| /planner/plans/{id} | GET预算/任务标题时长快照和任务现状，changed表示确认后任务revision已变 |
+| /planner/tasks/{id}/adjustments | GET历史；POST `{kind:DEFER|CANCEL|SPLIT,revision,dueDate?,reason,parts:[{title,minutes,dueDate?}]}`，幂等键；延期须晚于原日期，拆分2..8项且总分钟等于原任务；未结束计时拒绝；周期复习任务不能拆分 |
+| /reviews/schedules | GET `?due=true&until=ISO8601`为截至当前/指定时刻的到期队列，默认due=false全部；POST `{taskId,evidenceId?,firstDate?,timeZone,plannedMinutes,reason}`，同节点仅一条安排，无证据必须填首次日期 |
+| /reviews/schedules/{id} | GET安排、节点标题、当前周期任务；PATCH `{revision,nextDate,status:ACTIVE|PAUSED,reason}`，按安排自身时区09:00转换UTC |
+| /reviews/schedules/{id}/complete | POST `{revision,evidenceId,reason}`，幂等键；新作答需晚于安排创建/上次复测，证据同节点且不可复用；RULE_CHECKED+独立正确翻倍，其余回1天，不自动更新能力 |
+| /reviews/schedules/{id}/history | GET不可变调度/复测事件分页，保留前后日期/间隔、结果来源和原因 |
+
+未来或今天的当前确认计划内任务，改变预计分钟返回422 TASK_IN_CONFIRMED_PLAN；先取消相关计划再修改。P3工作台仍允许手动修改任务状态和日期（例如提前重新排期），同事务审计，旧计划快照保留。草案最多2000学习候选和2000复习候选、确认最多200项；超限明确拒绝，不静默截断。
+
+时区须Java和PostgreSQL均识别。计划日期是该时区的日历日期；预算为预计时长，不会强制中断实际计时。复测规则是可解释的保守启发式，不是个体记忆模型。详情见[P5设计](P5_DESIGN.md)。
+
 ## P4实际练习与导师接口
 
 均需认证，写入需CSRF。下述列表支持page/size（1..100）；写入从认证用户导出owner，不接受user_id。

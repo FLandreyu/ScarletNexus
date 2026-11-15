@@ -6,6 +6,10 @@ import { allPages, duration } from '../api/learning'
 import type { Skill, Graph, PlacedNode, Page } from '../types/catalog'
 import type { Dashboard, Goal, Task, Entry, Progress } from '../types/learning'
 import { taskStates, progressStates } from '../types/learning'
+import type { Day, ReviewView } from '../types/planner'
+import { localDate } from '../types/planner'
+const todayPlan = ref<Day | null>(null),
+  dueReviews = ref(0)
 const router = useRouter(),
   data = ref<Dashboard | null>(null),
   error = ref(''),
@@ -37,10 +41,14 @@ async function run(action: () => Promise<void>) {
   }
 }
 async function load() {
-  ;[data.value, tasks.value] = await Promise.all([
+  ;[data.value, tasks.value, todayPlan.value] = await Promise.all([
     api<Dashboard>('/learning/dashboard'),
     api<Page<Task>>(`/learning/tasks?page=${taskPage.value}&size=20`),
+    api<Day>(`/planner/days/${localDate()}`),
   ])
+  dueReviews.value = (
+    await api<Page<ReviewView>>('/reviews/schedules?due=true&size=1')
+  ).total
 }
 async function loadNodes() {
   nodes.value = form.value.skillId
@@ -138,8 +146,17 @@ onMounted(
   <section class="workspace-heading">
     <p class="eyebrow">YOUR LEARNING DESK</p>
     <h1>学习首页</h1>
-    <p>从上次停下的地方继续。学习状态由你记录，能力评估将在后续阶段提供。</p>
+    <p>从上次停下的地方继续。学习状态由你记录，能力证据可在练习页确认。</p>
+    <p v-if="todayPlan?.activePlan">
+      今日计划：{{ todayPlan.activePlan.plannedMinutes }} /
+      {{ todayPlan.activePlan.plan.budgetMinutes }} 分钟 ·
+      {{ todayPlan.activePlan.items.length }} 项
+    </p>
+    <p v-else>今日尚无确认的计划。</p>
+    <p>当前到期复习：{{ dueReviews }} 项</p>
     <div class="row-actions">
+      <RouterLink to="/planner">规划今日学习</RouterLink>
+      <RouterLink to="/reviews">查看到期复习</RouterLink>
       <RouterLink to="/paths">管理目标与路线</RouterLink
       ><button :disabled="busy" @click="run(load)">刷新学习记录</button>
     </div>

@@ -9,6 +9,8 @@ import LearningPage from '../pages/LearningPage.vue'
 import PathsPage from '../pages/PathsPage.vue'
 import StudyPage from '../pages/StudyPage.vue'
 import PracticePage from '../pages/PracticePage.vue'
+import PlannerPage from '../pages/PlannerPage.vue'
+import ReviewsPage from '../pages/ReviewsPage.vue'
 import { useAuthStore } from '../stores/auth'
 
 export const router = createRouter({
@@ -16,6 +18,8 @@ export const router = createRouter({
   routes: [
     { path: '/', redirect: '/learn' },
     { path: '/learn', component: LearningPage, meta: { private: true } },
+    { path: '/planner', component: PlannerPage, meta: { private: true } },
+    { path: '/reviews', component: ReviewsPage, meta: { private: true } },
     { path: '/paths', component: PathsPage, meta: { private: true } },
     { path: '/study/:id', component: StudyPage, meta: { private: true } },
     { path: '/practice/:id', component: PracticePage, meta: { private: true } },

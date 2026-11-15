@@ -258,6 +258,8 @@ onUnmounted(() => {
     <h1>{{ data?.task.title ?? '学习工作台' }}</h1>
     <div class="row-actions">
       <RouterLink to="/learn">返回学习首页</RouterLink
+      ><RouterLink :to="`/planner?task=${id}`">调整任务</RouterLink
+      ><RouterLink :to="`/reviews?task=${id}`">安排复习</RouterLink
       ><RouterLink :to="`/practice/${id}`">练习与能力证据</RouterLink
       ><button :disabled="busy" @click="refresh">刷新工作台</button>
     </div>

@@ -20,11 +20,17 @@ public class LearningService {
   private final LearningMapper db;
   private final CatalogMapper catalog;
   private final AuditLog audit;
+  private final dev.scarletnexus.planner.PlanningGuard planning;
 
-  public LearningService(LearningMapper db, CatalogMapper catalog, AuditLog audit) {
+  public LearningService(
+      LearningMapper db,
+      CatalogMapper catalog,
+      AuditLog audit,
+      dev.scarletnexus.planner.PlanningGuard planning) {
     this.db = db;
     this.catalog = catalog;
     this.audit = audit;
+    this.planning = planning;
   }
 
   private UUID owner() {
@@ -295,6 +301,7 @@ public class LearningService {
     lock();
     var before = task(id);
     conflict(before.revision() == v.revision());
+    planning.minutes(owner(), id, before.plannedMinutes(), v.plannedMinutes());
     db.updateTask(owner(), id, v.title().strip(), v.plannedMinutes(), v.dueDate(), v.status());
     var after = task(id);
     audit.record("learning_task", id, "SAVE", before, after);

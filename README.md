@@ -2,7 +2,11 @@
 
 AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus_Codex_Master_Plan.md)，阶段实况见 [PROGRESS](docs/PROGRESS.md)。
 
-**当前P0–P4已验收**：技能/知识树、AI草案与版本、目标/路线/任务/学习记录、练习/证据、私有图片、数学及SSE导师。正式数据写入PostgreSQL并审计，不预置学习进度。验收实况与局限见[进度](docs/PROGRESS.md)。P5尚未开始。
+**当前P0–P5已验收**：技能/知识树、AI草案与版本、目标/路线/任务/学习记录、练习/证据、私有图片、数学及SSE导师，以及预算计划与复习。正式数据写入PostgreSQL并审计，不预置学习进度。验收实况与局限见[进度](docs/PROGRESS.md)，下一阶段P6。
+
+P5使用方法：在“每日计划”选择日期、时区、总预算和本次技能上限，生成规则草案；检查原因、保存选择，勾选明确确认后计划才生效。原任务截止日期不会被草案覆盖。未完成任务可延期/取消/保总分钟拆分；提前重新排期可在学习工作台编辑日期与状态。已确认计划内任务改变预计分钟前须取消对应计划。
+
+“到期复习”可手动安排或参考已确认的节点证据，按安排自身时区09:00调度；先做新练习并确认证据，再提交复测，历史记录前后日期、间隔与原因。规则独立正确延长间隔，其余保守1天；不自动提高能力等级。无Key可运行，未接入AI文字建议。详见[P5设计](docs/P5_DESIGN.md)与[P5验收](docs/P5_ACCEPTANCE.md)。
 
 P4已加入工作台“练习与能力证据”、独立作答/准备提示/人工复核、确认后的证据和保守能力历史、私有PNG/JPEG附件、KaTeX数学，以及默认关闭的SSE导师。已按授权完成一次真实DeepSeek导师验收，单样例不代表全面教学质量，详见[P4_ACCEPTANCE](docs/P4_ACCEPTANCE.md)。
 
@@ -116,7 +120,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-完整Playwright需要**隔离验收数据库/账号**，在终端设置E2E_EMAIL，并从本地验收密码文件读取E2E_PASSWORD（不要在命令中粘贴真实密码）。它会创建验收技能和节点，不要对个人真实库运行。默认启动Vite并真实请求后端；覆盖桌面/手机登录、手动图谱、环拒绝、刷新持久化、退出，以及系统状态。产物在test-results/playwright-report（不入Git）。CI使用临时随机密码文件/独立数据库；未推送并执行前不能声称远端CI已通过。
+完整Playwright需要**隔离验收数据库/账号**，在终端设置E2E_EMAIL，并从本地验收密码文件读取E2E_PASSWORD（不要在命令中粘贴真实密码）。它会创建验收技能、任务、复习和证据，不要对个人真实库运行。默认启动Vite并真实请求后端；覆盖桌面/手机登录、手动图谱、路线计时、练习附件、三技能计划/任务调整/复测、刷新持久化和系统状态。产物在test-results/playwright-report（不入Git）。CI使用临时随机密码文件/独立数据库；未推送并执行前不能声称远端CI已通过。
 
 验证Compose构建后的页面时，先在同一终端设置 `$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:8088'` 再运行 `npm run test:e2e`。此模式直接访问Nginx和生产构建产物，不启动Vite；CI也使用此模式。恢复开发模式可移除该环境变量。
 
@@ -128,4 +132,4 @@ npm run test:e2e
 - [AI设计](docs/AI_DESIGN.md)、[安全](docs/SECURITY.md)、[决策](docs/DECISIONS.md)
 - [路线](docs/ROADMAP.md)、[测试](docs/TEST_PLAN.md)、[运维](docs/OPERATIONS.md)、[进度](docs/PROGRESS.md)
 
-开发OpenAPI：http://127.0.0.1:8080/v3/api-docs 。只包含实际端点，Compose默认关闭。接下来P2为可编辑草案、校验、版本发布与可配置AI；生产部署、付费AI及不可逆操作另行确认。
+开发OpenAPI：http://127.0.0.1:8080/v3/api-docs 。只包含实际端点，Compose默认关闭。接下来P6为分析、导入导出、备份恢复与部署准备；生产部署、付费AI及不可逆操作另行确认。

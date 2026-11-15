@@ -1,5 +1,11 @@
 # 数据库设计与迁移
 
+V10新增13表：review_schedules/review_events/review_cycle_tasks、plan_drafts/plan_draft_limits/plan_draft_items、daily_plans/daily_plan_limits/daily_plan_items/daily_plan_days/plan_confirmation_keys、task_adjustments/task_splits。安排/草案/日指针有revision，用户行锁与事务串行化确认、复测与任务调整。V1–V9不修改。
+
+复习安排每owner/node唯一；周期号仅复测时推进，每周期最多一个任务。原任务、初始证据、周期任务的owner/id/node复合FK保护同节点关联；复测记录每owner/evidence唯一，幂等键每owner唯一。下次时刻为UTC timestamptz，另存原IANA时区。
+
+草案保留候选、排除原因、整项选择及稳定源hash；修改选择不写任务。计划按owner/date递增版本，确认后预算、条目和标题快照不可改。daily_plan_days的复合外键同时约束owner/plan/date，只有当前指针可替换。计划/条目/技能预算、复习事件/周期关联、任务调整/拆分关联有不可变触发器，禁止更新或删除。取消、延期、拆分保留任务及原学习事实，不级联删除。实际SQL迁移是字段与约束的权威来源，流程见P5_DESIGN。
+
 V9新增questions/question_exposures、learning_attempts、attachments/attempt_attachments、ai_conversations/tutor_turns、attempt_reviews、learning_evidence、mastery_assessments/assessment_evidence，共11表；给任务增加owner/id/node复合唯一约束支持同节点FK。作答、复核、证据、评估及关联不可修改或删除。参考答案不进入独立练习DTO；曝光持久化且只升不降，提交时保存自报独立与曝光快照。
 
 Tutor运行记录保存私有上下文和费用快照，与P2共享每日token/货币账本，不创建虚假图谱草案。文件使用独立私有卷，DB保存随机键、归属、校验和与READY/ARCHIVED状态；文件不进Git/数据库。V1–V8不修改。复核与评估始终区分RULE/SELF/REVIEWED_AI来源；REVIEWED_AI需同作答本人成功turn，仍为SELF_REPORTED。

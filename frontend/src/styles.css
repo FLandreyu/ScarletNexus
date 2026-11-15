@@ -476,6 +476,40 @@ button:disabled {
 .learning-section {
   margin-top: 28px;
 }
+.workspace-page {
+  padding: 40px 0;
+  min-width: 0;
+}
+.workspace-page > h1 {
+  font-size: clamp(26px, 4vw, 38px);
+  margin-bottom: 16px;
+}
+.workspace-page p {
+  line-height: 1.8;
+}
+.workspace-page .skill-card h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+.workspace-page .skill-card {
+  margin: 12px 0;
+}
+.workspace-page button {
+  border: 1px solid #80647b;
+  border-radius: 5px;
+  padding: 10px 13px;
+  min-height: 42px;
+  background: #302538;
+  color: #f0deeb;
+  cursor: pointer;
+}
+.workspace-page button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.workspace-page a {
+  color: #e7b7c5;
+}
 .stage-editor,
 .path-node-editor {
   border: 1px solid #573043;

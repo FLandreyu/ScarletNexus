@@ -1,5 +1,7 @@
 # 测试策略与 P0 验收
 
+P5实际门禁见[P5_ACCEPTANCE](P5_ACCEPTANCE.md)：最终Linux Java21/Testcontainers共31单元+43真实PG集成；前端13单元、格式/类型/构建，真实Nginx桌面/手机默认10项通过。覆盖三技能75分钟预算、未确认隔离、过期/并发冲突、幂等、不可变快照、故障回滚、先修、所有权、延期/拆分/计时保护，以及周期任务复用、新证据复测/暂停/原因历史。截图已查看，远端CI未运行，AI文字建议未接入、没有新模型调用。
+
 P4实际结果见[P4_ACCEPTANCE](P4_ACCEPTANCE.md)：Windows最终28单元+35PG集成=63，Linux Testcontainers62（新增413用例前），前端11单元，真实Nginx桌面/手机8项、导师启用独立协议2项。新增超限行为在Windows及真实Linux容器浏览器覆盖；预算/恢复/隔离/不可变历史、UTF-8分片与deadline、数学HTML攻击输入均有实证。另按新授权完成真实deepseek-flash单次SSE验收，作答保留、无自动证据，单样例不代替全面教学质量；本次仅文档更新，未重复执行整套本地测试。
 
 P3实际门禁和结果见[P3_ACCEPTANCE](P3_ACCEPTANCE.md)：最终Linux25单元+23真实PG集成，前端9单元，真实Nginx桌面/手机6项E2E；覆盖退出恢复、路线历史、计时并发与幂等、初次写入和旧revision防覆盖、所有权FK及故障回滚。后续阶段不能用本轮结果冒充AI导师/附件/证据验收。
