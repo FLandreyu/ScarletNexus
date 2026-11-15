@@ -88,6 +88,8 @@ erDiagram
 
 ## Flyway 门禁
 
+P2新增V4：graph_drafts(owner_id,skill_id,draft_json,revision,base_hash,status)、knowledge_graph_versions(每技能版本号唯一，draft_id唯一，snapshot_json)、graph_publish_keys(用户/键唯一)。复合FK隔离所有权，版本触发器拒绝UPDATE/DELETE。草案保存和发布复用audit_events记录变更，含前后revision与文档；未新增重复审计事实源。源指纹只包含技能/节点/位置/关系，不包含草案、会话或审计。连接初始化设置UTC，避免不同JVM时区使时间序列化导致指纹漂移。V1–V3不修改。
+
 迁移路径 `backend/src/main/resources/db/migration`。P0 `V1__identity_and_audit_baseline.sql`：无个人数据、无默认账号，建身份和审计表/约束。`baseline-on-migrate=false`，`clean-disabled=true`，启动 validate + migrate，禁止失败后绕过校验。测试必须验证空库迁移、重复启动幂等、真实 PG 约束和应用重启后持久化。
 
 P6 备份使用 pg_dump 自定义格式，数据库与附件清单共同校验；恢复只在隔离环境演练。导入先 schema/归属/引用校验预览，用户确认后事务写入，不自动 DROP、TRUNCATE 或覆盖原记录。

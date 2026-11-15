@@ -39,7 +39,8 @@ public class ApiExceptionHandler {
   @ExceptionHandler({
     MethodArgumentNotValidException.class,
     HttpMessageNotReadableException.class,
-    MethodArgumentTypeMismatchException.class
+    MethodArgumentTypeMismatchException.class,
+    org.springframework.web.bind.ServletRequestBindingException.class
   })
   ResponseEntity<ApiError> invalid(HttpServletRequest request) {
     return ResponseEntity.badRequest().body(ApiError.of("VALIDATION_ERROR", "参数无效，请检查输入", request));

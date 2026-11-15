@@ -7,6 +7,14 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface CatalogMapper {
+  @Select(
+      "SELECT EXISTS(SELECT 1 FROM knowledge_graph_versions WHERE owner_id=#{owner} AND skill_id=#{skill})")
+  boolean versioned(UUID owner, UUID skill);
+
+  @Select(
+      "SELECT EXISTS(SELECT 1 FROM skill_nodes p JOIN knowledge_graph_versions v ON v.skill_id=p.skill_id AND v.owner_id=p.owner_id WHERE p.owner_id=#{owner} AND p.node_id=#{node})")
+  boolean protectedNode(UUID owner, UUID node);
+
   @Select("SELECT id FROM users WHERE id=#{owner} AND status='ACTIVE' FOR UPDATE")
   UUID lockOwner(UUID owner);
 

@@ -25,5 +25,6 @@ public final class CatalogModels {
 
   public record Page<T>(List<T> items, int page, int size, long total) {}
 
-  public record Graph(Skill skill, List<PlacedNode> nodes, List<Relation> relations) {}
+  public record Graph(
+      Skill skill, List<PlacedNode> nodes, List<Relation> relations, boolean versioned) {}
 }

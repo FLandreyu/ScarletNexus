@@ -6,7 +6,7 @@
 
 | 方法 / 路径 | 访问 | 响应 |
 | --- | --- | --- |
-| GET /api/v1/system/status | public | 200 `{service:"scarlet-nexus",status:"UP",database:"UP",schemaVersion:"3",phase:"P1",aiConfigured:false}`；通过 MyBatis 实查 Flyway 历史，DB 不可用 503 |
+| GET /api/v1/system/status | public | 200 `{service:"scarlet-nexus",status:"UP",database:"UP",schemaVersion:"4",phase:"P1",aiConfigured:false}`；phase为最近完整验收阶段，P2部分实现不冒充整阶段完成；通过MyBatis实查Flyway，DB不可用503 |
 | GET /actuator/health | public | 200 `{status:"UP",groups:["liveness","readiness"]}`，故障503；不公开组件细节 |
 | GET /actuator/health/liveness | public | 进程存活，不依赖 DB |
 | GET /actuator/health/readiness | public | 应用就绪且 DB 可查询 |
@@ -38,9 +38,21 @@ Skill.name<=120、category<=80、description<=4000；Node.title<=160、descripti
 
 前端新建节点和附加技能引用是两个请求；若附加失败，已保存定义保留在节点库并明确提示，可选择引用重试，不冒充整组事务成功。客户端在取得CSRF前冻结提交值，不自动重试写操作。
 
-## 后续合同基线（设计，不是已实现接口）
+## P2手动草案与后续合同
 
-P2：`POST /skills/:id/graph/drafts {baseVersionId?}` → 201；`GET/PATCH /graph/drafts/:id`，PATCH 必须 `{revision,draft}`，冲突409；`POST .../validate` → `{valid,issues:[{code,path,message}]}`；`POST .../publish {revision,confirmed:true}` + `Idempotency-Key` → 发布版本；`GET /skills/:id/graph/versions` 和版本详情只读。`POST /ai/knowledge-drafts`/`ai/path-drafts` → 202 `{jobId}`；`GET /ai/jobs/:id` 轮询，未配置503 `AI_NOT_CONFIGURED`，失败保留草案。
+### P2本轮已实现的手动接口
+
+`POST/GET /skills/:id/graph/drafts`从正式图谱创建/列出草案；`GET /graph/drafts/:id`返回`{id,skillId,document:JSON字符串,revision,baseHash,status}`。`PATCH /graph/drafts/:id {revision,document:JSON对象}`返回新revision；旧revision或已发布草案409 DRAFT_CONFLICT。无效结构可保存（对象、最多100万字符），但不能发布。
+
+`POST /graph/drafts/:id/validate {}`返回`{valid,issues,potentiallyAffectedSkills,sourceChanged,nodeCount,relationCount}`。v1合同见resources/schemas/graph-draft-v1.schema.json；应用通过严格类型解析、Bean Validation与图规则执行本合同的校验，不是通用JSON Schema执行引擎。校验分类/先修环、重复与引用，兼顾草案外全用户关系。影响列表为保守的所有引用技能，前端展示名称与节点变更摘要。
+
+`POST /graph/drafts/:id/publish {revision,confirmed:true}`必须提供`Idempotency-Key`（1..128位安全字符），返回`{id,skillId,draftId,versionNumber,document}`。同键/同请求返回同一版本，不同请求409。发布前当前用户整个技能目录的SHA256指纹必须仍与草案创建时一致，任何正式目录变动都会保守拒绝覆盖，旧草案仍保留。事务修改节点/位置/内部关系、版本、草案状态、幂等记录及审计。移出技能的节点定义不会删除。
+
+`GET /skills/:id/graph/versions`、`GET /graph/versions/:id`读取不可变发布快照。所有接口按认证用户隔离。发布后P1直接修改版本图谱或被其引用的节点/关系返回409 USE_GRAPH_DRAFT，需走草案。跨多个已发布技能的共享定义/关系变更暂拒绝，联合发布尚未实现；共享定义不变的引用仍可发布。缺少请求头/参数400，未确认或图不合法422。
+
+AI草案生成端点、Provider与高级合并/拆分仍未实现。下方P2原始目标合同是剩余规划，不能当作已实现。
+
+P2剩余规划：`POST /ai/knowledge-drafts`/`ai/path-drafts` → 202 `{jobId}`；`GET /ai/jobs/:id`轮询，未配置503 AI_NOT_CONFIGURED，失败保留草案。上述AI端点当前未实现。手动创建草案当前返回200，使用document字段；发布快照按UUID、标题首尾空白和缺省字段规范化，保存的原始草案及审计仍保留。
 
 P3：`POST/GET /goals`、`POST/GET /skills/:id/paths`、`GET /paths/:id`、`POST /paths/:id/enroll`；`GET/POST/PATCH /tasks?date=`；`POST /sessions/start {taskId?,nodeId}` / `POST /sessions/:id/pause|resume|stop`；状态转换在服务端验证，重复 stop 幂等。笔记 / 资料操作均有归属检查。
 

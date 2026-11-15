@@ -23,6 +23,7 @@ export interface Relation {
   relationType: 'PREREQUISITE_OF' | 'RELATED_TO'
 }
 export interface Graph {
+  versioned: boolean
   skill: Skill
   nodes: PlacedNode[]
   relations: Relation[]

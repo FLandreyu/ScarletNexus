@@ -205,15 +205,25 @@ onMounted(async () => {
     <RouterLink to="/skills">← 技能空间</RouterLink>
     <p class="eyebrow">KNOWLEDGE TREE</p>
     <h1>{{ graph?.skill.name ?? '知识树' }}</h1>
+    <RouterLink :to="`/skills/${skillId}/drafts`">草案与版本历史 →</RouterLink>
     <p>{{ graph?.skill.description }}</p>
   </section>
   <p v-if="error" role="alert" class="error-box">{{ error }}</p>
-  <div v-if="graph" class="workspace-columns">
+  <p v-if="graph?.versioned" class="help-text">
+    此图谱已发布，请通过草案审核修改。
+  </p>
+  <div
+    v-if="graph"
+    class="workspace-columns"
+    :style="graph.versioned ? { gridTemplateColumns: 'minmax(0, 1fr)' } : {}"
+  >
     <div>
       <section class="tree-panel" aria-label="知识树">
         <h2>知识树</h2>
         <div class="row-actions">
-          <button @click="beginCreate">添加节点</button>
+          <button :disabled="graph.versioned" @click="beginCreate">
+            添加节点
+          </button>
         </div>
         <p v-if="!graph.nodes.length" class="empty-state">
           添加第一个知识节点。
@@ -240,12 +250,13 @@ onMounted(async () => {
               </div>
               <div class="row-actions">
                 <button
+                  :disabled="graph.versioned"
                   @click="edit(node)"
                   :aria-label="`编辑节点 ${node.title}`"
                 >
                   编辑</button
                 ><button
-                  :disabled="busy"
+                  :disabled="busy || graph.versioned"
                   @click="detach(node)"
                   :aria-label="`移出节点 ${node.title}`"
                 >
@@ -269,8 +280,15 @@ onMounted(async () => {
               }}</small></span
             >
             <div class="row-actions">
-              <button @click="editRelation(relation)">修改关系</button
-              ><button :disabled="busy" @click="deleteRelation(relation.id)">
+              <button
+                :disabled="graph.versioned"
+                @click="editRelation(relation)"
+              >
+                修改关系</button
+              ><button
+                :disabled="busy || graph.versioned"
+                @click="deleteRelation(relation.id)"
+              >
                 移除关系
               </button>
             </div>
@@ -279,7 +297,11 @@ onMounted(async () => {
         <p v-if="!graph.relations.length" class="help-text">
           当前技能还没有关系。
         </p>
-        <form class="editor inline-editor" @submit.prevent="saveRelation">
+        <form
+          v-if="!graph.versioned"
+          class="editor inline-editor"
+          @submit.prevent="saveRelation"
+        >
           <label for="relation-source">起点 / 先修节点</label
           ><select
             id="relation-source"
@@ -312,7 +334,7 @@ onMounted(async () => {
           ><select id="relation-type" v-model="relationForm.relationType">
             <option value="PREREQUISITE_OF">先修关系</option>
             <option value="RELATED_TO">相关知识</option></select
-          ><button class="primary" :disabled="busy">
+          ><button class="primary" :disabled="busy || graph.versioned">
             {{ relationId ? '保存关系' : '建立关系' }}</button
           ><button v-if="relationId" type="button" @click="relationId = null">
             取消修改关系
@@ -321,7 +343,12 @@ onMounted(async () => {
       </section>
     </div>
     <div>
-      <form ref="editorForm" class="editor" @submit.prevent="saveDefinition">
+      <form
+        v-if="!graph.versioned"
+        ref="editorForm"
+        class="editor"
+        @submit.prevent="saveDefinition"
+      >
         <h2>{{ selected ? '编辑节点定义' : '添加节点' }}</h2>
         <template v-if="!selected"
           ><label for="node-mode">添加方式</label
@@ -392,7 +419,7 @@ onMounted(async () => {
             max="2147483647"
             required
         /></template>
-        <button class="primary" :disabled="busy">
+        <button class="primary" :disabled="busy || graph.versioned">
           {{ selected ? '保存节点定义' : '添加到知识树' }}</button><button
           v-if="selected"
           type="button"
@@ -401,7 +428,11 @@ onMounted(async () => {
           取消编辑 / 新增节点
         </button>
       </form>
-      <form v-if="selected" class="editor" @submit.prevent="move">
+      <form
+        v-if="selected && !graph.versioned"
+        class="editor"
+        @submit.prevent="move"
+      >
         <h2>调整当前技能中的位置</h2>
         <label for="move-parent">父节点</label
         ><select id="move-parent" v-model="position.parentNodeId">
@@ -421,7 +452,7 @@ onMounted(async () => {
           min="0"
           max="2147483647"
           required
-        /><button :disabled="busy">保存节点位置</button>
+        /><button :disabled="busy || graph.versioned">保存节点位置</button>
         <p class="help-text">顺序与父节点仅影响当前技能。</p>
       </form>
     </div>

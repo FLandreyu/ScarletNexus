@@ -347,6 +347,154 @@ class IdentityCatalogIT {
   }
 
   @Test
+  @Order(8)
+  void draftsValidateConflictPublishIdempotentlyAndRollbackOnFailure() throws Exception {
+    Client c = owner();
+    String skill = createSkill(c, "Draft acceptance");
+    String a = createNode(c, "Original"), b = createNode(c, "Second");
+    attach(c, skill, a, null, 0);
+    attach(c, skill, b, a, 1);
+    var draft = json(c.write("POST", "/skills/" + skill + "/graph/drafts", Map.of()));
+    String id = draft.get("id").asText();
+    var document =
+        (com.fasterxml.jackson.databind.node.ObjectNode)
+            JSON.readTree(draft.get("document").asText());
+    ((com.fasterxml.jackson.databind.node.ObjectNode) document.get("nodes").get(0))
+        .put("title", "Draft rename");
+    assertThat(
+            c.write("PATCH", "/graph/drafts/" + id, Map.of("revision", 0, "document", document))
+                .statusCode())
+        .isEqualTo(200);
+    assertThat(
+            c.write("PATCH", "/graph/drafts/" + id, Map.of("revision", 0, "document", document))
+                .statusCode())
+        .isEqualTo(409);
+    assertThat(json(c.get("/knowledge/nodes/" + a)).get("title").asText()).isEqualTo("Original");
+    assertThat(
+            json(c.write("POST", "/graph/drafts/" + id + "/validate", Map.of()))
+                .get("valid")
+                .asBoolean())
+        .isTrue();
+    var request =
+        c.request(
+            "POST",
+            "/graph/drafts/" + id + "/publish",
+            Map.of("revision", 1, "confirmed", true),
+            json(c.get("/auth/csrf")).get("token").asText());
+    var publish =
+        java.net.http.HttpRequest.newBuilder(request.uri())
+            .headers(
+                "Content-Type",
+                "application/json",
+                "X-CSRF-TOKEN",
+                json(c.get("/auth/csrf")).get("token").asText(),
+                "Idempotency-Key",
+                "publish-test-1")
+            .POST(
+                java.net.http.HttpRequest.BodyPublishers.ofString(
+                    "{\"revision\":1,\"confirmed\":true}"))
+            .build();
+    var result = c.http.send(publish, HttpResponse.BodyHandlers.ofString());
+    assertThat(result.statusCode()).isEqualTo(200);
+    assertThat(json(c.http.send(publish, HttpResponse.BodyHandlers.ofString())).get("id"))
+        .isEqualTo(json(result).get("id"));
+    assertThat(json(c.get("/skills/" + skill + "/graph/versions")).size()).isEqualTo(1);
+    assertThatThrownBy(() -> jdbc.update("UPDATE knowledge_graph_versions SET version_number=2"))
+        .isInstanceOf(DataIntegrityViolationException.class);
+    var stale = json(c.write("POST", "/skills/" + skill + "/graph/drafts", Map.of()));
+    assertThat(c.write("PATCH", "/knowledge/nodes/" + a, node("Live edit")).statusCode())
+        .isEqualTo(409);
+    c.write("PATCH", "/skills/" + skill, skill("Changed metadata", "ACTIVE"));
+    assertThat(
+            json(c.write(
+                    "POST", "/graph/drafts/" + stale.get("id").asText() + "/validate", Map.of()))
+                .get("sourceChanged")
+                .asBoolean())
+        .isTrue();
+    var fresh = json(c.write("POST", "/skills/" + skill + "/graph/drafts", Map.of()));
+    String freshId = fresh.get("id").asText();
+    var changed =
+        (com.fasterxml.jackson.databind.node.ObjectNode)
+            JSON.readTree(fresh.get("document").asText());
+    ((com.fasterxml.jackson.databind.node.ObjectNode) changed.get("nodes").get(0))
+        .put("title", "Must roll back");
+    c.write("PATCH", "/graph/drafts/" + freshId, Map.of("revision", 0, "document", changed));
+    jdbc.execute(
+        "CREATE FUNCTION fail_publish_test() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected failure' USING ERRCODE='23514'; END; $$");
+    jdbc.execute(
+        "CREATE TRIGGER fail_publish_test BEFORE INSERT ON knowledge_graph_versions FOR EACH ROW EXECUTE FUNCTION fail_publish_test()");
+    try {
+      var fail =
+          java.net.http.HttpRequest.newBuilder(
+                  URI.create(
+                      "http://127.0.0.1:" + port + "/api/v1/graph/drafts/" + freshId + "/publish"))
+              .headers(
+                  "Content-Type",
+                  "application/json",
+                  "X-CSRF-TOKEN",
+                  json(c.get("/auth/csrf")).get("token").asText(),
+                  "Idempotency-Key",
+                  "rollback-test")
+              .POST(
+                  java.net.http.HttpRequest.BodyPublishers.ofString(
+                      "{\"revision\":1,\"confirmed\":true}"))
+              .build();
+      assertThat(c.http.send(fail, HttpResponse.BodyHandlers.ofString()).statusCode())
+          .isEqualTo(409);
+      assertThat(json(c.get("/knowledge/nodes/" + a)).get("title").asText())
+          .isEqualTo("Draft rename");
+      assertThat(json(c.get("/graph/drafts/" + freshId)).get("status").asText())
+          .isEqualTo("EDITING");
+      assertThat(json(c.get("/skills/" + skill + "/graph/versions")).size()).isEqualTo(1);
+    } finally {
+      jdbc.execute("DROP TRIGGER fail_publish_test ON knowledge_graph_versions");
+      jdbc.execute("DROP FUNCTION fail_publish_test()");
+    }
+    String otherSkill = createSkill(c, "Shared published skill");
+    attach(c, otherSkill, a, null, 0);
+    var other = json(c.write("POST", "/skills/" + otherSkill + "/graph/drafts", Map.of()));
+    var otherRequest =
+        java.net.http.HttpRequest.newBuilder(
+                URI.create(
+                    "http://127.0.0.1:"
+                        + port
+                        + "/api/v1/graph/drafts/"
+                        + other.get("id").asText()
+                        + "/publish"))
+            .headers(
+                "Content-Type",
+                "application/json",
+                "X-CSRF-TOKEN",
+                json(c.get("/auth/csrf")).get("token").asText(),
+                "Idempotency-Key",
+                "shared-unchanged")
+            .POST(
+                java.net.http.HttpRequest.BodyPublishers.ofString(
+                    "{\"revision\":0,\"confirmed\":true}"))
+            .build();
+    assertThat(c.http.send(otherRequest, HttpResponse.BodyHandlers.ofString()).statusCode())
+        .isEqualTo(200);
+    var protectedDraft = json(c.write("POST", "/skills/" + skill + "/graph/drafts", Map.of()));
+    var forbidden =
+        (com.fasterxml.jackson.databind.node.ObjectNode)
+            JSON.readTree(protectedDraft.get("document").asText());
+    ((com.fasterxml.jackson.databind.node.ObjectNode) forbidden.get("nodes").get(0))
+        .put("title", "Forbidden shared change");
+    c.write(
+        "PATCH",
+        "/graph/drafts/" + protectedDraft.get("id").asText(),
+        Map.of("revision", 0, "document", forbidden));
+    assertThat(
+            json(c.write(
+                    "POST",
+                    "/graph/drafts/" + protectedDraft.get("id").asText() + "/validate",
+                    Map.of()))
+                .get("valid")
+                .asBoolean())
+        .isFalse();
+  }
+
+  @Test
   @Order(90)
   void rateLimitsRepeatedLoginAttemptsWithoutLeakingCredentials() throws Exception {
     Client c = client();

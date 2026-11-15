@@ -3,6 +3,7 @@ import SystemPage from '../pages/SystemPage.vue'
 import LoginPage from '../pages/LoginPage.vue'
 import SkillsPage from '../pages/SkillsPage.vue'
 import SkillPage from '../pages/SkillPage.vue'
+import DraftPage from '../pages/DraftPage.vue'
 import { useAuthStore } from '../stores/auth'
 
 export const router = createRouter({
@@ -13,6 +14,11 @@ export const router = createRouter({
     { path: '/login', component: LoginPage },
     { path: '/skills', component: SkillsPage, meta: { private: true } },
     { path: '/skills/:id', component: SkillPage, meta: { private: true } },
+    {
+      path: '/skills/:id/drafts',
+      component: DraftPage,
+      meta: { private: true },
+    },
     { path: '/:pathMatch(.*)*', redirect: '/skills' },
   ],
 })

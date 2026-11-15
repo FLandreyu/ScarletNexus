@@ -104,6 +104,10 @@ public class CatalogService {
 
   public Node saveNode(UUID id, CatalogController.NodeWrite value) {
     lock();
+    if (id != null) {
+      node(id);
+      requireDraft(!db.protectedNode(owner(), id));
+    }
     Node before = id == null ? null : node(id);
     UUID key = id == null ? UUID.randomUUID() : id;
     if (before == null)
@@ -137,12 +141,15 @@ public class CatalogService {
         nodes,
         db.relations(owner()).stream()
             .filter(r -> ids.contains(r.sourceNodeId()) && ids.contains(r.targetNodeId()))
-            .toList());
+            .toList(),
+        db.versioned(owner(), skillId));
   }
 
   public Position place(
       UUID skillId, UUID nodeId, CatalogController.PositionWrite value, boolean create) {
     lock();
+    skill(skillId);
+    requireDraft(!db.versioned(owner(), skillId));
     skill(skillId);
     Node node = node(nodeId);
     require("ACTIVE".equals(node.status()), "NODE_ARCHIVED", "请先恢复已归档节点");
@@ -173,6 +180,8 @@ public class CatalogService {
   public void detach(UUID skillId, UUID nodeId) {
     lock();
     skill(skillId);
+    requireDraft(!db.versioned(owner(), skillId));
+    skill(skillId);
     node(nodeId);
     var positions = db.positions(owner(), skillId);
     Position before =
@@ -194,6 +203,17 @@ public class CatalogService {
 
   public Relation saveRelation(UUID id, CatalogController.RelationWrite value) {
     lock();
+    node(value.sourceNodeId());
+    node(value.targetNodeId());
+    requireDraft(
+        !db.protectedNode(owner(), value.sourceNodeId())
+            && !db.protectedNode(owner(), value.targetNodeId()));
+    if (id != null) {
+      var old = relation(id);
+      requireDraft(
+          !db.protectedNode(owner(), old.sourceNodeId())
+              && !db.protectedNode(owner(), old.targetNodeId()));
+    }
     var source = node(value.sourceNodeId());
     var target = node(value.targetNodeId());
     require(
@@ -230,7 +250,16 @@ public class CatalogService {
   public void deleteRelation(UUID id) {
     lock();
     Relation before = relation(id);
+    requireDraft(
+        !db.protectedNode(owner(), before.sourceNodeId())
+            && !db.protectedNode(owner(), before.targetNodeId()));
     db.deleteRelation(owner(), id);
     audit.record("KNOWLEDGE_RELATION", id, "REMOVED", before, null);
+  }
+
+  private void requireDraft(boolean valid) {
+    if (!valid)
+      throw new DomainFailure(
+          org.springframework.http.HttpStatus.CONFLICT, "USE_GRAPH_DRAFT", "已发布图谱及其共享节点请通过草案审核修改");
   }
 }

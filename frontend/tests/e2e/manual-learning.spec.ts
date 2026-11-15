@@ -112,6 +112,46 @@ test('authenticates, persists a manual knowledge tree, rejects cycles and logs o
     path: testInfo.outputPath('manual-knowledge.png'),
     fullPage: true,
   })
+  await page
+    .getByRole('link', { name: '草案与版本历史 →', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: '从当前图谱创建草案', exact: true })
+    .click()
+  await page.getByLabel('新节点名称', { exact: true }).fill('草案实践节点')
+  await page.getByRole('button', { name: '添加草案节点', exact: true }).click()
+  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await page.getByRole('button', { name: '保存草案', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('草案已保存')
+  await page
+    .getByRole('button', { name: '校验与发布预览', exact: true })
+    .click()
+  await expect(page.getByLabel('发布预览')).toContainText(
+    '新增节点：草案实践节点',
+  )
+  await page.getByRole('checkbox').check()
+  await page.getByRole('button', { name: '确认发布版本', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('版本已发布')
+  await page.getByRole('button', { name: '查看版本 1', exact: true }).click()
+  await expect(page.getByLabel('历史版本快照')).toContainText('草案实践节点')
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBeTruthy()
+  await page.screenshot({
+    path: testInfo.outputPath('draft-published.png'),
+    fullPage: true,
+  })
+  await page.getByRole('link', { name: '← 返回知识树', exact: true }).click()
+  await expect(page.locator('.node-row')).toHaveCount(4)
+  await expect(
+    page.getByText('此图谱已发布，请通过草案审核修改。', { exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: '添加节点', exact: true }),
+  ).toBeDisabled()
   await page.getByRole('button', { name: '退出登录', exact: true }).click()
   await expect(page).toHaveURL(/\/login$/)
   await page.reload()

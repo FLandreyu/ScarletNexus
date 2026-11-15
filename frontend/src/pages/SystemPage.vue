@@ -72,8 +72,8 @@ onMounted(() => system.refresh())
     <div class="next-number" aria-hidden="true">01</div>
     <div>
       <p class="eyebrow">NEXT MILESTONE</p>
-      <h2 id="next-title">AI 知识草案与版本发布</h2>
-      <p>下一阶段增加可编辑草案、变更预览和用户确认发布。</p>
+      <h2 id="next-title">AI 知识草案生成</h2>
+      <p>手动草案和版本发布已经可用，AI 生成仍在后续开发范围内。</p>
       <p class="scope-note">
         当前不调用外部 AI。知识节点与依赖关系由你手动管理。
       </p>

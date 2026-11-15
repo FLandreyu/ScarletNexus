@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:scarlet-nexus:graph-draft:v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "nodes",
+    "relations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "nodes": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "nodeType",
+          "description",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160,
+            "pattern": "\\S"
+          },
+          "nodeType": {
+            "enum": [
+              "CATEGORY",
+              "CONCEPT",
+              "PRACTICE"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 8000
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ]
+          },
+          "parentNodeId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "displayOrder": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647,
+            "default": 0
+          }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "maxItems": 1500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "sourceNodeId",
+          "targetNodeId",
+          "relationType"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceNodeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetNodeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relationType": {
+            "enum": [
+              "PREREQUISITE_OF",
+              "RELATED_TO"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -12,8 +12,12 @@ export async function api<T>(
   path: string,
   method = 'GET',
   body?: unknown,
+  extraHeaders: Record<string, string> = {},
 ): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' }
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...extraHeaders,
+  }
   try {
     const submittedBody = body === undefined ? undefined : JSON.stringify(body)
     if (method !== 'GET') {
