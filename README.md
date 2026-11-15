@@ -2,9 +2,9 @@
 
 AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus_Codex_Master_Plan.md)，阶段实况见 [PROGRESS](docs/PROGRESS.md)。
 
-**当前已实现P3学习闭环**：目标、路线阶段与版本、选择路线、自报进度、任务、服务器计时、笔记与链接资料；首页继续学习。保留P1技能/知识树和P2草案编辑、来源映射、联合发布、历史、预算与显式修复。正式数据写入PostgreSQL并审计，不预置学习进度。验收实况见[进度](docs/PROGRESS.md)及[P3设计](docs/P3_DESIGN.md)。
+**当前P0–P4已验收**：技能/知识树、AI草案与版本、目标/路线/任务/学习记录、练习/证据、私有图片、数学及SSE导师。正式数据写入PostgreSQL并审计，不预置学习进度。验收实况与局限见[进度](docs/PROGRESS.md)。P5尚未开始。
 
-P4核心功能已加入：工作台“练习与能力证据”、独立作答/准备提示/人工复核、确认后的证据和保守能力历史、私有PNG/JPEG附件、KaTeX数学，以及默认关闭的SSE导师。本地协议不代表模型质量，整阶段验收状态见[P4_ACCEPTANCE](docs/P4_ACCEPTANCE.md)；P5未开始。
+P4已加入工作台“练习与能力证据”、独立作答/准备提示/人工复核、确认后的证据和保守能力历史、私有PNG/JPEG附件、KaTeX数学，以及默认关闭的SSE导师。已按授权完成一次真实DeepSeek导师验收，单样例不代表全面教学质量，详见[P4_ACCEPTANCE](docs/P4_ACCEPTANCE.md)。
 
 AI生成默认关闭，无Key也可完成P3学习闭环。P2已按授权完成一次DeepSeek真实Blender候选→编辑→发布验收，详见[P2验收](docs/P2_ACCEPTANCE.md)；单一样例不代表全面教学质量。模型配置与预算见[AI_GENERATION.md](docs/AI_GENERATION.md)和[Provider协议](docs/AI_PROVIDER.md)。
 

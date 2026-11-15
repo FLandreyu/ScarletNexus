@@ -1,6 +1,6 @@
 # P4导师协议、预算与恢复
 
-服务端保留Java适配器，`AIProvider.chatStream`真实请求Chat Completions SSE，不将完整文本切片伪装流。默认`app.ai.tutor-enabled=false`，同时需要`app.ai.enabled`、token配额及P2货币策略才能启用；Compose不转发真实模型配置。本轮没有使用本地Key或调用外部模型。
+服务端保留Java适配器，`AIProvider.chatStream`真实请求Chat Completions SSE，不将完整文本切片伪装流。默认`app.ai.tutor-enabled=false`，同时需要`app.ai.enabled`、token配额及P2货币策略才能启用；Compose不转发真实模型配置。已按单次新授权完成一次真实DeepSeek验收，证据与质量局限见P4_ACCEPTANCE.md；默认部署不会因此自动启用模型。
 
 协议依据：[DeepSeek Chat](https://api-docs.deepseek.com/api/create-chat-completion/)。`stream=true`、`stream_options.include_usage=true`，输出上限8192；DeepSeek显式JSON协议配置在聊天中仅用于选择`max_tokens`与关闭思考，不要求聊天输出JSON。默认OpenAI格式使用`max_completion_tokens`。HTTPS、无重定向、无重试，body整体deadline与2MB上限、单SSE行128KiB、总文本50000字符；须收到stop和[DONE]才成功。UTF-8按完整SSE行解码，不因网络分片破坏字符。
 
