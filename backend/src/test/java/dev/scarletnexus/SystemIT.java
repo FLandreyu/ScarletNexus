@@ -60,6 +60,151 @@ class SystemIT {
   @Autowired TestRestTemplate http;
   @Autowired JdbcTemplate jdbc;
   @Autowired Flyway flyway;
+  @Autowired dev.scarletnexus.ai.GenerationJobs jobs;
+  @Autowired com.fasterxml.jackson.databind.ObjectMapper json;
+
+  @Test
+  @Order(5)
+  void persistsGenerationAndSettlesBudgetWithoutPublishing() throws Exception {
+    UUID owner = UUID.randomUUID(), skill = UUID.randomUUID();
+    jdbc.update(
+        "INSERT INTO users(id,email,password_hash) VALUES(?,?,?)",
+        owner,
+        owner + "@test.invalid",
+        "test-only-password-hash-placeholder");
+    jdbc.update("INSERT INTO skills(id,owner_id,name) VALUES(?,?,?)", skill, owner, "AI test");
+    var principal =
+        new dev.scarletnexus.identity.SessionUser(
+            new dev.scarletnexus.identity.UserAccount(
+                owner, owner + "@test.invalid", "test-only", "ACTIVE"));
+    org.springframework.security.core.context.SecurityContextHolder.getContext()
+        .setAuthentication(
+            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                principal, null, principal.getAuthorities()));
+    try {
+      var calls = new java.util.concurrent.atomic.AtomicInteger();
+      dev.scarletnexus.ai.AIProvider fake =
+          (instructions, input, schema) -> {
+            calls.incrementAndGet();
+            assertThat(
+                    org.springframework.transaction.support.TransactionSynchronizationManager
+                        .isActualTransactionActive())
+                .isFalse();
+            return new dev.scarletnexus.ai.AIProvider.Result(
+                json.createObjectNode()
+                    .put("schemaVersion", 1)
+                    .set("nodes", json.createArrayNode()),
+                new dev.scarletnexus.ai.AIProvider.Usage(10L, 5L, "PROVIDER"));
+          };
+      // Invalid graph is retained as a failed task, never materialized as a candidate.
+      var failed = jobs.generate(skill, "invalid", "topic", 100, 200, fake);
+      assertThat(failed.state()).isEqualTo("FAILED");
+      assertThat(failed.chargedTokens()).isEqualTo(15);
+      assertThat(jobs.generate(skill, "invalid", "topic", 100, 200, fake).id())
+          .isEqualTo(failed.id());
+      assertThat(calls.get()).isEqualTo(1);
+      var valid = json.readTree("{\"schemaVersion\":1,\"nodes\":[],\"relations\":[]}");
+      var success =
+          jobs.generate(
+              skill,
+              "valid",
+              "topic",
+              100,
+              200,
+              (a, b, c) ->
+                  new dev.scarletnexus.ai.AIProvider.Result(
+                      valid, new dev.scarletnexus.ai.AIProvider.Usage(20L, 10L, "PROVIDER")));
+      assertThat(success.state()).isEqualTo("SUCCEEDED");
+      assertThat(
+              jdbc.queryForObject("SELECT count(*) FROM knowledge_graph_versions", Integer.class))
+          .isZero();
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT revision FROM graph_drafts WHERE id=?", Integer.class, success.draftId()))
+          .isEqualTo(1);
+      var disabled =
+          jobs.generate(
+              skill,
+              "disabled",
+              "topic",
+              100,
+              200,
+              (a, b, c) -> {
+                throw new dev.scarletnexus.ai.AIProvider.Failure("AI_NOT_CONFIGURED", false);
+              });
+      assertThat(disabled.chargedTokens()).isZero();
+      var uncertain =
+          jobs.generate(
+              skill,
+              "timeout",
+              "topic",
+              100,
+              200,
+              (a, b, c) -> {
+                throw new dev.scarletnexus.ai.AIProvider.Failure("AI_TIMEOUT", true);
+              });
+      assertThat(uncertain.chargedTokens()).isEqualTo(100);
+      assertThatThrownBy(() -> jobs.generate(skill, "over", "topic", 100, 200, fake))
+          .isInstanceOf(dev.scarletnexus.common.DomainFailure.class);
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT reserved_tokens FROM ai_daily_budgets WHERE owner_id=?",
+                  Long.class,
+                  owner))
+          .isZero();
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT consumed_tokens FROM ai_daily_budgets WHERE owner_id=?",
+                  Long.class,
+                  owner))
+          .isEqualTo(145);
+      try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+        var barrier = new java.util.concurrent.CyclicBarrier(2);
+        var futures = new java.util.ArrayList<java.util.concurrent.Future<Boolean>>();
+        for (int i = 0; i < 2; i++) {
+          String raceKey = "race-" + i;
+          futures.add(
+              pool.submit(
+                  () -> {
+                    org.springframework.security.core.context.SecurityContextHolder.getContext()
+                        .setAuthentication(
+                            new org.springframework.security.authentication
+                                .UsernamePasswordAuthenticationToken(
+                                principal, null, principal.getAuthorities()));
+                    try {
+                      barrier.await();
+                      jobs.generate(
+                          skill,
+                          raceKey,
+                          "topic",
+                          100,
+                          245,
+                          (a, b, c) -> {
+                            throw new dev.scarletnexus.ai.AIProvider.Failure("AI_TIMEOUT", true);
+                          });
+                      return true;
+                    } catch (dev.scarletnexus.common.DomainFailure e) {
+                      return false;
+                    } finally {
+                      org.springframework.security.core.context.SecurityContextHolder
+                          .clearContext();
+                    }
+                  }));
+        }
+        int accepted = 0;
+        for (var f : futures) if (f.get(10, java.util.concurrent.TimeUnit.SECONDS)) accepted++;
+        assertThat(accepted).isEqualTo(1);
+        assertThat(
+                jdbc.queryForObject(
+                    "SELECT consumed_tokens FROM ai_daily_budgets WHERE owner_id=?",
+                    Long.class,
+                    owner))
+            .isEqualTo(245);
+      }
+    } finally {
+      org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+  }
 
   @Test
   @Order(1)
@@ -70,7 +215,7 @@ class SystemIT {
     var response = http.getForEntity("/api/v1/system/status", Map.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody())
-        .containsEntry("schemaVersion", "4")
+        .containsEntry("schemaVersion", "5")
         .containsEntry("database", "UP");
     assertThat(response.getBody()).containsEntry("aiConfigured", false);
     assertThat(response.getHeaders().getFirst("X-Request-ID")).isNotBlank();

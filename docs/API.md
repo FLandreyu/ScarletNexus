@@ -6,7 +6,7 @@
 
 | 方法 / 路径 | 访问 | 响应 |
 | --- | --- | --- |
-| GET /api/v1/system/status | public | 200 `{service:"scarlet-nexus",status:"UP",database:"UP",schemaVersion:"4",phase:"P1",aiConfigured:false}`；phase为最近完整验收阶段，P2部分实现不冒充整阶段完成；通过MyBatis实查Flyway，DB不可用503 |
+| GET /api/v1/system/status | public | 200 `{service:"scarlet-nexus",status:"UP",database:"UP",schemaVersion:"5",phase:"P1",aiConfigured:false}`；phase为最近完整验收阶段，P2部分实现不冒充整阶段完成；通过MyBatis实查Flyway，DB不可用503 |
 | GET /actuator/health | public | 200 `{status:"UP",groups:["liveness","readiness"]}`，故障503；不公开组件细节 |
 | GET /actuator/health/liveness | public | 进程存活，不依赖 DB |
 | GET /actuator/health/readiness | public | 应用就绪且 DB 可查询 |
