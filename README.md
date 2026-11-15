@@ -4,6 +4,8 @@ AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus
 
 **当前 P1 + P2手动草案基础**：已实现私有登录、技能/知识树管理，以及独立草案、校验、确认发布和不可变版本历史。P2整体仍进行中：AI生成、专用合并拆分及联合发布尚未实现；路线和学习记录属于后续阶段。所有业务数据真实写入PostgreSQL并审计，不预置学习进度。
 
+后端已加入默认禁用的结构化AI Provider传输适配器，配置和本地协议测试范围见[AI_PROVIDER.md](docs/AI_PROVIDER.md)。生成任务/预算及页面入口尚未接入，当前不提供端到端AI生成。
+
 ## 启动方式 A：Docker 本地持久环境
 
 前置：Docker Engine/Desktop 已运行，Docker Compose v2+，Git；首次构建需要网络。无需宿主机 Java / Node / PostgreSQL。仅监听本机127.0.0.1，不是生产配置。
