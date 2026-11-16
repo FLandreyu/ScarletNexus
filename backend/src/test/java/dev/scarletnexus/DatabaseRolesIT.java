@@ -11,6 +11,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class DatabaseRolesIT {
   @Test
   void migrationOwnsSchemaWhileRuntimePerformsRealWorkWithoutDdl() throws Exception {
+    exerciseRoles(false);
+  }
+
+  @Test
+  void independentJobMigratesBeforeRuntimeWithoutMigrationCredentials() throws Exception {
+    exerciseRoles(true);
+  }
+
+  private void exerciseRoles(boolean independentJob) throws Exception {
     String runtimePassword = UUID.randomUUID().toString(),
         migrationPassword = UUID.randomUUID().toString();
     var settings = new HashMap<String, String>();
@@ -18,6 +27,11 @@ class DatabaseRolesIT {
     settings.put("spring.datasource.password", runtimePassword);
     settings.put("spring.flyway.user", "scarlet_migrator");
     settings.put("spring.flyway.password", migrationPassword);
+    if (independentJob) {
+      settings.put("spring.flyway.enabled", "false");
+      settings.put("spring.flyway.user", "scarlet_runtime");
+      settings.put("spring.flyway.password", runtimePassword);
+    }
     try (var runtime =
         new LearningTestRuntime(
             0,
@@ -33,7 +47,32 @@ class DatabaseRolesIT {
                 statement.execute(
                     "ALTER ROLE scarlet_migrator PASSWORD '" + migrationPassword + "'");
               }
+              if (independentJob) {
+                String cleanUrl = url.split("\\?")[0];
+                assertThat(runMigrationJob(cleanUrl, "wrong-password")).isEqualTo(1);
+                try (var connection = DriverManager.getConnection(url, user, password);
+                    var statement = connection.createStatement();
+                    var result =
+                        statement.executeQuery(
+                            "SELECT count(*) FROM pg_tables WHERE schemaname='public'")) {
+                  result.next();
+                  assertThat(result.getInt(1)).isZero();
+                }
+                assertThat(runMigrationJob(cleanUrl, migrationPassword)).isZero();
+                assertThat(runMigrationJob(cleanUrl, migrationPassword)).isZero();
+                try (var connection = DriverManager.getConnection(url, user, password);
+                    var statement = connection.createStatement();
+                    var result = statement.executeQuery("SELECT count(*) FROM users")) {
+                  result.next();
+                  assertThat(result.getInt(1)).isZero();
+                }
+              }
             })) {
+      if (independentJob) {
+        assertThat(runtime.app.getBeansOfType(org.flywaydb.core.Flyway.class)).isEmpty();
+        assertThat(runtime.app.getEnvironment().getProperty("spring.flyway.password"))
+            .isEqualTo(runtimePassword);
+      }
       var db = runtime.app.getBean(JdbcTemplate.class);
       assertThat(db.queryForObject("SELECT current_user", String.class))
           .isEqualTo("scarlet_runtime");
@@ -89,6 +128,31 @@ class DatabaseRolesIT {
           .isEqualTo(1);
       assertThat(h.ok(h.c.get("/data/snapshot")).path("tables").path("learning_tasks")).hasSize(1);
       assertThat(h.ok(h.c.get("/system/status")).path("schemaVersion").asText()).isEqualTo("12");
+    }
+  }
+
+  private int runMigrationJob(String url, String password) throws Exception {
+    var builder =
+        new ProcessBuilder(
+            Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+            "-Dloader.main=dev.scarletnexus.database.DatabaseMigration",
+            "-cp",
+            Path.of("target/scarlet-nexus-0.1.0-SNAPSHOT.jar").toAbsolutePath().toString(),
+            "org.springframework.boot.loader.launch.PropertiesLauncher");
+    builder.environment().put("DATABASE_URL", url);
+    builder.environment().put("MIGRATION_USERNAME", "scarlet_migrator");
+    builder.environment().put("MIGRATION_PASSWORD", password);
+    builder.redirectErrorStream(true);
+    var process = builder.start();
+    try {
+      assertThat(process.waitFor(45, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+      String output =
+          new String(
+              process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+      assertThat(output).doesNotContain(password);
+      return process.exitValue();
+    } finally {
+      process.destroyForcibly();
     }
   }
 }

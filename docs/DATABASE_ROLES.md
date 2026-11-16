@@ -15,11 +15,22 @@ scarlet_migrator/scarlet_runtime为部署保留角色名。共享集群必须先
 
 应用管理员引导、登录持久会话、用户行锁、技能、笔记、时段、练习与证据需要正常业务DML，因此运行角色不是只读角色。不能撤销所有UPDATE后用跳过测试宣称可用。
 
-## 生产边界
+## 独立迁移作业（新库）
+
+`docker-compose.migrate.yml`提供一次性migrate服务，使用同一应用JAR的DatabaseMigration入口，不启动Spring/Web/管理员引导。只接受明确的scarlet_migrator身份与MIGRATION_PASSWORD，URL不接受查询参数或内嵌凭据；此版本不提供通过URL设置生产SSL选项的能力。迁移/validate失败退出1，禁clean与baseline；默认本地双连接方式保持兼容。
+
+1. 私有.env先配置数据库、RUNTIME_PASSWORD与MIGRATOR_PASSWORD，两个角色密码不同；不要提交。合并base与migrate文件，先只`up -d --wait db`。
+2. 仅在新空库，按前述脚本provision角色并交互设置密码；不对现有卷运行初始化或权限切换。
+3. `docker compose -f docker-compose.yml -f docker-compose.migrate.yml up --build -d --wait`。backend依赖migrate成功退出；失败时必须处理迁移原因，不能关闭依赖检查强行启动。TLS可继续额外合并docker-compose.tls.yml。
+4. 检查migrate退出0、后端Healthy及/system版本12。新迁移发布前再次执行完整up让作业运行，不能只restart旧后端冒充已迁移。
+
+不要同时合并旧docker-compose.roles.yml。新overlay后端只注入运行密码，移除迁移用户名/密码并设SPRING_FLYWAY_ENABLED=false；迁移容器只读根、无附件卷/公开端口、有资源上限，不常驻。Compose需要支持!reset的版本（本地5.7.1实测）。Docker管理员与私有.env仍可读取迁移配置，此方案只消除长期Web进程的迁移凭据，不代替secret manager或宿主权限控制。实际门禁见P6_MIGRATION_JOB_ACCEPTANCE。
+
+## 生产边界（续）
 
 连接URL不得携带user/password参数：驱动可能让URL凭据覆盖独立用户名。验收初轮正是Embedded PG的URL内置user=postgres导致实际连成管理员，去除后通过current_user与对象所有者断言验证；不能仅凭配置文本宣称权限隔离生效。
 
-应用内双连接用于兼容开发及验收；若后端进程同时持有迁移凭据，不能宣称进程整体不具备DDL。正式环境优先用独立迁移作业，完成Flyway后长期运行进程不注入迁移密码并设SPRING_FLYWAY_ENABLED=false；数据库健康查询仍可读取Flyway历史。独立作业编排、既有库切换、备份专用角色、TLS/Secure Cookie、资源与全栈风险门禁仍需完成。初始化/迁移角色不向浏览器暴露，禁止调试日志输出连接属性。
+应用内双连接用于兼容开发及验收；若后端进程同时持有迁移凭据，不能宣称进程整体不具备DDL。正式环境优先用独立迁移作业，完成Flyway后长期运行进程不注入迁移密码并设SPRING_FLYWAY_ENABLED=false；数据库健康查询仍可读取Flyway历史。独立作业现已提供本地新库编排与验收，既有库切换、备份专用角色和整体生产门禁仍需完成；TLS/资源的已有本机证据不代表生产部署。初始化/迁移角色不向浏览器暴露，禁止调试日志输出连接属性。
 
 验收采用全新临时真实PostgreSQL，验证迁移角色拥有表、运行角色DDL/改历史/提权失败，同时真正登录并创建技能、学习任务/笔记/时段、提交练习、确认证据与导出快照。具体结果维护于PROGRESS，不能把本文步骤当作生产部署实证。
 

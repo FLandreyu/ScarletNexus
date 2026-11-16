@@ -16,11 +16,27 @@ if [ -n "${MAVEN_REPOSITORY:-}" ]; then
   test -d "$MAVEN_REPOSITORY"
   set -- -v "$MAVEN_REPOSITORY:/root/.m2/repository"
 fi
+mkdir -p "$workspace/backend/target"
 docker run --rm \
   "$@" \
-  -v "$workspace/backend:/workspace" \
+  -v "$workspace/backend:/source:ro" \
+  -v "$workspace/backend/target:/reports" \
   -v "$workspace/scripts:/scripts:ro" \
   -v "$socket_path:/var/run/docker.sock" \
   -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$socket_path" \
   -e TESTCONTAINERS_HOST_OVERRIDE="$gateway" \
-  -w /workspace "$tool_image" mvn -B verify -Ptestcontainers
+  -w /workspace "$tool_image" sh -c '
+    set -eu
+    tar -C /source --exclude=target -cf - . | tar -C /workspace -xf -
+    set +e
+    mvn -B verify -Ptestcontainers
+    result=$?
+    set -e
+    for report in target/surefire-reports target/failsafe-reports; do
+      if [ -d "$report" ]; then cp -R "$report" /reports/; fi
+    done
+    if [ -f target/scarlet-nexus-0.1.0-SNAPSHOT.jar ]; then
+      cp target/scarlet-nexus-0.1.0-SNAPSHOT.jar /reports/
+    fi
+    exit "$result"
+  '

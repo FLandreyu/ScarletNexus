@@ -105,6 +105,22 @@ def scan(project, output):
     for service in ('backend', 'web'):
         info = docker_tools.inspect(docker_tools.source(project, service))
         targets['app-' + service] = (info['Image'], 'runtime', True)
+    job_ids = run(['docker', 'ps', '-a', '-q', '--filter', 'label=com.docker.compose.project=' + project,
+                   '--filter', 'label=com.docker.compose.service=migrate']).stdout.decode().split()
+    migration_image = None
+    if job_ids:
+        if len(job_ids) != 1:
+            raise ValueError('Migration job identity is ambiguous')
+        job = docker_tools.inspect(job_ids[0])
+        if job['Image'] != targets['app-backend'][0] or job['State']['Running'] or job['State']['ExitCode'] != 0:
+            raise ValueError('Migration job must complete using the same scanned backend artifact')
+        app = docker_tools.inspect(docker_tools.source(project, 'backend'))
+        environment = dict(item.split('=', 1) for item in app['Config']['Env'])
+        if (environment.get('SPRING_FLYWAY_ENABLED') != 'false'
+                or environment.get('DATABASE_USERNAME') != 'scarlet_runtime'
+                or {'MIGRATION_USERNAME', 'MIGRATION_PASSWORD', 'MIGRATOR_PASSWORD'} & environment.keys()):
+            raise ValueError('Runtime must not retain migration credentials or automatic migration')
+        migration_image = job['Image']
     output.mkdir(parents=True, exist_ok=False)
     (output / 'empty-ignore').write_text('', encoding='utf8')
     (output / 'empty-config.yaml').write_text('{}\n', encoding='utf8')
@@ -113,6 +129,7 @@ def scan(project, output):
                 'scannerVersion': spec['version'], 'scannerBinarySha256': spec['binarySha256'],
                 'imageLockSha256': sha(ROOT / 'security/images.lock.json'),
                 'toolRecipeSha256': security_images.recipe_hash(),
+                'migrationImage': migration_image,
                 'gatePolicy': 'effective-artifacts-v1; all upstream findings retained', 'targets': {}}
     (output / 'summary.json').write_text(json.dumps(manifest, indent=2), encoding='utf8')
     try:

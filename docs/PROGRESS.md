@@ -4,7 +4,20 @@
 
 ## 当前阶段
 
-P6第八批：经用户确认完成Boot4框架迁移与本地回归；**当前实际产物仍有Ryuk2项高等级发现，安全门禁未通过，P6尚未完成**。Java25保留，无生产部署。
+P6第九批：独立迁移作业已实现并验收；Ryuk新SDK兼容性调查未形成可合入修复，**仍保留2高，安全门禁未通过，P6尚未完成**。Java25/Boot4保持，无生产部署。
+
+- 先定义P6_RYUK_ACCEPTANCE与P6_MIGRATION_JOB_ACCEPTANCE。官方Ryuk稳定0.14.0/main仍分别依赖旧Docker模块28.3.3/28.5.2，旧模块公告没有列出兼容修复。试验官方拆分client0.6.3/api1.57.0，接口/返回类型及旧测试build/jsonmessage路径需要适配，依赖解析发生root/api模块包歧义；未编译/测试通过，不提交候选或替换现有清理工具，不生成ignore/VEX。证据.runtime-ryuk-sdk-compile.log与官方源码核对，2026-11-23继续跟踪，详见P6_RYUK_ACCEPTANCE。
+- 转而完成已规划的独立迁移入口DatabaseMigration：同一Boot JAR直接Flyway migrate/validate，不启动Spring/Web/管理员或AI；显式scarlet_migrator与私有密码，拒绝URL查询/内嵌凭据，禁clean/baseline，失败退出1且不打印异常内容。无V1–V12改动，新角色只在新隔离库provision；不切换个人/既有库权限。
+- 新docker-compose.migrate.yml仅用于新库：migrate退出0后才启动backend；后端禁Flyway、只持scarlet_runtime身份，环境移除迁移用户名/密码。迁移容器只读根、无附件卷/公开端口、有内存/PID限制，完成后不常驻。初轮分别build产生不同镜像ID，扫描正确拒绝；已改显式共用同一项目镜像、作业pull_policy=never，ADR-036记录选择。
+- 新DatabaseRolesIT独立JVM故事验证实际Boot Launcher入口：错误口令返回1且空库不变，正确迁移/第二次幂等返回0、作业不创建用户；Web无Flyway bean及迁移密码，真实current_user/owner和DDL/提权/历史写入拒绝，登录/技能/学习/练习/证据/快照通过。首轮共享Windows target在IdentityCatalogIT重启时类文件瞬时缺失，31单元/53集成中3错误（.runtime-job-backend.log，9分06秒），原因未证实，未改业务断言或跳过测试。
+- runner改只读源快照、容器内独立编译，导出JAR与报告后，最终`verify -Ptestcontainers`**31单元+53真实PG17.12集成=84项通过**，0失败/错误/跳过、格式/编译/打包通过，3分01秒（.runtime-job-backend-isolated.log）；Ryuk清理正常。没有把定向角色故事代替最终全量，也不声称Windows原生PG已重跑。
+- 新scarlet-nexus-p6-job-acceptance两卷/专用角色Compose：实际作业退出0、表owner为migrator、Web为runtime且无迁移环境变量。错误迁移配置执行完整up返回1、backend不运行，finally恢复正确配置后健康，共用镜像改动后再次验证（.runtime-job-negative.log / .runtime-job-final-checks.log）。默认/旧角色overlay保持兼容，不自动套用新overlay到旧卷。
+- 受测Node前端格式/类型/14单元/构建通过（.runtime-job-frontend.log）；新角色TLS桌面6项37.1秒、手机6项36.3秒全通过（.runtime-job-browser.log），无API mock/JS异常/横向溢出。TLS正反/主机名/明文拒绝/Secure Cookie/CSRF/退出/限流，资源/monitor与附件只读审计通过；延迟SSE首段0.077秒/终段2.578秒及头清洗通过。Linux Python/OpenSSL17项、Python编译、CI YAML/Git diff通过；CI新增overlay配置检查，远端未运行。
+- `.runtime/security-job-final`完整，捕获退出2：门禁仍**Ryuk2高/0严重**，含所有父层合计43次；后端2中、前端1中，npm生产0/全部5 moderate。新增已完成作业与backend镜像ID一致/运行环境无迁移凭据检查，migrationImage=360459d907dc...；首轮不一致失败日志保留，不删除覆盖检查求绿。全部中低/未知保留，详见SUPPLY_CHAIN_REVIEW。
+- 收尾仅对本轮新隔离项目Compose down，四服务移除、ps -a空、Testcontainers无残留，两新验收卷保留；旧卷/用户数据未改。原.env.example/.gitignore修改不入提交，SDK候选/口令/报告/样例只在忽略目录。无推送/生产部署/付费模型/全局服务变更；GraphFlow仍未提供，定向检查，未context/plan/index。
+- **下一步**：设计并实证备份专用身份/权限和新角色库的配对恢复，再完成P6最终门禁；Ryuk2高继续跟踪上游兼容修复或单独评审工具分支。当前不把上一批默认身份备份当作新备份权限验收，不标P6完成。
+
+P6第八批（以下为历史记录）：经用户确认完成Boot4框架迁移与本地回归；当时仍有Ryuk2高，安全门禁未通过。
 
 - 用户在了解迁移理由后以“那继续吧”确认BOOT4_MIGRATION_PLAN，回滚起点9dcc816。Boot4.1.2/MyBatis4.0.1/springdoc3.2.0，专用Web MVC/Session JDBC/Flyway及测试模块；适配上下文/安全配置包名、显式TestRestTemplate自动配置。实际Framework7.0.10、Security7.1.2、Tomcat11.0.27；移除旧Tomcat覆盖，保留JDBC42.7.14，Java25不变。无V1–V12修改或MCP依赖。
 - 采用官方弃用Jackson2过渡模块，原严格AI/Schema/目录解析保持，HTTP明确jackson2与UTC；安全覆盖属性改为jackson-2-bom.version=2.21.8，Jackson3 BOM保持3.1.7。新增真实转换器、UUID/日期/小数/401错误与requestId回归；两套Jackson都强制识别扫描。ADR-035记录选择与后续Jackson3迁移边界。

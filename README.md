@@ -2,6 +2,8 @@
 
 P6已迁移Spring Boot4.1.2，保留Java25及严格JSON业务解析；原两项Spring严重告警在实际产物扫描中消失，仍有Ryuk两项高等级发现，**安全门禁未通过**，不能据此生产部署。迁移及真实回归见[P6_BOOT4_ACCEPTANCE](docs/P6_BOOT4_ACCEPTANCE.md)，完整来源与计数见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)，固定工具构建见[P6_TOOLCHAIN_REMEDIATION](docs/P6_TOOLCHAIN_REMEDIATION.md)。
 
+P6新增[独立数据库迁移作业](docs/P6_MIGRATION_JOB_ACCEPTANCE.md)：新库可显式合并docker-compose.migrate.yml，迁移成功退出后才启动后端；后端只持受限运行身份，不注入迁移凭据。先按[角色说明](docs/DATABASE_ROLES.md)provision新库，不对现有卷自动切换权限。Ryuk新SDK调查尚未形成可接入修复，原两项高告警继续保留。
+
 P6新增独立HTTPS与资源配置：显式合并`docker-compose.tls.yml`，证书/私钥必填、仅loopback HTTPS，Secure Cookie、登录入口限流、三服务资源上限与后端只读根目录。默认HTTP不变，配置和隔离验证见[TLS_DEPLOYMENT](docs/TLS_DEPLOYMENT.md)；不代表生产部署或P6整体验收。
 
 P6数据库角色方案：新空库可采用独立Flyway连接与受限运行角色，见[DATABASE_ROLES](docs/DATABASE_ROLES.md)。现有库未自动更换角色，默认本地配置保留；双连接不等于长期进程不持有迁移权限，生产优先使用独立迁移作业。P6整体验收仍未完成。
@@ -124,6 +126,8 @@ mvn -B verify
 项目`.mvn/settings.xml`将发行版依赖解析限定到Maven Central，避免上游POM引入的快照/里程碑仓库影响干净环境构建。Docker构建使用BuildKit缓存Maven依赖，不改全局Maven配置。
 
 Linux上可运行 `sh scripts/verify-testcontainers-in-docker.sh`；它先构建并校验四个工具镜像，在受测Java25/Maven容器中执行`verify -Ptestcontainers`，正确传递自定义Unix socket供Ryuk清理资源。需要已有本地Linux Docker权限和Python3.10+；不会修改宿主机权限或停用Ryuk。直接从宿主执行该profile前，须先在根目录运行`python3 scripts/security_images.py --build`并校验镜像；默认原生PG测试不依赖这些容器。
+
+该容器测试入口只读挂载源目录，在容器内部生成独立编译输出，结束后将JAR及Surefire/Failsafe报告导出到backend/target，避免共享Windows编译目录的文件变化影响重启故事；失败日志与退出码照常保留。
 
 后端默认测试使用隔离真实PG随机端口，包含数据库宕机503、迁移约束和应用重新启动的数据保留；不是H2。每次使用新集群且自动关闭。默认测试不调用外部AI。格式修正：前端 `npm run format`；后端 `mvn spotless:apply`。
 

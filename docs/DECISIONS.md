@@ -183,3 +183,11 @@ Trivy固定官方归档/二进制摘要，扫描所有锁定基础镜像、实�
 2026-11-16用户了解理由后确认继续，授权BOOT4_MIGRATION_PLAN中的本地迁移与隔离验证。以9dcc816为回滚点，保持Java25/模块化单体，迁移Boot4.1.2、MyBatis4.0.1、springdoc3.2.0，采用Web MVC/Session JDBC/Flyway专用starter与对应测试模块。按Boot4 BOM管理Framework/Security/Tomcat，移除旧Tomcat10覆盖；保留Jackson2.21.8与JDBC42.7.14显式安全覆盖，Jackson2属性为jackson-2-bom.version，不覆盖Jackson3 BOM。
 
 官方已弃用Jackson2兼容模块作为过渡：原AI/Schema/导入解析继续使用Jackson2，HTTP明确选择jackson2及UTC，新增实际转换器/日期/小数/错误响应回归；Jackson3用于框架/OpenAPI并强制纳入扫描覆盖。严格业务解析不放宽，MCP依赖不引入，无Flyway或个人数据变更。旧备份演练可显式指定已存在的不可变新后端ID，仅在新隔离资源执行；报告同时记录原/新ID，不篡改认证备份，不把旧应用恢复成功当新版本兼容证据。门禁仍以实际结果为准，不自动部署/推送/调用付费模型。
+
+## ADR-036 — 独立迁移入口与共享产物门禁
+
+同一Boot JAR增加DatabaseMigration入口，直接执行Flyway migrate/validate，不启动Spring/Web/业务引导。固定显式scarlet_migrator，拒绝缺失密码与含查询/内嵌凭据的URL，禁clean/baseline，失败非0且不打印异常内容。新overlay仅用于已provision的新库，migrate成功退出后才启动backend；长期后端仅运行身份、禁Flyway，移除迁移环境变量，不声称Docker管理员或私有.env不可读取秘密。
+
+迁移服务和后端必须显式共用同一项目镜像；扫描检查已退出0的作业与后端image ID一致、运行环境无迁移凭据，否则失败。避免两个build产生不同元数据镜像后只扫描其中一个。Testcontainers runner改为只读源快照、容器内部编译，导出JAR与测试报告，避免共享Windows target中的类文件瞬时缺失影响应用重启故事；原失败日志保留，原因未证实，不归咎于编辑器。
+
+Ryuk新SDK兼容试验仅在.runtime，旧模块公告无兼容修复版，拆分SDK需要维护清理分支且依赖解析未通过；不将未验证候选接入生产/测试，不做ignore/VEX。继续保留2高与官方源码记录，P6整体门禁仍未通过。

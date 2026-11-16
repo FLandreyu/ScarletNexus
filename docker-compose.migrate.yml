@@ -1,0 +1,36 @@
+# NEW, provisioned databases only. Do not combine with docker-compose.roles.yml.
+services:
+  migrate:
+    image: ${COMPOSE_PROJECT_NAME:-scarlet-nexus}-backend
+    pull_policy: never
+    entrypoint: [java, '-Dloader.main=dev.scarletnexus.database.DatabaseMigration', '-cp', /app/app.jar, org.springframework.boot.loader.launch.PropertiesLauncher]
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-scarlet_nexus}
+      MIGRATION_USERNAME: scarlet_migrator
+      MIGRATION_PASSWORD: ${MIGRATOR_PASSWORD:?Set a private migration password}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+    read_only: true
+    tmpfs: ['/tmp:size=64m,mode=1777']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+  backend:
+    image: ${COMPOSE_PROJECT_NAME:-scarlet-nexus}-backend
+    environment:
+      DATABASE_USERNAME: scarlet_runtime
+      DATABASE_PASSWORD: ${RUNTIME_PASSWORD:?Set a private runtime password}
+      SPRING_FLYWAY_ENABLED: 'false'
+      MIGRATION_USERNAME: !reset null
+      MIGRATION_PASSWORD: !reset null
+    depends_on:
+      migrate:
+        condition: service_completed_successfully

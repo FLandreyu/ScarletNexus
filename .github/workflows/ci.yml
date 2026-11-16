@@ -92,6 +92,11 @@ jobs:
           } >> "$GITHUB_ENV"
       - run: python3 scripts/security_images.py --build
       - run: docker compose config --quiet
+      - name: Validate independent migration configuration
+        env:
+          RUNTIME_PASSWORD: ci-configuration-only-runtime
+          MIGRATOR_PASSWORD: ci-configuration-only-migration
+        run: docker compose -f docker-compose.yml -f docker-compose.migrate.yml config --quiet
       - run: docker compose up --build -d --wait --wait-timeout 240
       - name: Check gateway and restart persistence
         run: |

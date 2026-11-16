@@ -2,7 +2,15 @@
 
 复核日期：2026-11-16，Asia/Shanghai。**兼容补丁、不可变镜像与可复现扫描已实现；安全门禁未通过，P6不标记完成。** 扫描完成与安全通过是两个不同结果。组件识别受文件元数据/数据库覆盖限制，JVM与手工安装的服务端二进制仍须核对厂商发布公告。本轮未包含渗透测试、宿主/浏览器漏洞、GitHub Actions供应链、许可证合规或真实模型质量。
 
-## 第八批：Boot4迁移后的当前产物（2026-11-16）
+## 第九批：独立迁移作业与Ryuk调查（2026-11-16）
+
+Ryuk官方拆分客户端SDK兼容试验尚未通过依赖解析，静态接口核对也显示需适配清理分支；候选只在.runtime，未替换任何受测工具。原SDK与符号/daemon证据不变，不用ignore/VEX关闭2高。详情见[P6_RYUK_ACCEPTANCE](P6_RYUK_ACCEPTANCE.md)，2026-11-23继续复查上游兼容迁移或单独评审工具分支。
+
+本批交付独立迁移作业。migrate与backend显式共用同一实际镜像，扫描要求迁移退出0、image ID相同、Web运行环境无迁移凭据且Flyway关闭，才接受该复用覆盖。最终`.runtime/security-job-final`完整，migrationImage=360459d907dc...，门禁仍**Ryuk2高/0严重**、全部含父层基线43次，明确退出2；应用后端2中、前端1中、npm生产0/全依赖5 moderate。来源锁/漏洞库与第八批相同，中低/未知保留，不称P6通过。
+
+初轮migrate/backend分别build导致不同image ID，扫描正确拒绝，失败日志`.runtime-job-scan.log`保留；改为同一项目标签、禁止作业拉取后重测成功。没有通过删除迁移目标或只扫Web后端规避覆盖。功能与权限证据见[P6_MIGRATION_JOB_ACCEPTANCE](P6_MIGRATION_JOB_ACCEPTANCE.md)。
+
+## 第八批历史：Boot4迁移后的产物（2026-11-16）
 
 经用户确认迁移至Boot4.1.2/MyBatis4.0.1/springdoc3.2.0，Java25不变；实际JAR识别Framework7.0.10、Security7.1.2、Jackson2.21.8与Jackson3.1.7、JDBC42.7.14，Tomcat11.0.27三包从实际JAR提取版本与SHA补充SBOM。未修改已执行Flyway，未引入springdoc MCP模块。
 
