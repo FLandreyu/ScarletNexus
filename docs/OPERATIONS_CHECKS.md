@@ -22,7 +22,7 @@ Compose三个服务统一json-file日志，单文件10m、保留3份，由Docker
 ## 尚未完成的生产前门禁
 
 1. 本机直接TLS overlay及Secure Cookie/CSP/登录/附件/延迟SSE已验证，配置见[TLS_DEPLOYMENT](TLS_DEPLOYMENT.md)。仍需选定生产域名、受信任证书与续期、网络访问控制；现有loopback配置不自动对公网开放。
-2. 新空库的独立迁移/受限运行角色方案及权限/真实业务测试见[DATABASE_ROLES](DATABASE_ROLES.md)。既有库切换、独立迁移作业编排、备份专用角色和生产恢复权限仍未完成；默认本地DB初始化角色权限较高。迁移不得通过改旧Flyway文件实现。
+2. 新空库独立迁移作业、受限运行与只读备份角色已通过本地真实PG和恢复验收，见[DATABASE_ROLES](DATABASE_ROLES.md)及[P6_BACKUP_ROLE_ACCEPTANCE](P6_BACKUP_ROLE_ACCEPTANCE.md)。既有库生产切换及生产恢复权限尚未验收；默认本地DB初始化角色权限较高。迁移不得通过改旧Flyway文件实现。
 3. TLS overlay资源/只读配置已实证，六份官方镜像digest已固定并核对；Java兼容补丁和Nginx/PG更新后全量扫描仍有高/严重发现，台账与复现见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)，安全门禁未通过。压力/容量、磁盘与备份留存及剩余依赖/镜像风险处置仍待完成。npm生产依赖审计不能代替全栈审查。
 4. TLS网关按直连IP限制登录且覆盖客户端转发头，伪造头不绕过；后端仍统一代理来源、单实例内存桶。多用户真实身份、再加代理时的可信链及分布式防护仍需独立方案。
 5. 备份异地与口令独立保管、定期恢复、告警接收、会话撤销与应急回滚流程。在具体配置完成前不把文档清单计作生产安全验收。生产部署、购买服务和不可逆操作另行确认。

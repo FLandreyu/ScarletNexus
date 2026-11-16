@@ -4,7 +4,19 @@
 
 ## 当前阶段
 
-P6第十批：备份专用只读身份、v2角色感知备份与受限恢复已验收；**仍保留Ryuk2高，安全门禁未通过，P6尚未完成**。Java25/Boot4保持，无生产部署。
+P6第十一批：最终验收矩阵与离线扫描证据复核已完成，补齐最新默认HTTP12旅程；**Ryuk2高仍阻止安全门禁通过，P6尚未完成**。未启动P7或生产部署。
+
+- 先定义P6_FINAL_REVIEW标准，按总纲P6核对分析/证据、JSON边界、备份恢复、身份分离、鉴权/附件、TLS/资源、监控日志、桌面手机旅程、供应链和文档一致性。矩阵区分本地通过、未通过、未验证生产项；修正P6_DESIGN旧Java21基线及运维/TLS/安全说明中独立迁移/备份角色的过期待办，不改写历史分批失败记录。
+- 新增只读review_security_report.py：核对15目标/全部父层与有效产物、原始报告SHA、当前锁/配方/扫描器、时效/漏洞库、包/双Jackson/Go覆盖、镜像身份、Tomcat SBOM版本与npm实际包计数，重算高/严重。缺失/篡改/不一致/过期返回1，证据一致但仍有高/严重返回2，无高/严重才0；输出始终不据此宣布P6通过，不改原始发现或抑制风险。
+- 新增9项复核测试（合成夹具只验证复核逻辑，不证明真实扫描干净），覆盖原始文件篡改、漏父层/移出门禁、伪零计数、错误镜像即使更新hash、旧/未来/未完成报告、过期漏洞库/旧配方、npm包发现与metadata矛盾，以及有效产物无高但父层仍有发现时也不宣称P6成立。最终Linux Python/OpenSSL**31项通过**，Python编译/CI YAML/Git diff通过（.runtime-final-evidence-checks.log）。
+- 对最新真实.runtime/security-backup-role-final完成15目标复核，输出.runtime/p6-final-evidence-review.json：archived-report-consistency、evidenceVerified=true、仍2高/含父层43、securityGatePassed=false，明确review_exit=2。输入summary SHA efbc216308fcc412b7d72e9b78fee4bc1ce14f787419f3058df3c0000fa96da1。reviewedAt不修改scanFinishedAt；不把哈希一致性称外部签名、独立可利用性或第三方审计。
+- 安全workflow扫描后always运行复核，报告缺失也失败，结果仍上传；已有扫描退出2不会被复核覆盖成成功。远端workflow未运行，Quality gates成功不代表安全门禁/P6通过。ADR-038记录复核范围与证据边界。
+- 核对发现最新完整回归此前覆盖TLS12、默认HTTP整套仍为较早组合；本批复用原scarlet-nexus-p6-backup-role-acceptance隔离卷，base+migrate配置真实构建/启动V12三服务Healthy、迁移退出0，默认HTTP桌面6项23.6秒、手机6项28.4秒全通过，无API mock/JS异常/横向溢出（.runtime-final-review-http-browser.log），未调高限流。
+- 本批没有修改应用代码/Flyway/依赖/镜像锁，不重复跑84后端/14前端或TLS12，明确沿用12977a1对应实证；备份v2及旧v1恢复同样沿用前批记录，不冒称本批重新执行。总矩阵保留JSON学习快照不可直接导回历史、P5 AI文字建议/图片识别等既有局限；监控为本地探测、日志为固定字段文本/requestId和轮转，不冒称持续告警或全链路JSON。
+- 收尾Compose down，原隔离项目ps -a空、PG/附件两卷保留，个人库/旧角色/秘密/归档不改，用户.env.example/.gitignore不入提交。无推送/生产/付费调用/系统服务修改。GraphFlow工具仍未提供，定向检查，未context/plan/index；历史记忆仅定位当前项目，状态以仓库/实证为准。
+- **下一步**：集中处置Ryuk两项高等级及其他风险，重扫后才可能关闭安全门禁；生产域名/证书续期、旧库权限切换、持续告警/备份留存与实际灾备仍待具体环境授权/验证。P6未通过前不进入P7或以无关新功能代替处置。
+
+P6第十批（以下为历史记录）：备份专用只读身份、v2角色感知备份与受限恢复已验收；当时仍保留Ryuk2高、P6门禁未通过。
 
 - 先定义P6_BACKUP_ROLE_ACCEPTANCE，沿用新空库provision约定增加scarlet_backup（无特权/成员关系，CONNECT/USAGE、迁移角色未来表/序列SELECT）；不改V1–V12或业务schema，不给旧卷/个人库授权。JDBC真实验证DML/DDL/改角色/读服务器文件/执行程序拒绝42501，未来表/序列SELECT可用而nextval拒绝；Web无备份或迁移密码。
 - 分离角色项目backup强制`--database-password-file`，和加密口令文件分离，不回退管理员。用源PG同一镜像的短期客户端、只读根/无cap/私有0600 pgpass，通过非loopback地址TCP验证无口令不能登录，检查current_user、角色能力/成员关系/所有权和完整SELECT/无DML。预检先于停止Web，缺/错口令及过量/不足权限四种真实情况均拒绝、源进程StartedAt不变、无输出文件或密码披露（.runtime-backup-role-preflight.log / .runtime-backup-role-final-v2.log）。

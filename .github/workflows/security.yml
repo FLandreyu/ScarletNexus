@@ -28,6 +28,9 @@ jobs:
       - run: docker compose -p scarlet-security-ci up --build -d --wait --wait-timeout 240
       - name: Retain all findings and enforce the high severity gate
         run: python3 scripts/security_scan.py --project scarlet-security-ci --output .runtime/security-ci
+      - name: Recount and verify archived evidence
+        if: always()
+        run: python3 scripts/review_security_report.py --report .runtime/security-ci --output .runtime/security-ci/review.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

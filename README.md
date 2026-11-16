@@ -1,5 +1,7 @@
 # Scarlet Nexus
 
+当前总验收结论见[P6最终复核矩阵](docs/P6_FINAL_REVIEW.md)：本地核心流程已有实证，最新HTTP/TLS桌面与手机均覆盖；Ryuk两项高告警仍阻止P6通过。可用`python3 scripts/review_security_report.py --report .runtime/YOUR_REPORT`离线复核扫描证据，证据一致不等于安全门禁或整个P6通过。
+
 P6已迁移Spring Boot4.1.2，保留Java25及严格JSON业务解析；原两项Spring严重告警在实际产物扫描中消失，仍有Ryuk两项高等级发现，**安全门禁未通过**，不能据此生产部署。迁移及真实回归见[P6_BOOT4_ACCEPTANCE](docs/P6_BOOT4_ACCEPTANCE.md)，完整来源与计数见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)，固定工具构建见[P6_TOOLCHAIN_REMEDIATION](docs/P6_TOOLCHAIN_REMEDIATION.md)。
 
 P6新增[独立数据库迁移作业](docs/P6_MIGRATION_JOB_ACCEPTANCE.md)：新库可显式合并docker-compose.migrate.yml，迁移成功退出后才启动后端；后端只持受限运行身份，不注入迁移凭据。先按[角色说明](docs/DATABASE_ROLES.md)provision新库，不对现有卷自动切换权限。Ryuk新SDK调查尚未形成可接入修复，原两项高告警继续保留。

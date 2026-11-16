@@ -15,6 +15,7 @@ HTTPS_PORT=8443
 ```
 
 ```sh
+python3 scripts/security_images.py --build
 docker compose --env-file /private/scarlet.env -f docker-compose.yml -f docker-compose.tls.yml config --quiet
 docker compose --env-file /private/scarlet.env -f docker-compose.yml -f docker-compose.tls.yml up --build -d --wait
 # 结束时保留数据卷；后续命令也必须带相同 env、文件和项目名。
@@ -76,6 +77,6 @@ npm run test:e2e -- --config=playwright.tls.config.ts --project=desktop
 
 ## 仍需完成
 
-镜像digest固定、兼容补丁和全量扫描已实施，但仍有未关闭高/严重发现，见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)。仍需实际部署域名、证书及续期/撤销、可信网络与防火墙、现有库迁移/独立迁移作业、备份专用权限、负载与容量、异地备份/告警接收、会话撤销与应急流程。生产部署、公网暴露、购买服务及现有库权限修改均须另行确认。本批本地 TLS 与资源验收不等于生产安全审计或 P6 完成。
+镜像digest固定、兼容补丁和全量扫描已实施，但仍有Ryuk两项高等级发现，见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)。独立迁移作业与只读备份/受限恢复已有新库本地实证；仍需实际部署域名、证书及续期/撤销、可信网络与防火墙、既有库生产切换、负载与容量、异地备份/告警接收、会话撤销与应急流程。生产部署、公网暴露、购买服务及现有库权限修改均须另行确认。本批本地TLS与资源验收不等于生产安全审计或P6完成；总矩阵见[P6_FINAL_REVIEW](P6_FINAL_REVIEW.md)。
 
 配置依据：[Nginx HTTPS](https://nginx.org/en/docs/http/configuring_https_servers.html)、[代理模块](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)、[请求限流](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html)、[Compose 合并与 override](https://docs.docker.com/reference/compose-file/merge/)、[服务资源限制](https://docs.docker.com/reference/compose-file/services/)。核对日期：2026-11-16。

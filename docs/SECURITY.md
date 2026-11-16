@@ -1,10 +1,10 @@
 # 安全方案
 
-P6供应链复核与兼容补丁见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)：实际镜像/JAR/npm全范围扫描完整，仍有高/严重发现，安全门禁退出2；固定digest和生产npm零发现不代表全栈安全。未创建漏洞忽略条目，Framework生命周期、gosu与构建/测试工具风险继续保留。新安全workflow为手动入口且如实失败，不代表远端已验收。
+P6供应链复核与补丁见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)：实际镜像/JAR/npm全范围扫描完整，当前明确阻断为Ryuk两项高等级发现，退出2；Boot4已移除原Spring两项严重告警，构建/运行工具的中低/未知项和Jackson2过渡边界仍跟踪。固定digest和生产npm零发现不代表全栈安全，不创建忽略条目。安全workflow为手动入口，扫描后仍执行只读归档复核并如实失败，不代表远端或第三方审计已通过；总矩阵见[P6_FINAL_REVIEW](P6_FINAL_REVIEW.md)。
 
 P6直接TLS配置及本地证据见[TLS_DEPLOYMENT](TLS_DEPLOYMENT.md)、[P6_TLS_ACCEPTANCE](P6_TLS_ACCEPTANCE.md)：独立overlay强制Secure Cookie，TLS1.2/1.3、短期HSTS，网关清除伪造转发头并按直连IP限登录；后端关闭代理解析、保留共享限流桶。三服务资源上限/no-new-privileges，后端只读根目录与专用临时/附件存储。仅本机隔离验收，不等于生产域名/证书、代理链、权限迁移或全栈安全审计。
 
-P6专用数据库角色：新空库可由迁移角色持有schema与表、运行角色执行必要DML，V12限制Flyway历史和追加型历史权限；真实角色/拒绝DDL与学习业务测试见DATABASE_ROLES。默认现有库不自动切换，双连接进程仍可能持有迁移凭据，生产优先独立迁移作业。不能据此宣称生产最小权限与角色切换已经完成。
+P6专用数据库角色：新空库由迁移角色持有schema/表，运行角色执行必要DML，V12限制历史写入；独立迁移作业完成后Web不持迁移凭据。只读备份角色通过TCP口令预检，v2恢复重建权限后用runtime启动，见DATABASE_ROLES/P6_BACKUP_ROLE_ACCEPTANCE。默认现有库不自动切换，旧双连接方式仍可能持有迁移凭据；不能把本地新库实证当既有库生产切换完成。
 
 P6第一批：分析、学习快照导出和目录导入均认证隔离；分析验证技能归属、时区和日期窗口。导出no-store，仅显式白名单的本人记录，不含身份凭据/会话/Key/审计、附件磁盘路径或二进制；但包含学习文本和题目答案，页面提醒私有保管。超过25000行/原始行JSON8MiB拒绝，不静默截断。
 
