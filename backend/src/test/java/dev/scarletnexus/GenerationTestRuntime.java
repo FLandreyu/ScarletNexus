@@ -101,7 +101,7 @@ public final class GenerationTestRuntime implements AutoCloseable {
     provider.start();
     String url, user, pass;
     if ("container".equals(System.getProperty("test.database"))) {
-      container = new PostgreSQLContainer<>("postgres:17.11-alpine");
+      container = new PostgreSQLContainer<>(TestImages.POSTGRES);
       container.start();
       pg = null;
       url = container.getJdbcUrl();

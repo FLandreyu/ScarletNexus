@@ -1,0 +1,36 @@
+name: Supply chain review
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dependency-and-image-scan:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: ci-disposable-security-database-only
+      ADMIN_EMAIL: security-acceptance@example.test
+      ADMIN_PASSWORD_FILE: /run/secrets/security.password
+      TRIVY_DISABLE_TELEMETRY: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable acceptance password
+        run: |
+          umask 077
+          mkdir -p .runtime/dev-secrets
+          python3 - <<'PY'
+          from pathlib import Path
+          import secrets
+          Path('.runtime/dev-secrets/security.password').write_text(secrets.token_urlsafe(32))
+          PY
+      - run: python3 scripts/verify_image_lock.py --remote
+      - run: python3 scripts/install_security_scanner.py
+      - run: docker compose -p scarlet-security-ci up --build -d --wait --wait-timeout 240
+      - name: Retain all findings and enforce the high severity gate
+        run: python3 scripts/security_scan.py --project scarlet-security-ci --output .runtime/security-ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-and-image-review
+          path: .runtime/security-ci/
+      - run: docker compose -p scarlet-security-ci down
+        if: always()

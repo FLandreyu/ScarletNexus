@@ -19,8 +19,9 @@ def verify(ca_file, key_file, web_image):
         fixture = docker_tools.docker(
             'run', '-d', '--network', network, '--network-alias', 'backend',
             '--name', name + '-fixture', '--memory', '256m', '--cpus', '1', '--pids-limit', '128',
-            '--mount', f'type=bind,src={root / "backend/src/test/java/dev/scarletnexus/TlsStreamFixture.java"},dst=/fixture.java,readonly',
-            '--entrypoint', 'java', 'maven:3.9.16-eclipse-temurin-21', '/fixture.java').decode().strip()
+            '--mount', f'type=bind,src={root / "backend/src/test/java/dev/scarletnexus/TlsStreamFixture.java"},dst=/fixture/dev/scarletnexus/TlsStreamFixture.java,readonly',
+            '--entrypoint', 'java', 'maven:3.9.16-eclipse-temurin-25@sha256:93b8a14ea2f412782e4e842651273b4d903e35cc496284f178fbbe2d67d00976',
+            '/fixture/dev/scarletnexus/TlsStreamFixture.java').decode().strip()
         containers.append(fixture)
         gateway = docker_tools.docker(
             'run', '-d', '--network', network, '--name', name + '-gateway',
@@ -35,6 +36,8 @@ def verify(ca_file, key_file, web_image):
         address = next(iter(info['NetworkSettings']['Networks'].values()))['IPAddress']
         context = ssl.create_default_context(cafile=str(ca_file))
         for attempt in range(40):
+            if docker_tools.inspect(fixture)['State']['Status'] == 'exited':
+                raise RuntimeError('Disposable Java stream fixture exited before serving requests')
             try:
                 # SNI and hostname verification stay localhost while the test
                 # connects only through the Linux host's private Docker bridge.

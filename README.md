@@ -1,5 +1,7 @@
 # Scarlet Nexus
 
+P6供应链复核新增固定镜像清单、校验安装的扫描器和实际JAR/镜像扫描；Jackson/Tomcat/JDBC与Nginx/PG安全版本已调整。**扫描仍有高/严重发现，安全门禁未通过**，不能据此生产部署；来源、计数与后续处置见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)。
+
 P6新增独立HTTPS与资源配置：显式合并`docker-compose.tls.yml`，证书/私钥必填、仅loopback HTTPS，Secure Cookie、登录入口限流、三服务资源上限与后端只读根目录。默认HTTP不变，配置和隔离验证见[TLS_DEPLOYMENT](docs/TLS_DEPLOYMENT.md)；不代表生产部署或P6整体验收。
 
 P6数据库角色方案：新空库可采用独立Flyway连接与受限运行角色，见[DATABASE_ROLES](docs/DATABASE_ROLES.md)。现有库未自动更换角色，默认本地配置保留；双连接不等于长期进程不持有迁移权限，生产优先使用独立迁移作业。P6整体验收仍未完成。
@@ -63,12 +65,14 @@ docker compose down
 
 ## 启动方式 B：无 Docker 的 P0 验收预览
 
-前置：Java21 JDK、Maven3.9+、Node24 LTS与npm、网络。此方式下载测试依赖并启动**临时真实 PostgreSQL 17.11**，仅用于P0验收；使用本机loopback信任认证，不得保存个人数据。进程退出后不保留预览数据。需要长期使用时选择方式A或配置独立的安全PostgreSQL。
+前置：Java25 JDK、Maven3.9+、Node24 LTS与npm、网络。此方式下载测试依赖并启动**临时真实 PostgreSQL 17.11**，仅用于P0验收；使用本机loopback信任认证，不得保存个人数据。进程退出后不保留预览数据。需要长期使用时选择方式A或配置独立的安全PostgreSQL。
+
+本机已在忽略的`.tools/jdks/jdk-25.0.5+8`安装并校验Temurin 25.0.5+8；下面的`-JavaHome`也可以替换为自己的Java25 JDK目录。工具不会自动安装系统JDK或修改全局环境变量。
 
 终端一（Windows）：
 
 ```powershell
-./scripts/Start-P0Preview.ps1 -JavaHome D:/Java21
+./scripts/Start-P0Preview.ps1 -JavaHome ./.tools/jdks/jdk-25.0.5+8
 ```
 
 终端二：
@@ -88,18 +92,18 @@ cd backend
 mvn -B test-compile exec:java -Dexec.mainClass=dev.scarletnexus.P0Preview -Dexec.classpathScope=test
 ```
 
-独立数据库开发：先安全创建空库和专用账号，再在后端进程设置 `DATABASE_URL=jdbc:postgresql://127.0.0.1:5432/scarlet_nexus`、`DATABASE_USERNAME`、`DATABASE_PASSWORD`，以Java21执行 `mvn spring-boot:run`。后端不会自动读取根目录.env（Compose才读取），不要在命令行或日志写真实密码。源码默认只绑定loopback。
+独立数据库开发：先安全创建空库和专用账号，再在后端进程设置 `DATABASE_URL=jdbc:postgresql://127.0.0.1:5432/scarlet_nexus`、`DATABASE_USERNAME`、`DATABASE_PASSWORD`，以Java25执行 `mvn spring-boot:run`。后端不会自动读取根目录.env（Compose才读取），不要在命令行或日志写真实密码。源码默认只绑定loopback。
 
 ## 测试与构建
 
 Windows一键（不含浏览器与Compose）：
 
 ```powershell
-./scripts/Verify.ps1 -JavaHome D:/Java21
+./scripts/Verify.ps1 -JavaHome ./.tools/jdks/jdk-25.0.5+8
 # 本机隔离Node24已经放在.tools时，可指定，不修改系统PATH：
-./scripts/Verify.ps1 -JavaHome D:/Java21 -NodeHome ./.tools/node-v24.22.3-win-x64
+./scripts/Verify.ps1 -JavaHome ./.tools/jdks/jdk-25.0.5+8 -NodeHome ./.tools/node-v24.22.3-win-x64
 # 已有可用Docker时，改用Testcontainers：
-./scripts/Verify.ps1 -JavaHome D:/Java21 -Testcontainers
+./scripts/Verify.ps1 -JavaHome ./.tools/jdks/jdk-25.0.5+8 -Testcontainers
 ```
 
 等价独立命令：
@@ -118,7 +122,7 @@ mvn -B verify
 
 项目`.mvn/settings.xml`将发行版依赖解析限定到Maven Central，避免上游POM引入的快照/里程碑仓库影响干净环境构建。Docker构建使用BuildKit缓存Maven依赖，不改全局Maven配置。
 
-Linux上只有Docker而没有Java/Maven时，可运行 `sh scripts/verify-testcontainers-in-docker.sh`；它在Java21/Maven容器中执行同一套真实测试，正确传递自定义Unix socket供Ryuk清理资源。需要已有本地Linux Docker权限；不会修改宿主机权限或停用Ryuk。
+Linux上只有Docker而没有Java/Maven时，可运行 `sh scripts/verify-testcontainers-in-docker.sh`；它在Java25/Maven容器中执行同一套真实测试，正确传递自定义Unix socket供Ryuk清理资源。需要已有本地Linux Docker权限；不会修改宿主机权限或停用Ryuk。
 
 后端默认测试使用隔离真实PG随机端口，包含数据库宕机503、迁移约束和应用重新启动的数据保留；不是H2。每次使用新集群且自动关闭。默认测试不调用外部AI。格式修正：前端 `npm run format`；后端 `mvn spotless:apply`。
 

@@ -4,6 +4,27 @@
 
 ## 当前阶段
 
+P6第六批：兼容安全补丁、镜像固定与可复现扫描已实施；功能回归通过，**高/严重漏洞门禁未通过，P6尚未完成**。中断期间用户追加的Java25升级已保留并补充真实容器验证。
+
+- 先定义P6_SUPPLY_CHAIN_ACCEPTANCE；按ADR-032保留Java25，在Boot3.5.16内显式覆盖Jackson2.21.8/Tomcat10.1.62/JDBC42.7.14。官方Nginx1.30.6/PG17.12、前端libxslt1.1.43-r4，六份构建/运行/测试镜像固定官方多架构索引并逐项registry核对，消费者/包约束检查通过；只实测linux/amd64，无已执行Flyway修改，未升级原验收/学习卷。
+- Trivy0.76.2归档/checksum/二进制SHA-256校验；新增校验安装、镜像锁检查和全量扫描工具、手动安全workflow。实际JAR识别Jackson/JDBC，Java DB未识别新Tomcat的首轮覆盖失败后，从最终JAR提取三包版本/hash补充CycloneDX扫描0发现。显式空ignore、保留未修项/所有严重度，拒绝缺覆盖、过期/未来数据库，4项失败关闭单测加入后Linux Python/OpenSSL共9项通过。
+- 最终.runtime/security-complete与当前锁摘要一致：完整扫描，漏洞库/Java DB当日01:11Z/00:57Z更新，95次高/严重“目标内包/CVE”发现、退出2；不是95个独立CVE，也不将基础镜像与最终镜像相加当生产暴露。最终后端2严重/4中，最终前端1中；npm生产0、全部5 moderate。Spring条件、gosu/Go、Maven、Node内置npm、Ryuk与未知项未关闭，具体台账/期限/官方来源见SUPPLY_CHAIN_REVIEW，不忽略求绿或称全栈安全。
+- Node24格式/类型/14单元/构建通过（.runtime-p6-risk-frontend.log）；Linux Java25/Testcontainers首次tag@digest兼容初始化失败，集中官方兼容声明后31单元通过，51真实PG17.12集成仅SystemIT旧17.11断言失败（50通过/1失败/0错误/0跳过，7分20秒，.runtime-p6-risk-testcontainers-r2.log）。修正为容器17.12/原生17.11各自严格断言后，最终31单元+SystemIT6集成通过、0失败/错误/跳过、3分03秒（.runtime-p6-risk-system-final.log）；其它45集成沿用同生产代码前轮通过结果，不声称最终又全量跑82项。本轮不重跑Windows原生PG；前一沙箱失败记录保留。
+- 新建scarlet-nexus-p6-security-acceptance隔离项目/两卷，实际JRE25.0.5+8、PG17.12、V12，构建/测试Maven镜像JDK25.0.4.1，版本边界如实区分。最终TLS桌面6项36.2秒+手机6项40.3秒全旅程通过，无API mock/JS异常/横向溢出；默认HTTP桌面/手机状态2项5.6秒通过，未重复HTTP12项（.runtime-p6-risk-browser-final.log / .runtime-p6-risk-http-browser.log）。
+- 证书/主机名正反、明文拒绝、安全Cookie/CSRF/退出/网关限流通过；资源/只读/monitor UP、4附件引用/4文件无异常。Java25夹具源文件包路径错误已修正，最终延迟SSE首段0.048秒/终段2.548秒且清洗转发头（.runtime-p6-risk-runtime-final.log），仅协议，不是真实模型质量。Python编译、CI YAML及Git diff检查通过，远端CI未运行。
+- 收尾隔离Compose down，ps -a空、两卷保留，临时SSE/Testcontainers容器清理。原.env.example/.gitignore与Java25专项改动、stash备份保留；无全局环境修改/生产部署/公网服务/付费调用/推送。GraphFlow工具仍未提供，定向检查，未context/plan/index。截图/报告/口令/附件样例不入Git。
+- **下一步优先处置未关闭高/严重与框架生命周期风险**，再完成独立迁移作业/备份权限和最终门禁；实际生产域名/证书续期、现有库权限切换、付费支持或框架大版本迁移须独立评审/确认，不以当前补丁和条件分析提前结束P6。
+
+Java运行时专项（2026-11-16，以下为当时历史记录）：已按用户明确要求将Java21升级为最新LTS Java25；当时完整集成验收受沙箱限制，后续真实容器结果见上文，P6整体状态仍未完成。
+
+- 项目内Temurin25.0.5+8已下载并校验官方SHA256；Maven3.9.16保留。`backend/pom.xml`编译目标、CI、Docker构建/JRE及Testcontainers/SSE夹具镜像统一25；镜像继续固定官方registry核对的digest，同步既有`security/images.lock.json`。Boot3.5.16官方支持Java25，保留现有框架及Jackson/Tomcat/JDBC安全覆盖，不改业务逻辑或Flyway迁移。ADR-032明确替代旧Java21约束，历史验收记录不重写。
+- Java21基线：先修正原有四处PG镜像长行格式；`clean compile test-compile`与`clean test`通过，31单元、0失败/错误/跳过。`verify`真实PG启动前失败，报告23初始化错误（10个集成类），`pg_ctl`无法创建受限令牌error87/启动子进程error3（`.runtime-java25-baseline-verify.log`）；不能将其视为业务断言通过。
+- Java25：`clean test-compile`、`clean test`通过，31单元全通过；`javap`确认major69，Compiler3.14.1、Surefire/Failsafe3.5.6可用。最终`mvn -B clean verify -Djacoco.skip=false`完成编译/打包/31单元，但真实PG仍同样23初始化错误、0跳过，退出1（3分32秒，`.runtime-java25-final-verify.log`）；未新增绕过/跳过测试或安全控制的参数。项目未配置JaCoCo，命令没有生成覆盖率数据，不编造百分比。
+- Node24前端格式/类型/14单元/生产构建全部通过；既有ECharts体积提示保留。16项解析后的直接Java依赖CVE工具扫描未发现已知CVE，仅代表本次直接依赖范围。原有安全版本覆盖、全部镜像锁消费者、PowerShell语法检查通过；预览/验证脚本先解析相对JavaHome，避免切换工作目录后失效。
+- 当前策略拒绝WSL（E_ACCESSDENIED）且不允许提权，故无法完成Java25 Linux Testcontainers、Docker实构建/运行、真实网关/Playwright验收；Windows真实PG也受上述令牌限制。原生PG与WSL两种路径均有失败证据，不能通过H2/假响应/跳过测试冒充验收。编辑器另提示Boot3.5.x已于2026-06-30结束OSS支持，该生命周期风险保留，不扩展为未经请求的框架大版本迁移。
+- 工作分支`appmod/java-upgrade-20261116030222`。分支工具自动stash后，全部原有工作文件已从事先私有快照恢复；原stash保留备份。`.env.example`及其他无关供应链文件逐项hash确认未被本轮改变；四个PG测试源仅有格式变化。提交工具仅支持提交全部工作区，为免混入原有用户修改，本轮未创建混合提交，未推送。GraphFlow仍不可用；不声称context/plan/index。自动审批拒绝临时安装包/旧工具副本清理，文件保留在忽略目录，不影响Java25.0.5运行。
+- 计划、逐步结果与剩余门禁见[升级报告](../.github/modernize/java-upgrade/20261116030222/summary.md)。下一步在允许子数据库进程及WSL/Docker的环境中重跑Java25真实PG/容器/浏览器门禁后才能标为完整升级验收；不以原Java21历史成功代替Java25运行证据。不生产部署、公开服务、付费调用或改系统JAVA_HOME/PATH。
+
 P6第五批：独立HTTPS、安全Cookie与资源约束已完成本批本地验收；整体P6尚未完成。
 
 - 先定义P6_TLS_ACCEPTANCE。本批新增显式docker-compose.tls.yml：Compose !override仅保留loopback HTTPS，证书链/私钥路径必填、只读挂载，TLS1.2/1.3、HSTS/CSP、Secure Cookie；关闭应用代理解析，网关清洗转发头、按直连IP限登录。后端共享来源10次/5分钟桶保留，不冒称多用户/多级代理支持。三服务CPU/内存/PID/no-new-privileges，后端cap_drop/只读根/64MiB受限tmpfs；解释与生产边界见TLS_DEPLOYMENT、ADR-031。
@@ -270,6 +291,6 @@ P0–P5已按各阶段交付范围验收；P6开发中，尚未整体验收。P5
 - 本机可按README使用临时真实PG预览；它不保留用户数据，不能作为长期使用部署。截图和日志在忽略目录，正式证据摘要进仓库。
 - 开发依赖5项中等级告警待上游兼容修复；生产依赖审计无发现不代表全栈安全审计完成。生产前重新评估Java依赖和容器漏洞。
 - GraphFlow恢复可用后执行context/plan/index，当前不能声称已索引。
-- **当前P6后续**：分析/学习快照/知识目录迁移、数据库与附件配对备份/隔离恢复、监控日志/轮转、专用角色方案和本机TLS/资源均已有本地证据；接下来完成依赖/镜像风险与digest、独立迁移作业/备份权限与最终安全复核。整阶段门禁仍未通过；实际生产域名/续期、权限切换、公网部署与外部告警另行确认。P5的AI文字建议、P4图片自动识别和供应商账单对账局限继续保留。
+- **当前P6后续**：分析/迁移/恢复、监控日志、角色方案、TLS/资源和Java25已有本地证据，镜像digest及兼容安全补丁/全量扫描已实施；安全门禁仍因未关闭高/严重发现而失败，优先按SUPPLY_CHAIN_REVIEW台账处置，再推进独立迁移作业/备份权限与最终复核。实际生产域名/续期、权限切换、公网部署、付费支持/框架大版本迁移与外部告警另行确认。P5的AI文字建议、P4图片自动识别和供应商账单对账局限保留。
 - 现有边界：源指纹保守覆盖整个用户目录，其他技能变化也可能要求新草案，不自动冲突合并。改变其他已发布技能必须明确联合范围、重新预览及确认。表单/JSON编辑器没有拖拽画布；来源映射保留节点与快照，不自动迁移能力证据。登录限流仍为单实例内存，节点库最多100项并提供搜索；无密码重置/多用户注册。部署是私有本地开发配置，不是生产安全验收。
 - P2与本轮P4各一次付费调用授权均已使用；不追加调用、不生产部署、不自动安装系统服务、不执行不可逆数据操作。

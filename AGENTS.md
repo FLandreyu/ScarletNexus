@@ -20,7 +20,7 @@ If the session does not expose these tools, record the limitation and use scoped
 - 按 P0 → P6 顺序推进。先列验收标准，再实现、测试、记录证据；门禁未通过不能标记完成或进入后续阶段。
 - 非关键细节自主决定并写入 `docs/DECISIONS.md`。重大架构变更、付费服务、生产部署、公开暴露服务、不可逆操作必须先确认。
 - 每次结束更新 `docs/PROGRESS.md`：改动、命令、实际结果、阻塞、下一步；阶段工作使用可回滚 Git 提交。不自动推送。
-- 保持 Vue 3 / TypeScript / Java 21 / Spring Boot / MyBatis / PostgreSQL 模块化单体。所有数据库变更走 Flyway，已执行迁移不得修改。
+- 保持 Vue 3 / TypeScript / Java 25 / Spring Boot / MyBatis / PostgreSQL 模块化单体。所有数据库变更走 Flyway，已执行迁移不得修改。
 - 私有业务按当前认证用户隔离，UUID 主键，UTC `timestamptz`，归档优先。发布采用事务、草案乐观锁、评估追加历史。
 - AI 输出是不可信数据，只能进入草案；无 Key 不影响手动业务；Fake Provider 只允许出现在测试源集。
 - 不提交密钥、数据库文件、学习附件或个人示例进度。不用 H2、假响应或跳过的测试证明 PostgreSQL / AI / Docker 可用。

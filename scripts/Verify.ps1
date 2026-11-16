@@ -1,7 +1,9 @@
 param([string]$JavaHome = $env:JAVA_HOME, [string]$NodeHome, [switch]$Testcontainers)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-if (-not $JavaHome) { throw 'Provide -JavaHome with a Java 21 JDK directory.' }
+if (-not $JavaHome) { throw 'Provide -JavaHome with a Java 25 JDK directory.' }
+$JavaHome = (Resolve-Path -LiteralPath $JavaHome).Path
+if (-not (Test-Path -LiteralPath (Join-Path $JavaHome 'bin/javac.exe'))) { throw 'JavaHome must contain a Java 25 JDK.' }
 $env:JAVA_HOME = $JavaHome
 $env:PATH = "$JavaHome/bin;$env:PATH"
 if ($NodeHome) {

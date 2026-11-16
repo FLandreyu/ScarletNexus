@@ -8,7 +8,7 @@
 
 ## 浏览器验收运行方式
 
-从backend目录使用Java21：
+从backend目录使用Java25（原Java21验收证据仍保留）：
 
 ```powershell
 mvn -B test-compile exec:java '-Dexec.mainClass=dev.scarletnexus.GenerationTestRuntime' '-Dexec.classpathScope=test' '-Dexec.args=../.runtime/generation-acceptance.json ../.runtime/generation-stop-UNIQUE'

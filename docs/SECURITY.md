@@ -1,5 +1,7 @@
 # 安全方案
 
+P6供应链复核与兼容补丁见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)：实际镜像/JAR/npm全范围扫描完整，仍有高/严重发现，安全门禁退出2；固定digest和生产npm零发现不代表全栈安全。未创建漏洞忽略条目，Framework生命周期、gosu与构建/测试工具风险继续保留。新安全workflow为手动入口且如实失败，不代表远端已验收。
+
 P6直接TLS配置及本地证据见[TLS_DEPLOYMENT](TLS_DEPLOYMENT.md)、[P6_TLS_ACCEPTANCE](P6_TLS_ACCEPTANCE.md)：独立overlay强制Secure Cookie，TLS1.2/1.3、短期HSTS，网关清除伪造转发头并按直连IP限登录；后端关闭代理解析、保留共享限流桶。三服务资源上限/no-new-privileges，后端只读根目录与专用临时/附件存储。仅本机隔离验收，不等于生产域名/证书、代理链、权限迁移或全栈安全审计。
 
 P6专用数据库角色：新空库可由迁移角色持有schema与表、运行角色执行必要DML，V12限制Flyway历史和追加型历史权限；真实角色/拒绝DDL与学习业务测试见DATABASE_ROLES。默认现有库不自动切换，双连接进程仍可能持有迁移凭据，生产优先独立迁移作业。不能据此宣称生产最小权限与角色切换已经完成。

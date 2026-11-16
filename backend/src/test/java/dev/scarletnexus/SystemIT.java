@@ -41,7 +41,7 @@ class SystemIT {
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry registry) throws Exception {
     if ("container".equals(System.getProperty("test.database"))) {
-      container = new PostgreSQLContainer<>("postgres:17.11-alpine");
+      container = new PostgreSQLContainer<>(TestImages.POSTGRES);
       container.start();
       url = container.getJdbcUrl();
       username = container.getUsername();
@@ -320,7 +320,10 @@ class SystemIT {
   @Test
   @Order(1)
   void migratesAnEmptyRealPostgresAndReportsDatabaseState() {
-    assertThat(jdbc.queryForObject("SHOW server_version", String.class)).startsWith("17.11");
+    String expectedVersion =
+        "container".equals(System.getProperty("test.database")) ? "17.12" : "17.11";
+    assertThat(jdbc.queryForObject("SHOW server_version", String.class))
+        .startsWith(expectedVersion);
     flyway.validate();
     assertThat(flyway.migrate().migrationsExecuted).isZero();
     var response = http.getForEntity("/api/v1/system/status", Map.class);

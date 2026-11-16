@@ -158,3 +158,16 @@ Jackson默认字符串转换不能仅靠ALLOW_COERCION_OF_SCALARS关闭，需要
 保持默认本地HTTP，独立TLS overlay用Compose !override替换入口为loopback HTTPS；证书/私钥必填且只读，不自动申请证书或公开服务。Nginx直接终止TLS1.2/1.3并加短期HSTS，强制Secure Cookie；不信任客户端代理头，后端显式关闭转发解析。网关按连接IP限制登录，保留后端共享来源桶，明确单用户、多代理/多用户限流边界，不为验收调高安全阈值。
 
 三服务设置CPU/内存/PID与no-new-privileges，后端只读根目录/受限tmpfs/附件卷，限制堆比例；功能验收不替代容量评估。测试证书不装入OS信任库，Python验证真实CA/主机名与负向信任；浏览器显式限定本轮公钥，API使用额外CA。独立内部Docker测试网络以测试源SSE测首段延迟及代理头清洗，不调用模型或写学习数据；CI覆盖两种入口。生产角色迁移、TLS实际域名/续期、依赖镜像风险与完整P6门禁继续独立记录。
+
+
+## ADR-032 — Java 25 LTS 统一运行时
+
+2026-11-16，用户明确要求以自动执行模式升级到最新Java LTS。Oracle官方路线图确认Java25为当前最新LTS、Java29计划2027年9月发布；该明确要求替代总纲v1.0与ADR-001/004中的Java21基线，不改历史验收事实。Spring Boot3.5.16官方支持Java17至25，故保留既有框架、MyBatis与供应链补丁覆盖，不进行无关主版本迁移。
+
+Maven java.version、CI、Docker构建/JRE及隔离测试/SSE夹具镜像统一Java25，镜像继续固定经官方registry核对的digest，并同步security/images.lock.json。Windows使用项目内校验SHA256的Temurin25.0.5+8；Maven3.9.16保留，无Wrapper/Kotlin/Gradle。系统环境变量不修改，数据库迁移不变。既有未提交供应链修改及.env.example必须保留；验证及受限范围以PROGRESS与本次升级summary为准，不自动推送或部署生产。
+
+## ADR-033 — 全发现扫描与不可变镜像的保守门禁
+
+保留Java25专项，维持Boot3.5架构，显式安全版本覆盖Jackson2.21.8/Tomcat10.1.62/JDBC42.7.14；官方Nginx1.30.6与PG17.12采用固定多架构索引，前端libxslt精确补丁。Testcontainers将官方镜像的tag@digest兼容声明集中于测试辅助类，不禁用Ryuk；真实PG继续作为验证依据。
+
+Trivy固定官方归档/二进制摘要，扫描所有锁定基础镜像、实际构建应用镜像和两种npm范围；保留全严重度/未修项、显式空ignore及数据库新鲜度验证。Java DB未识别的Tomcat用实际嵌套JAR版本/hash补充CycloneDX扫描，不将覆盖缺失算零发现。只有完整、无高/严重才返回0，有发现返回2，工具/覆盖失败返回1；不以广泛抑制或手动改报告求绿。当前剩余风险由SUPPLY_CHAIN_REVIEW台账管理，安全CI提供手动入口并如实失败，整个P6仍不完成。

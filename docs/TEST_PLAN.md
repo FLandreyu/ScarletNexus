@@ -15,7 +15,7 @@ P3实际门禁和结果见[P3_ACCEPTANCE](P3_ACCEPTANCE.md)：最终Linux25单�
 ## P0 门禁
 
 1. `npm ci`、格式检查、vue-tsc、Vitest、生产构建：验证状态页实际请求、成功/失败/重试语义，禁止预置学习数据。
-2. Java21 `mvn verify`：格式门禁、编译、JUnit、真实 PG 迁移与 Spring API；默认隔离 PostgreSQL，CI 可使用 Testcontainers profile。
+2. Java25 `mvn clean verify`：格式门禁、编译、JUnit、真实 PG 迁移与 Spring API；默认隔离 PostgreSQL，CI 可使用 Testcontainers profile。
 3. 迁移：空库创建用户/审计表；Flyway validate；重复 migrate 不变；email 唯一/规范化、状态/外键、JSON约束和审计不可改；真实记录跨新连接/应用重启仍存在。
 4. API：status 真实数据库读取；健康/就绪；私有请求401，非法变更403，requestId可追踪，错误不泄露配置，数据库断连后 readiness/status503。
 5. Playwright：真实启动页面访问 API，无请求拦截；桌面和390px手机宽度，健康内容和无水平溢出。截图/报告位于忽略目录，CI 失败上传证据。
@@ -27,6 +27,8 @@ P3实际门禁和结果见[P3_ACCEPTANCE](P3_ACCEPTANCE.md)：最终Linux25单�
 P1：双技能共享节点顺序独立；A→B→C→A拒绝；分类环拒绝；资源越权；登录/退出/CSRF/限流。P2：草案中途发布失败回滚；同revision并发冲突；非法JSON/超时不污染数据；幂等发布。P3：节点重命名和路线更新不损证据；暂停恢复计时；重复stop。P4：AI断线不丢作答、提示等级不泄题、图片校验/权限、评估关联证据。P5：预算硬约束、草案确认幂等、复习原因。P6：导出恢复记录数量/关联/checksum一致、全旅程窄屏回归。
 
 Fake AI 只用于测试；真实 Provider 联调需要授权和安全配置 Key，不将 Fake 通过视为真实模型调用通过。CI 配置未在远端运行前不得宣称远端 CI 通过。
+
+P6供应链工具：镜像锁静态/registry一致性、工具SHA-256、全量包/严重度、新鲜数据库、实际JAR与Tomcat补充SBOM。空报告/缺包、缺Java覆盖、过期/未来数据库不得视为干净；具体工具单测与实际结果见P6_SUPPLY_CHAIN_ACCEPTANCE。安全扫描完整但有高/严重时退出2，不能与工具错误退出1或安全通过退出0混淆；不依靠忽略清单求绿。
 
 P6 HTTPS与资源门禁见[P6_TLS_ACCEPTANCE](P6_TLS_ACCEPTANCE.md)：证书/主机名正反验证、TLS1.2/1.3、明文拒绝、安全Cookie/CSRF/退出、伪造转发头与网关限流，三服务实际资源/只读根目录、运维与附件清单。真实业务桌面/手机复用默认全旅程，通过限定公钥的TLS测试配置访问Nginx；独立测试源延迟SSE验证首段时机和转发头清洗，不证明模型质量。CI矩阵覆盖HTTP/TLS×桌面/手机，本轮远端未运行。
 

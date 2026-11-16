@@ -39,7 +39,7 @@ public final class LearningTestRuntime implements AutoCloseable {
     String url, user, pass;
     if ("container".equals(System.getProperty("test.database"))) {
       pg = null;
-      container = new PostgreSQLContainer<>("postgres:17.11-alpine");
+      container = new PostgreSQLContainer<>(TestImages.POSTGRES);
       container.start();
       url = container.getJdbcUrl();
       user = container.getUsername();
