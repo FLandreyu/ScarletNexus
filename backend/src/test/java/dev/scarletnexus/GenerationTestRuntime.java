@@ -9,7 +9,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /** Isolated acceptance fixture. Never packaged in production or used as a real model. */

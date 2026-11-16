@@ -38,6 +38,7 @@ def inspect_report(data, backend=False):
     if backend:
         names = {p['Name'] for p in packages}
         required = {'org.springframework:spring-webmvc', 'com.fasterxml.jackson.core:jackson-databind',
+                    'tools.jackson.core:jackson-databind',
                     'org.postgresql:postgresql'}
         if not required <= names:
             raise ValueError('Backend JAR transitive dependency coverage is incomplete')
@@ -60,14 +61,15 @@ def tomcat_sbom(image):
     components = []
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         for name in archive.namelist():
-            match = re.fullmatch(r'BOOT-INF/lib/(tomcat-embed-(?:core|el|websocket))-(10\.1\.[0-9]+)\.jar', name)
+            match = re.fullmatch(r'BOOT-INF/lib/(tomcat-embed-(?:core|el|websocket))-((?:10\.1|11\.0)\.[0-9]+)\.jar', name)
             if match:
                 artifact, version = match.groups()
                 components.append({'type': 'library', 'group': 'org.apache.tomcat.embed',
                                    'name': artifact, 'version': version,
                                    'purl': f'pkg:maven/org.apache.tomcat.embed/{artifact}@{version}',
                                    'hashes': [{'alg': 'SHA-256', 'content': hashlib.sha256(archive.read(name)).hexdigest()}]})
-    if {p['name'] for p in components} != {'tomcat-embed-core', 'tomcat-embed-el', 'tomcat-embed-websocket'}:
+    if (len(components) != 3 or len({p['version'] for p in components}) != 1
+            or {p['name'] for p in components} != {'tomcat-embed-core', 'tomcat-embed-el', 'tomcat-embed-websocket'}):
         raise ValueError('Built backend Tomcat inventory is incomplete')
     return {'bomFormat': 'CycloneDX', 'specVersion': '1.5', 'version': 1, 'components': components}
 

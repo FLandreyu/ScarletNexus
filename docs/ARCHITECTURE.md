@@ -17,12 +17,13 @@ flowchart LR
 ## 版本与兼容性
 
 - Java 源码 / Docker / CI 固定 Java 25 LTS；本机验证使用项目内 .tools/jdks/jdk-25.0.5+8（Temurin 25.0.5+8），不修改系统 JAVA_HOME/PATH。原 Java21 基线由 ADR-032 明确替代。
-- Spring Boot 3.5.16，MyBatis Starter 3.0.5，Springdoc 2.8.17；BOM管理基础依赖，安全补丁显式覆盖Jackson2.21.8、Tomcat10.1.62、PostgreSQL JDBC42.7.14，更新框架时复核这些例外。
+- Spring Boot 4.1.2，MyBatis Starter 4.0.1，Springdoc 3.2.0；BOM管理Framework7/Security7/Tomcat11/Jackson3，移除Boot3时代的Tomcat覆盖。安全补丁显式保留Jackson2.21.8（属性jackson-2-bom.version）与PostgreSQL JDBC42.7.14。
+- spring-boot-jackson2作为官方弃用过渡模块保留既有AI/Schema/目录严格解析；HTTP明确preferred-json-mapper=jackson2，spring.jackson2配置UTC。Jackson3供新框架/OpenAPI路径使用，两套库均纳入实际JAR扫描；以后单独迁移Jackson3，不把兼容层当长期终点。Session/Flyway/Web MVC采用Boot4专用starter，数据库模型与V1–V12不变。
 - Vue 3.5、Vite 8、TypeScript、Router 4、Pinia 3、Element Plus 2、Tailwind 4；精确版本见 package.json 与 package-lock.json。生产 / CI 使用 Node 24。
 - Compose/Testcontainers PostgreSQL17.12；Zonky原生二进制BOM暂为17.11.0，二者实证分别记录，不用H2替代。
 - Nginx1.30.6作为同源反向代理。六份构建/运行/测试镜像使用security/images.lock.json的官方多架构digest，实际只验证linux/amd64；最终Nginx另锁定libxslt安全补丁。扫描与剩余风险见SUPPLY_CHAIN_REVIEW，不将固定digest当作自动漏洞修复。
 
-版本依据：[Spring Boot 系统要求](https://docs.spring.io/spring-boot/3.5/system-requirements.html)、[MyBatis 兼容矩阵](https://mybatis.org/spring-boot-starter/mybatis-spring-boot-autoconfigure/)、[Vite 环境要求](https://vite.dev/guide/)。实际制品版本同时经 npm / Maven Central 元数据核对。
+版本依据：[Spring Boot 4迁移指南](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide)、[MyBatis 兼容矩阵](https://mybatis.org/spring-boot-starter/mybatis-spring-boot-autoconfigure/)、[Vite 环境要求](https://vite.dev/guide/)。实际制品版本同时经 npm / Maven Central 元数据核对；验收实况见PROGRESS。
 
 ## 模块边界
 

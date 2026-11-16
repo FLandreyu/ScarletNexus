@@ -1,10 +1,10 @@
-# Spring Boot 4 迁移提案（尚未实施）
+# Spring Boot 4 迁移方案
 
-核对：2026-11-16。此文件是可供确认的计划，不代表迁移完成或安全通过。工具镜像修补独立推进，当前业务框架仍为Boot3.5.16。
+核对：2026-11-16。用户在了解理由后以“那继续吧”确认本地迁移与隔离验证，现已开始实施；验收结果以PROGRESS为准，不代表迁移完成或安全通过。起点为9dcc816，用户.env.example/.gitignore改动保留。
 
 ## 原因与目标
 
-现有Framework6.2.19残留CVE-2026-47884/47890；官方为6.2列出的修复属于商业支持。当前使用条件复核不代替补丁与受支持生命周期。推荐免费OSS路线：Spring Boot4.1.2、MyBatis Starter4.0.1、springdoc3.2.0，保留Java25/Vue3/PostgreSQL模块化单体，不购买服务、不部署生产。以上版本已在Maven Central核对；springdoc官方矩阵支持Boot4.1对应3.1/3.2，MyBatis4对应Boot4。
+迁移前Framework6.2.19残留CVE-2026-47884/47890；官方为6.2列出的修复属于商业支持。使用条件复核不代替补丁与受支持生命周期。已确认采用免费OSS路线：Spring Boot4.1.2、MyBatis Starter4.0.1、springdoc3.2.0，保留Java25/Vue3/PostgreSQL模块化单体，不购买服务、不部署生产。以上版本已在Maven Central核对；springdoc官方矩阵支持Boot4.1对应3.1/3.2，MyBatis4对应Boot4。完整实施及验收见[P6_BOOT4_ACCEPTANCE](P6_BOOT4_ACCEPTANCE.md)。
 
 ## 具体范围
 

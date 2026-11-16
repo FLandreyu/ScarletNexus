@@ -1,9 +1,44 @@
 from datetime import datetime, timedelta, timezone
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
+import io
+import zipfile
 import security_scan
 
 
 class SecurityScanTest(unittest.TestCase):
+    def tomcat_jar(self, versions):
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, 'w') as archive:
+            for component, version in versions.items():
+                archive.writestr(f'BOOT-INF/lib/tomcat-embed-{component}-{version}.jar', component.encode())
+        return SimpleNamespace(stdout=output.getvalue())
+
+    def test_actual_tomcat11_inventory_preserves_versions_and_hashes(self):
+        jar = self.tomcat_jar(dict.fromkeys(['core', 'el', 'websocket'], '11.0.27'))
+        with patch.object(security_scan, 'run', return_value=jar):
+            components = security_scan.tomcat_sbom('test-image')['components']
+        self.assertEqual(len(components), 3)
+        self.assertEqual({item['version'] for item in components}, {'11.0.27'})
+        self.assertTrue(all(len(item['hashes'][0]['content']) == 64 for item in components))
+
+    def test_missing_or_mixed_tomcat_inventory_cannot_pass(self):
+        for versions in [{'core': '11.0.27'}, {'core': '11.0.27', 'el': '11.0.26', 'websocket': '11.0.27'}]:
+            with patch.object(security_scan, 'run', return_value=self.tomcat_jar(versions)):
+                with self.assertRaisesRegex(ValueError, 'incomplete'):
+                    security_scan.tomcat_sbom('test-image')
+
+    def test_boot4_scan_requires_both_jackson_generations(self):
+        report = {'ArtifactType': 'container_image', 'Results': [{'Packages': [
+            {'Name': name} for name in ['org.springframework:spring-webmvc',
+                                       'com.fasterxml.jackson.core:jackson-databind',
+                                       'org.postgresql:postgresql']]}]}
+        with self.assertRaisesRegex(ValueError, 'coverage'):
+            security_scan.inspect_report(report, backend=True)
+        report['Results'][0]['Packages'].append({'Name': 'tools.jackson.core:jackson-databind'})
+        self.assertEqual(security_scan.inspect_report(report, backend=True), (4, {}))
+
     def test_unpatched_effective_artifact_still_blocks_and_upstream_is_preserved(self):
         names = ['base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk',
                  'app-backend', 'app-web', 'app-tomcat', 'npm-all', 'npm-production']

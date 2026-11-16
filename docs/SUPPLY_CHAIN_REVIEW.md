@@ -2,7 +2,23 @@
 
 复核日期：2026-11-16，Asia/Shanghai。**兼容补丁、不可变镜像与可复现扫描已实现；安全门禁未通过，P6不标记完成。** 扫描完成与安全通过是两个不同结果。组件识别受文件元数据/数据库覆盖限制，JVM与手工安装的服务端二进制仍须核对厂商发布公告。本轮未包含渗透测试、宿主/浏览器漏洞、GitHub Actions供应链、许可证合规或真实模型质量。
 
-## 第七批：当前有效产物（2026-11-16）
+## 第八批：Boot4迁移后的当前产物（2026-11-16）
+
+经用户确认迁移至Boot4.1.2/MyBatis4.0.1/springdoc3.2.0，Java25不变；实际JAR识别Framework7.0.10、Security7.1.2、Jackson2.21.8与Jackson3.1.7、JDBC42.7.14，Tomcat11.0.27三包从实际JAR提取版本与SHA补充SBOM。未修改已执行Flyway，未引入springdoc MCP模块。
+
+最终报告`.runtime/security-boot4-final`完整，2026-11-16T04:55:59Z结束、实际捕获退出2。当前产物门禁从4次降至**Ryuk2项高**，0严重；全部父层基线及当前产物合计43次，包含重复层，不当作独立CVE或生产暴露数量。没有ignore/VEX或删除未修项，P6门禁仍失败。漏洞库和Java DB仍为当日01:11Z/00:57Z数据。
+
+| 当前应用扫描 | 严重 | 高 | 中 | 低 | 未知 |
+| --- | --- | --- | --- | --- | --- |
+| Boot4实际后端 | 0 | 0 | 2 | 0 | 0 |
+| 实际前端 | 0 | 0 | 1 | 0 | 0 |
+| Tomcat11实际三包补充SBOM | 0 | 0 | 0 | 0 | 0 |
+
+Maven/Node/PG/Go有效工具组合及其发现与第七批相同；npm生产0、全部5 moderate。后端残留中等级为zlib1.3.2-r1的CVE-2026-4738及MyBatis传递OGNL3.4.4的CVE-2026-113730，保留后续分类/兼容补丁待办（2026-11-23复查），不把零高/严重称零漏洞。Spring原两项告警在新实际产物扫描中消失，生命周期迁移已实施；Ryuk daemon/client范围证据仍仅作限定判断，不抑制其2项高。
+
+首次Boot4扫描因Tomcat清单只接受10.1而正确失败，原记录`.runtime/security-boot4`为不完整结果，不作为通过证据。工具已支持实际11.0版本，仍要求core/el/websocket恰好三包且版本一致；补充缺包/混合版本拒绝及Jackson2/3双覆盖测试。迁移验收见[P6_BOOT4_ACCEPTANCE](P6_BOOT4_ACCEPTANCE.md)。
+
+## 第七批历史产物（2026-11-16，当前以上节为准）
 
 工具镜像修补与验证见[P6_TOOLCHAIN_REMEDIATION](P6_TOOLCHAIN_REMEDIATION.md)。官方父镜像继续固定摘要，新增Go1.27.4；Maven/Node/PostgreSQL/Ryuk改为本地派生镜像，以源码/资产摘要及配方指纹核对，实际扫描与运行记录不可变image ID。这些本地标签不是已发布的registry digest，也不修改宿主全局工具。
 

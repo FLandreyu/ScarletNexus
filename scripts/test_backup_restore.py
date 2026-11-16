@@ -5,10 +5,20 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 import backup_restore as backup
 
 
 class BackupFormatTest(unittest.TestCase):
+    def test_upgrade_drill_rejects_mutable_image_before_creating_resources(self):
+        args = SimpleNamespace(command='drill', input=Path('unused.snb'), backend_image='backend:latest')
+        with patch.object(backup, 'unseal', return_value={'backendImage': 'sha256:' + 'a' * 64}), \
+                patch.object(backup, 'docker') as docker:
+            with self.assertRaisesRegex(ValueError, 'immutable'):
+                backup.restore(args, Path('.'), Path('unused.key'), b'unused')
+            docker.assert_not_called()
+
     def payload(self, work):
         (work / 'database.dump').write_bytes(b'format-test-only-not-a-postgres-dump')
         with tarfile.open(work / 'attachments.tar', 'w') as archive:

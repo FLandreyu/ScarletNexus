@@ -4,7 +4,20 @@
 
 ## 当前阶段
 
-P6第七批：构建、测试、数据库启动工具重建修补已验证；**当前实际产物仍有4次高/严重发现，安全门禁未通过，P6尚未完成**。Java25保留，Boot4仅形成待确认提案。
+P6第八批：经用户确认完成Boot4框架迁移与本地回归；**当前实际产物仍有Ryuk2项高等级发现，安全门禁未通过，P6尚未完成**。Java25保留，无生产部署。
+
+- 用户在了解迁移理由后以“那继续吧”确认BOOT4_MIGRATION_PLAN，回滚起点9dcc816。Boot4.1.2/MyBatis4.0.1/springdoc3.2.0，专用Web MVC/Session JDBC/Flyway及测试模块；适配上下文/安全配置包名、显式TestRestTemplate自动配置。实际Framework7.0.10、Security7.1.2、Tomcat11.0.27；移除旧Tomcat覆盖，保留JDBC42.7.14，Java25不变。无V1–V12修改或MCP依赖。
+- 采用官方弃用Jackson2过渡模块，原严格AI/Schema/目录解析保持，HTTP明确jackson2与UTC；安全覆盖属性改为jackson-2-bom.version=2.21.8，Jackson3 BOM保持3.1.7。新增真实转换器、UUID/日期/小数/401错误与requestId回归；两套Jackson都强制识别扫描。ADR-035记录选择与后续Jackson3迁移边界。
+- patched Maven/Java25 `verify -Ptestcontainers`最终**31单元+52真实PG17.12集成=83项通过**，0失败/错误/跳过，7分10秒（.runtime-boot4-integration-r2.log），格式/编译/打包通过；含角色、OpenAPI、会话、严格解析、故障回滚与新增JSON合同，Ryuk启用。初轮包名/注解位置、UTF-8 BOM/导入排序失败已修正，日志保留，未跳过门禁。Windows原生PG未重跑。
+- Node受测容器格式/类型/14单元/构建通过（.runtime-boot4-frontend.log），既有chunk与弃用提示保留。隔离Compose复用旧V12卷启动Boot4，三服务Healthy；真实TLS桌面6项30.6秒+手机6项32.4秒全通过，无API mock/JS异常/横向溢出（.runtime-boot4-browser.log）。未重复默认HTTP完整12项。
+- TLS信任正反/主机名/明文拒绝/Secure Cookie/CSRF/退出/伪造头限流，资源/只读/monitor UP及6引用/6文件审计通过；延迟SSE首段0.041秒/终段2.541秒、代理头清洗通过（.runtime-boot4-runtime.log）。仅协议夹具，未调用真实模型，不声称旧浏览器会话跨Security代际保持。
+- 新增`drill --backend-image sha256:...`，仅已有本地不可变ID，认证备份不改，只在新隔离卷/网络验证。旧Boot3备份在实际Boot4镜像上**54表/6附件匹配、认证读取/6图成功**，报告保留不同原/新ID（.runtime-boot4-upgrade-drill.log）；新Boot4配对备份/恢复**54表/8附件匹配、认证读取/8图成功**（.runtime-boot4-paired-restore.log）。不覆盖源卷，私有备份/口令不入Git。
+- 最终Linux Python/OpenSSL17项通过，增加双Jackson覆盖、Tomcat11三包清单/缺失/版本不一致拒绝及升级镜像标签拒绝；Python编译、镜像消费者静态锁、CI YAML/Git diff检查通过（.runtime-boot4-static.log）。远端CI未运行。
+- `.runtime/security-boot4-final`完整扫描、明确scanner_exit=2：**实际后端0高/严重、2中；前端1中；门禁剩Ryuk2高/0严重**。所有父层基线保留合计43次，不能当独立CVE；npm生产0、全依赖5 moderate。首次因Tomcat只接受10.1清单而扫描不完整，修正实际11.0版本/hash提取后重跑；没有忽略漏洞/未修项，原Spring2严重告警消失。zlib/OGNL中等级、工具中低/未知继续保留，台账见SUPPLY_CHAIN_REVIEW。
+- 收尾Compose down，该项目ps -a空、Testcontainers无残留、两卷保留，恢复/SSE临时资源清理；用户.env.example/.gitignore原改动保持不入提交。无推送/生产部署/公网服务/付费调用/全局服务修改；GraphFlow仍未提供，定向检查，未context/plan/index。细节见P6_BOOT4_ACCEPTANCE。
+- **下一步**：继续复核Ryuk2高的上游SDK修复/公告适用性，分类处理中低/未知，再完成独立迁移作业、备份权限与P6最终门禁；不重复请求已获授权的Boot4迁移确认，不标P6完成。
+
+P6第七批（以下为历史记录）：构建、测试、数据库启动工具重建修补已验证；当时实际产物4次高/严重，Boot4仅为待确认提案。
 
 - 先定义P6_TOOLCHAIN_REMEDIATION验收标准。六个官方父镜像digest与gosu1.20/Ryuk0.14.0源码、Guava33.7.2-jre/npm11.21.2资产摘要固定；Go1.27.4重建启动/清理二进制、保留符号与构建信息。Maven精确升级apt/OpenSSL/brotli及Guava，Node仅镜像内修补npm；实际PG17.12数据库引擎不变，无Flyway或业务代码变更。
 - 增加四个本地工具目标、recipe指纹/平台/用途核对、缺失失败且无旧版回退；构建、Testcontainers、Compose、SSE、安全workflow统一消费。Compose数据库pull_policy=never，根.dockerignore排除环境文件、缓存/附件；README补充Python/预构建要求。默认本地原生PG与宿主工具不改；CI前端/浏览器宿主环境不冒称已修补。ADR-034记录有效产物门禁语义，远端CI未运行。

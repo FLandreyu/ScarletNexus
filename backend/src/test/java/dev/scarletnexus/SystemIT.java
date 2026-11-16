@@ -14,9 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +27,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+@org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = "debug=false")
@@ -66,6 +67,46 @@ class SystemIT {
   @Autowired dev.scarletnexus.ai.MoneyLedger.Store costs;
   @Autowired org.springframework.transaction.PlatformTransactionManager manager;
   @Autowired org.springframework.context.ApplicationContext context;
+
+  record JsonCompatibility(
+      UUID id,
+      java.time.Instant timestamp,
+      java.time.LocalDate date,
+      java.math.BigDecimal amount) {}
+
+  @Test
+  @Order(0)
+  void preservesHttpJsonConverterDatesDecimalsAndErrorContract() throws Exception {
+    var adapter =
+        context.getBean(
+            org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter
+                .class);
+    var converter =
+        adapter.getMessageConverters().stream()
+            .filter(
+                value ->
+                    value.canWrite(
+                        JsonCompatibility.class,
+                        org.springframework.http.MediaType.APPLICATION_JSON))
+            .findFirst()
+            .orElseThrow();
+    assertThat(converter)
+        .isInstanceOf(
+            org.springframework.http.converter.json.MappingJackson2HttpMessageConverter.class);
+    var payload =
+        new JsonCompatibility(
+            UUID.randomUUID(),
+            java.time.Instant.parse("2026-11-16T00:00:00Z"),
+            java.time.LocalDate.parse("2026-11-16"),
+            new java.math.BigDecimal("123456789.12345678"));
+    var encoded = json.writeValueAsString(payload);
+    assertThat(encoded).contains("2026-11-16T00:00:00Z", "2026-11-16", "123456789.12345678");
+    assertThat(json.readValue(encoded, JsonCompatibility.class)).isEqualTo(payload);
+    var response = http.getForEntity("/api/v1/me", String.class);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(json.readTree(response.getBody()).get("code").asText()).isEqualTo("UNAUTHENTICATED");
+    assertThat(json.readTree(response.getBody()).get("requestId").asText()).isNotBlank();
+  }
 
   @Test
   @Order(5)

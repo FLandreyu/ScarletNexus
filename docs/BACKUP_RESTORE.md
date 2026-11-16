@@ -17,6 +17,8 @@ python3 -m unittest discover -s scripts -p test_backup_restore.py -v
 
 输出采用独占创建，不覆盖旧备份。临时明文目录私有并自动清理；断电/强制杀进程后需检查残余临时目录和资源。只恢复可信备份，数据库转储和镜像不是不可信代码沙箱。
 
+框架升级兼容性演练可在`drill`显式追加`--backend-image sha256:...`，仅接受已存在本地的不可变image ID。数据库仍使用备份原PG镜像，恢复只写新生成的隔离卷；输出同时记录备份后端与受测后端ID，原备份认证内容不改。默认不覆盖时仍使用备份所记录后端。此选项不适用于backup/verify，不接受浮动标签，不触碰源库。
+
 ## 保证与边界
 
 - pg_dump自定义格式+附件tar+manifest共同封装。每张表行数/UTC排序内容SHA-256、附件名/大小/SHA-256及镜像内容ID均入清单。READY/ARCHIVED图片须与数据库checksum一致；孤立文件也保留，不自动删除。

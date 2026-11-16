@@ -177,3 +177,9 @@ Trivy固定官方归档/二进制摘要，扫描所有锁定基础镜像、实�
 以官方digest固定父层、资产SHA与Go源码归档SHA构建四个本地工具镜像。精确OS包、Guava及npm补丁只在镜像内安装；gosu/Ryuk使用固定Go重建并保留可识别元数据与符号，不删除启动降权或测试清理能力。配方指纹覆盖两份锁、Dockerfile和.dockerignore；消费入口核对平台/用途/指纹，使用image ID，无旧工具回退。未构建或上游包消失时失败，需要复核锁，不自动降级。
 
 扫描v2保留全部父镜像基线，门禁扫描经身份验证的有效产物、实际应用、编译器及npm两个范围；父层被真实修补后不再重复阻塞，但不得删除报告或把实际目标取消门禁。Go二进制必须识别Go1.27.4。未修Spring与Ryuk仍阻止通过，二进制/daemon使用条件证据不自动生成忽略项。当前仅linux/amd64实测，本地标签不是发布的registry摘要；远端CI未运行，宿主/浏览器工具不在修补范围。框架迁移提案独立，未取得确认不实施Boot4。
+
+## ADR-035 — 经确认迁移Boot4并保留JSON过渡边界
+
+2026-11-16用户了解理由后确认继续，授权BOOT4_MIGRATION_PLAN中的本地迁移与隔离验证。以9dcc816为回滚点，保持Java25/模块化单体，迁移Boot4.1.2、MyBatis4.0.1、springdoc3.2.0，采用Web MVC/Session JDBC/Flyway专用starter与对应测试模块。按Boot4 BOM管理Framework/Security/Tomcat，移除旧Tomcat10覆盖；保留Jackson2.21.8与JDBC42.7.14显式安全覆盖，Jackson2属性为jackson-2-bom.version，不覆盖Jackson3 BOM。
+
+官方已弃用Jackson2兼容模块作为过渡：原AI/Schema/导入解析继续使用Jackson2，HTTP明确选择jackson2及UTC，新增实际转换器/日期/小数/错误响应回归；Jackson3用于框架/OpenAPI并强制纳入扫描覆盖。严格业务解析不放宽，MCP依赖不引入，无Flyway或个人数据变更。旧备份演练可显式指定已存在的不可变新后端ID，仅在新隔离资源执行；报告同时记录原/新ID，不篡改认证备份，不把旧应用恢复成功当新版本兼容证据。门禁仍以实际结果为准，不自动部署/推送/调用付费模型。

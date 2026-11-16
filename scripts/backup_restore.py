@@ -5,6 +5,7 @@ import hmac
 import http.cookiejar
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import subprocess
@@ -211,6 +212,11 @@ def restore(args, work, secret_file, secret):
         print(json.dumps({'authenticated': True, 'tables': len(manifest['tables']),
                           'attachments': len(manifest['attachments'])}))
         return
+    backend_image = getattr(args, 'backend_image', None) or manifest['backendImage']
+    if not re.fullmatch(r'sha256:[0-9a-f]{64}', backend_image):
+        raise ValueError('Restore application must use a local immutable image ID')
+    subprocess.run(['docker', 'image', 'inspect', backend_image], check=True,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     prefix = 'scarlet-restore-' + uuid.uuid4().hex[:16]
     network, db, app = prefix, prefix + '-db', prefix + '-app'
     volumes = [prefix + '-pg', prefix + '-files']
@@ -255,7 +261,7 @@ def restore(args, work, secret_file, secret):
         check_references(db, manifest['user'], manifest['database'], manifest['attachments'])
         env.write_text(f'DATABASE_URL=jdbc:postgresql://{db}:5432/{manifest["database"]}\nDATABASE_USERNAME={manifest["user"]}\nDATABASE_PASSWORD={db_password}\nSERVER_ADDRESS=0.0.0.0\nAPI_DOCS_ENABLED=false\n')
         docker('run','-d','--name',app,'--network',network,'--env-file',str(env),
-               '--mount',f'type=volume,src={volumes[1]},dst=/var/lib/scarlet/attachments',manifest['backendImage'])
+               '--mount',f'type=volume,src={volumes[1]},dst=/var/lib/scarlet/attachments',backend_image)
         created_containers.append(app)
         address = inspect(app)['NetworkSettings']['Networks'][network]['IPAddress']
         url = f'http://{address}:8080'
@@ -286,6 +292,7 @@ def restore(args, work, secret_file, secret):
         print(json.dumps({'isolatedRestore':True,'allTablesMatched':True,'allFilesMatched':True,
                           'applicationReady':True,'authenticatedRead':bool(args.login_password_file),
                           'authenticatedImagesRead':images_read,
+                          'backupBackendImage':manifest['backendImage'], 'testedBackendImage':backend_image,
                           'tables':len(manifest['tables']),'attachments':len(manifest['attachments'])}))
     finally:
         # Names are freshly generated here; never accept a user-supplied restore target.
@@ -303,7 +310,10 @@ def main():
     parser.add_argument('--input', type=Path)
     parser.add_argument('--login-email')
     parser.add_argument('--login-password-file')
+    parser.add_argument('--backend-image', help='Optional local sha256 image ID for an isolated upgrade drill')
     args = parser.parse_args()
+    if args.backend_image and args.command != 'drill':
+        parser.error('--backend-image only applies to isolated drill')
     if args.command == 'backup' and (not args.project or not args.output or args.output.exists()):
         parser.error('backup requires a source project and a new output path')
     if args.command != 'backup' and not args.input:

@@ -1,6 +1,6 @@
 # Scarlet Nexus
 
-P6供应链复核已固定官方基础镜像与工具源码摘要，并重建Maven、Node、PostgreSQL启动工具及Ryuk；实际产物仍有4项高/严重发现，**安全门禁未通过**，不能据此生产部署。来源、计数与后续处置见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)，工具构建见[P6_TOOLCHAIN_REMEDIATION](docs/P6_TOOLCHAIN_REMEDIATION.md)。
+P6已迁移Spring Boot4.1.2，保留Java25及严格JSON业务解析；原两项Spring严重告警在实际产物扫描中消失，仍有Ryuk两项高等级发现，**安全门禁未通过**，不能据此生产部署。迁移及真实回归见[P6_BOOT4_ACCEPTANCE](docs/P6_BOOT4_ACCEPTANCE.md)，完整来源与计数见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)，固定工具构建见[P6_TOOLCHAIN_REMEDIATION](docs/P6_TOOLCHAIN_REMEDIATION.md)。
 
 P6新增独立HTTPS与资源配置：显式合并`docker-compose.tls.yml`，证书/私钥必填、仅loopback HTTPS，Secure Cookie、登录入口限流、三服务资源上限与后端只读根目录。默认HTTP不变，配置和隔离验证见[TLS_DEPLOYMENT](docs/TLS_DEPLOYMENT.md)；不代表生产部署或P6整体验收。
 

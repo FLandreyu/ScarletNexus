@@ -5,7 +5,7 @@ import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import java.nio.file.*;
 import java.util.*;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /** Disposable real database and HTTP application; no AI key or fake provider. */
