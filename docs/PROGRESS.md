@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+P6远端CI修复（2026-11-17）：两次首次推送均因干净runner的Engine缺少Go测试夹具镜像而失败，前端通过、PG/浏览器未执行；BuildKit缓存不等于Engine已加载。verify_ryuk显式拉取锁定linux/amd64摘要后才执行全套测试，新增拉取失败关闭和执行顺序回归，标准见P6_CI_ACCEPTANCE。仅runner/测试/文档变更，不改应用/依赖/配方/Flyway；GraphFlow仍未提供，无context/plan/index。实际本地和远端结果在该验收文档更新，P6尚未完成、桌面发行版未实现。
+
 GitHub连接与首次推送：origin为https://github.com/FLandreyu/ScarletNexus.git，连接时远端为空。用户明确要求推送并完成本机设备授权后，以FLandreyu账号将当前已提交历史推送到远端main，首次远端HEAD为b0a2dbb；本机ls-remote核对一致。凭据通过Git Credential Manager保存，仓库本地指定GitHub用户名以避免多账号选择歧义，不写入令牌。保留本地appmod/java-upgrade-20261116030222分支及用户.env.example/.gitignore未提交修改，不上传运行数据/秘密、不发布Release。推送可触发Quality gates，其远端结果尚未核验，不把本地通过视为远端CI通过；手动安全workflow未主动触发。仅远端配置/记录变更，无应用测试重跑。
 
 P6第十二批：固定Ryuk源码适配官方拆分SDK，连同测试构建目标纳入正式门禁；当前应用回归通过，最终16目标扫描结果见P6_RYUK_SDK_MIGRATION。P6整体仍待收尾复核，未启动P7或生产部署。
