@@ -1,5 +1,8 @@
 # P6 分析、数据迁移与部署准备
 
+2026-11-17收尾状态：P6核心Web范围已按总纲逐项验收通过，依据及保留局限见[P6_CLOSEOUT](P6_CLOSEOUT.md)。下文分批证据保留当时结论；实际生产投用和桌面发行版未完成，中低/未知风险继续跟踪。
+
+
 依据总纲3.1、4.2、P6。当前采用Vue/Java25/Boot4/MyBatis/PostgreSQL模块化单体（Java25用户专项与Boot4确认迁移见ADR-032/035）；不运行真实模型、不生产部署、不修改已有迁移或用户.env.example。GraphFlow工具未提供，按AGENTS规则定向检查，不能声称已context/plan/index。原设计时使用Java21，历史验收不改写；当前总验收矩阵见[P6_FINAL_REVIEW](P6_FINAL_REVIEW.md)。
 
 ## 分步门禁

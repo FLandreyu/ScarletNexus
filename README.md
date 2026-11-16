@@ -1,6 +1,8 @@
 # Scarlet Nexus
 
-当前总验收结论见[P6最终复核矩阵](docs/P6_FINAL_REVIEW.md)：本地核心流程已有实证，HTTP/TLS桌面与手机均覆盖；第十二批实际产物扫描及离线复核为0高/严重，安全扫描门禁已通过，中低/未知风险和生产前验收仍保留。可用`python3 scripts/review_security_report.py --report .runtime/YOUR_REPORT`离线复核扫描证据，扫描通过不等于整个P6或生产安全通过。
+**P0–P6核心Web版本已验收通过（2026-11-17）**，关闭依据和保留局限见[P6_CLOSEOUT](docs/P6_CLOSEOUT.md)。远端六项CI作业、HTTP/TLS桌面手机旅程和既定安全门禁通过。实际生产部署与Windows桌面安装包尚未完成；当前需按下述Web部署方式使用，不能下载后双击图标直接使用。
+
+当前总验收结论见[P6最终复核矩阵](docs/P6_FINAL_REVIEW.md)：本地核心流程已有实证，HTTP/TLS桌面与手机均覆盖；第十二批实际产物扫描及离线复核为0高/严重，安全扫描门禁已通过，中低/未知风险和生产前验收仍保留。可用`python3 scripts/review_security_report.py --report .runtime/YOUR_REPORT`离线复核扫描证据，P6关闭另有逐项证据，扫描通过不等于生产安全通过。
 
 P6已迁移Spring Boot4.1.2，保留Java25及严格JSON业务解析；原Spring严重告警已消除，Ryuk通过固定源码上的[官方拆分SDK适配](docs/P6_RYUK_SDK_MIGRATION.md)消除原两项高告警，仍有1项中等级。该工具是可审查的本地补丁，并非上游新发行版；没有ignore/VEX或禁用清理。完整来源与计数见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)，框架迁移见[P6_BOOT4_ACCEPTANCE](docs/P6_BOOT4_ACCEPTANCE.md)。
 
@@ -8,19 +10,19 @@ P6新增[独立数据库迁移作业](docs/P6_MIGRATION_JOB_ACCEPTANCE.md)：新
 
 新角色项目已支持[只读备份与受限恢复](docs/P6_BACKUP_ROLE_ACCEPTANCE.md)：backup须提供独立数据库口令文件，使用scarlet_backup的TCP认证；v2归档恢复角色与权限后以runtime启动，旧工具明确拒绝v2，新工具兼容旧v1。密码/归档不提交，默认本地legacy-admin模式不冒充最小权限。
 
-P6新增独立HTTPS与资源配置：显式合并`docker-compose.tls.yml`，证书/私钥必填、仅loopback HTTPS，Secure Cookie、登录入口限流、三服务资源上限与后端只读根目录。默认HTTP不变，配置和隔离验证见[TLS_DEPLOYMENT](docs/TLS_DEPLOYMENT.md)；不代表生产部署或P6整体验收。
+P6新增独立HTTPS与资源配置：显式合并`docker-compose.tls.yml`，证书/私钥必填、仅loopback HTTPS，Secure Cookie、登录入口限流、三服务资源上限与后端只读根目录。默认HTTP不变，配置和隔离验证见[TLS_DEPLOYMENT](docs/TLS_DEPLOYMENT.md)；不代表生产部署。
 
-P6数据库角色方案：新空库可采用独立Flyway连接与受限运行角色，见[DATABASE_ROLES](docs/DATABASE_ROLES.md)。现有库未自动更换角色，默认本地配置保留；双连接不等于长期进程不持有迁移权限，生产优先使用独立迁移作业。P6整体验收仍未完成。
+P6数据库角色方案：新空库可采用独立Flyway连接与受限运行角色，见[DATABASE_ROLES](docs/DATABASE_ROLES.md)。现有库未自动更换角色，默认本地配置保留；双连接不等于长期进程不持有迁移权限，生产优先使用独立迁移作业。P6 Web范围已关闭，具体生产切换仍需独立验证。
 
 P6运维检查：`scripts/operations.py`支持本机Docker健康探测和只读附件审计，Compose已加入有界日志轮转；命令、真实验收和未完成的生产门禁见[OPERATIONS_CHECKS](docs/OPERATIONS_CHECKS.md)。没有自动删除附件、安装告警服务或生产部署。
 
-P6第二批已完成加密备份与隔离恢复演练：数据库全部表与私有附件配对备份、新实例真实登录和图片读取，工具与边界见[BACKUP_RESTORE](docs/BACKUP_RESTORE.md)。这不代表生产部署或P6整体验收完成。
+P6第二批已完成加密备份与隔离恢复演练：数据库全部表与私有附件配对备份、新实例真实登录和图片读取，工具与边界见[BACKUP_RESTORE](docs/BACKUP_RESTORE.md)。这不代表生产部署完成。
 
 AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus_Codex_Master_Plan.md)，阶段实况见 [PROGRESS](docs/PROGRESS.md)。
 
-P6开发中，首批新增“成长分析”和“数据管理”：真实已结束时长/任务完成/独立规则正确率、按日/技能图表、分来源能力与证据追踪；本人学习快照JSON导出；知识目录JSON校验预览后明确确认、新增UUID导入，保留跨技能共享定义，不覆盖原知识或学习历史。目录导入不包含学习记录/附件，学习快照不是可直接恢复的数据库备份。加密备份与隔离恢复已验证，监控及生产安全门禁尚未完成，不代表P6已验收。边界见[P6设计](docs/P6_DESIGN.md)。
+P6已交付，新增“成长分析”和“数据管理”：真实已结束时长/任务完成/独立规则正确率、按日/技能图表、分来源能力与证据追踪；本人学习快照JSON导出；知识目录JSON校验预览后明确确认、新增UUID导入，保留跨技能共享定义，不覆盖原知识或学习历史。目录导入不包含学习记录/附件，学习快照不是可直接恢复的数据库备份。加密备份与隔离恢复已验证，监控工具及既定安全门禁已验证，实际生产运维尚未执行。边界见[P6设计](docs/P6_DESIGN.md)。
 
-**当前P0–P5已验收**：技能/知识树、AI草案与版本、目标/路线/任务/学习记录、练习/证据、私有图片、数学及SSE导师，以及预算计划与复习。正式数据写入PostgreSQL并审计，不预置学习进度。验收实况与局限见[进度](docs/PROGRESS.md)，下一阶段P6。
+**当前P0–P6核心Web版本已验收**：技能/知识树、AI草案与版本、目标/路线/任务/学习记录、练习/证据、私有图片、数学及SSE导师，以及预算计划与复习。正式数据写入PostgreSQL并审计，不预置学习进度。验收实况与局限见[进度](docs/PROGRESS.md)，后续为桌面发行版独立交付。
 
 P5使用方法：在“每日计划”选择日期、时区、总预算和本次技能上限，生成规则草案；检查原因、保存选择，勾选明确确认后计划才生效。原任务截止日期不会被草案覆盖。未完成任务可延期/取消/保总分钟拆分；提前重新排期可在学习工作台编辑日期与状态。已确认计划内任务改变预计分钟前须取消对应计划。
 
@@ -161,4 +163,4 @@ npm run test:e2e -- --project=mobile
 - [AI设计](docs/AI_DESIGN.md)、[安全](docs/SECURITY.md)、[决策](docs/DECISIONS.md)
 - [路线](docs/ROADMAP.md)、[测试](docs/TEST_PLAN.md)、[运维](docs/OPERATIONS.md)、[进度](docs/PROGRESS.md)
 
-开发OpenAPI：http://127.0.0.1:8080/v3/api-docs 。只包含实际端点，Compose默认关闭。接下来P6为分析、导入导出、备份恢复与部署准备；生产部署、付费AI及不可逆操作另行确认。
+开发OpenAPI：http://127.0.0.1:8080/v3/api-docs 。只包含实际端点，Compose默认关闭。P6已交付分析、导入导出、备份恢复与部署准备；生产部署、付费AI及不可逆操作另行确认。

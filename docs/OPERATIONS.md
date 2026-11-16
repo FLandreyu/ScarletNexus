@@ -1,6 +1,6 @@
 # 本地运维与生产准备边界
 
-可选直接HTTPS与容器资源限制见[TLS_DEPLOYMENT](TLS_DEPLOYMENT.md)。合并TLS overlay只替换为loopback HTTPS，证书路径必填，不安装信任或申请证书；默认下述HTTP配置不变。生产域名/续期、依赖镜像风险及完整P6门禁仍待完成。
+可选直接HTTPS与容器资源限制见[TLS_DEPLOYMENT](TLS_DEPLOYMENT.md)。合并TLS overlay只替换为loopback HTTPS，证书路径必填，不安装信任或申请证书；默认下述HTTP配置不变。P6 Web范围已验收，生产域名/续期、风险维护与具体环境投用仍待验证，见P6_CLOSEOUT。
 
 日常启动见 README。本地 Compose 仅 loopback，持久卷 `postgres-data`；无自动数据清理。数据库连接密码必填于忽略的 .env，修改密码不会自动更新已有卷中的角色密码，需独立安全迁移，不能删卷绕过。
 
@@ -8,7 +8,7 @@
 
 停止：`docker compose down` 保留卷；重启：`docker compose restart`；查看日志：`docker compose logs --tail=100 backend`。不要执行 `down -v` 或删除数据目录。隔离测试使用临时测试集群，绝不指向用户数据库。
 
-当前 Docker 配置是开发环境，非生产方案。P6 必须补齐：域名/TLS、Secure Cookie、CSP 与 SSE 超时复核、镜像 digest、非root和资源限制、最小数据库角色、外部存储权限、脱敏轮转日志、健康告警、备份加密及隔离恢复演练、JSON导出/导入、安全扫描和回归。生产部署/公网暴露/购买资源需用户明确确认。
+当前默认Docker配置用于本机开发，不是直接公网生产方案。P6已交付TLS/Secure Cookie/CSP/SSE、固定镜像、资源限制、数据库分离身份、日志轮转/脱敏、健康探测、备份恢复及JSON迁移和安全回归。真实域名/续期、宿主与存储权限、外部持续告警/异地备份留存及容量仍需按实际环境验证；生产部署/公网暴露/购买资源需用户明确确认。
 
 ## 本机隔离WSL验收运行时（2026-11-15）
 
