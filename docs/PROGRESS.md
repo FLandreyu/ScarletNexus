@@ -4,6 +4,14 @@
 
 ## 当前阶段
 
+P6第三批推进监控、日志与只读附件审计，整体仍未验收。详见OPERATIONS_CHECKS。
+
+- 新增operations.py：Docker状态与内部liveness/readiness/网关HTTP探测，健康0、异常2；只读扫描附件并分类缺失/损坏/孤立文件，私有清单独占保存，无删除动作，明确非一致性快照。
+- Compose三服务json-file日志10m/3轮转；网关访问日志省略URI/查询/凭据并关联请求编号；PG减少错误详情和SQL语句输出。实际inspect/SHOW及查询标记未入日志的检查通过。真实10引用/10文件无异常，停止验收后端时监控正确返回2，随后恢复。
+- 5项Python测试通过；Java31单元+50真实PG集成=81项通过，0失败/跳过（.runtime-p6-ops-backend.log）；前端格式/类型/14单元/构建通过。真实Nginx桌面6项25.5秒+手机6项31.3秒全部通过（.runtime-p6-ops-browser.log）。实际inspect/SHOW与查询标记检查见.runtime-p6-logging-check.log，正常和后端停止故障检查见.runtime-p6-operations.log，新增gateway探测实际UP。
+- 收尾停止隔离Compose、保留数据库与附件卷，不安装服务、删除附件或推送。生产TLS、最小数据库角色、资源与全栈风险复核仍未完成；不把生产说明当作已部署/已安全验收。下一步优先准备最小数据库运行角色与独立迁移角色的可验收方案。
+- GraphFlow工具未提供，使用定向检查，未context/plan/index；原.env.example改动保留，无付费调用、推送或生产部署。
+
 P6第二批：加密备份与隔离恢复已验收，详见[BACKUP_RESTORE](BACKUP_RESTORE.md)，整体P6仍未完成。
 
 - 本轮新增scripts/backup_restore.py：命名项目停写后配对pg_dump/附件、全表与文件清单、数据库附件引用校验、加密和密文认证；恢复只生成新目标，不覆盖源库/卷，无模型调用或新迁移。

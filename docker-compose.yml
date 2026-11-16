@@ -1,7 +1,14 @@
 name: scarlet-nexus
+x-logging: &bounded-logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
 services:
   db:
+    logging: *bounded-logging
     image: postgres:17.11-alpine
+    command: ['postgres', '-c', 'log_error_verbosity=terse', '-c', 'log_min_error_statement=panic']
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-scarlet_nexus}
       POSTGRES_USER: ${POSTGRES_USER:-scarlet}
@@ -15,6 +22,7 @@ services:
       retries: 20
     restart: unless-stopped
   backend:
+    logging: *bounded-logging
     build: ./backend
     environment:
       DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-scarlet_nexus}
@@ -39,6 +47,7 @@ services:
       start_period: 30s
     restart: unless-stopped
   web:
+    logging: *bounded-logging
     build: ./frontend
     ports:
       - '127.0.0.1:${WEB_PORT:-8088}:80'

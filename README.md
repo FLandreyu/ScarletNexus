@@ -1,5 +1,7 @@
 # Scarlet Nexus
 
+P6运维检查：`scripts/operations.py`支持本机Docker健康探测和只读附件审计，Compose已加入有界日志轮转；命令、真实验收和未完成的生产门禁见[OPERATIONS_CHECKS](docs/OPERATIONS_CHECKS.md)。没有自动删除附件、安装告警服务或生产部署。
+
 P6第二批已完成加密备份与隔离恢复演练：数据库全部表与私有附件配对备份、新实例真实登录和图片读取，工具与边界见[BACKUP_RESTORE](docs/BACKUP_RESTORE.md)。这不代表生产部署或P6整体验收完成。
 
 AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus_Codex_Master_Plan.md)，阶段实况见 [PROGRESS](docs/PROGRESS.md)。

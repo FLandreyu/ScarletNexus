@@ -88,7 +88,9 @@ jobs:
         working-directory: frontend
       - name: Encrypted backup and isolated restore drill
         run: |
-          python3 -m unittest discover -s scripts -p test_backup_restore.py -v
+          python3 -m unittest discover -s scripts -p 'test_*.py' -v
+          python3 scripts/operations.py monitor --project scarlet-nexus
+          python3 scripts/operations.py attachments --project scarlet-nexus
           python3 - <<'PY'
           import pathlib, secrets
           pathlib.Path('.runtime/backup.key').write_text(secrets.token_urlsafe(48))
