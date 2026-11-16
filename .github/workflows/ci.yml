@@ -41,6 +41,10 @@ jobs:
   compose-and-browser:
     needs: [frontend, backend]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [desktop, mobile]
     env:
       POSTGRES_PASSWORD: ci-disposable-database-only
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:8088
@@ -69,7 +73,7 @@ jobs:
       - name: Check gateway and restart persistence
         run: |
           curl --fail http://127.0.0.1:8088/ | grep 'Scarlet Nexus'
-          curl --fail http://127.0.0.1:8088/api/v1/system/status | grep '"schemaVersion":"10"'
+          curl --fail http://127.0.0.1:8088/api/v1/system/status | grep '"schemaVersion":"11"'
           docker compose restart backend
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:8088/api/v1/system/status > /tmp/status.json; then break; fi
@@ -80,7 +84,7 @@ jobs:
         working-directory: frontend
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --project=${{ matrix.browser }}
         working-directory: frontend
       - name: Collect container logs
         if: failure()
@@ -88,7 +92,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: browser-and-compose
+          name: browser-and-compose-${{ matrix.browser }}
           path: |
             frontend/test-results/
             frontend/playwright-report/

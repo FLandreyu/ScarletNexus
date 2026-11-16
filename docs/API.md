@@ -1,5 +1,22 @@
 # API 合同
 
+## P6第一批实际接口（整体P6尚未完成）
+
+均在`/api/v1`下、当前认证用户隔离，写入需CSRF。
+
+| 路径 | 方法与实际行为 |
+| --- | --- |
+| /analytics | GET `from? / to? / timeZone=UTC / skillId?`；含首尾本地日期，默认30天，最多366天；时长、任务分母、独立规则作答、按技能与日期聚合、当前ACTIVE路线、generatedAt及口径说明 |
+| /analytics/assessments | GET `to? / timeZone / skillId? / page / size`；截至结束日期，各节点/RULE与SELF分别取最近评估，含证据IDs；不是混合掌握率 |
+| /analytics/evidence/{id} | GET本人证据来源/独立性/结果与原练习taskId，其他用户404 |
+| /data/catalog | GET `skillId?` 下载`scarlet-nexus-catalog/v1`；全部最多100技能，节点最多1000、分类位置5000、关系3000；单技能只含范围内引用/关系，no-store |
+| /data/snapshot | GET本人学习业务JSON快照，40个显式白名单表；最多25000行/原始行JSON8MiB，超限422 SNAPSHOT_TOO_LARGE；不含身份、会话、Key、审计、附件路径/二进制；不可直接数据库恢复，no-store |
+| /data/catalog/imports | POST `{documentText}`，目录最多2MiB；严格类型/字段/重复JSON键/UUID/引用/分类环/先修环校验，200返回服务器预览id、revision、sourceHash、计数与边界说明，不写目录 |
+| /data/catalog/imports/{id} | GET本人预览/确认状态，支持刷新后恢复；其他用户404 |
+| /data/catalog/imports/{id}/confirm | POST `{revision,sourceHash,confirmed:true}` + Idempotency-Key；锁当前用户后事务新增UUID/共享引用/关系，返回原→新UUID映射；同键同预览重取，不覆盖既有知识/学习记录或自动发布图谱；过期/篡改409 |
+
+导入仅接受知识目录格式，不接受学习快照，不能冒称学习历史或附件恢复；完整pg_dump/附件备份恢复演练仍待P6后续。指标精确定义见[P6设计](P6_DESIGN.md)。分析事务REPEATABLE_READ；导出/导入按用户行锁保持业务一致，原始学习内容不写应用日志。
+
 ## P5实际计划与复习接口
 
 前缀`/api/v1`，均认证隔离；写入需CSRF。`page=0,size=50`，size最大100。请求revision从当前对象读取，过期409；非法预算/重复技能/旧复测证据422。没有模型请求，规则v1生成真实草案。

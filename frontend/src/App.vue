@@ -41,6 +41,8 @@ onUnmounted(() => window.removeEventListener('session-expired', expired))
         <RouterLink to="/learn">学习首页</RouterLink>
         <RouterLink v-if="auth.user" to="/planner">每日计划</RouterLink>
         <RouterLink v-if="auth.user" to="/reviews">到期复习</RouterLink>
+        <RouterLink v-if="auth.user" to="/analytics">成长分析</RouterLink>
+        <RouterLink v-if="auth.user" to="/data">数据管理</RouterLink>
         <RouterLink v-if="auth.user" to="/paths">学习路线</RouterLink>
         <RouterLink to="/skills">技能空间</RouterLink
         ><RouterLink v-if="auth.user" to="/ai/jobs">生成任务</RouterLink

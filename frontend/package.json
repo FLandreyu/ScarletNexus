@@ -17,6 +17,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "echarts": "6.1.0",
     "element-plus": "2.14.8",
     "katex": "0.19.1",
     "pinia": "3.0.4",

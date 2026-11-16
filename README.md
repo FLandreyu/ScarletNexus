@@ -2,6 +2,8 @@
 
 AI 原生个人终身学习系统。正式需求见 [开发总纲](Scarlet_Nexus_Codex_Master_Plan.md)，阶段实况见 [PROGRESS](docs/PROGRESS.md)。
 
+P6开发中，首批新增“成长分析”和“数据管理”：真实已结束时长/任务完成/独立规则正确率、按日/技能图表、分来源能力与证据追踪；本人学习快照JSON导出；知识目录JSON校验预览后明确确认、新增UUID导入，保留跨技能共享定义，不覆盖原知识或学习历史。目录导入不包含学习记录/附件，学习快照不是可直接恢复的数据库备份。完整备份恢复、监控及生产安全门禁尚未完成，不代表P6已验收。边界见[P6设计](docs/P6_DESIGN.md)。
+
 **当前P0–P5已验收**：技能/知识树、AI草案与版本、目标/路线/任务/学习记录、练习/证据、私有图片、数学及SSE导师，以及预算计划与复习。正式数据写入PostgreSQL并审计，不预置学习进度。验收实况与局限见[进度](docs/PROGRESS.md)，下一阶段P6。
 
 P5使用方法：在“每日计划”选择日期、时区、总预算和本次技能上限，生成规则草案；检查原因、保存选择，勾选明确确认后计划才生效。原任务截止日期不会被草案覆盖。未完成任务可延期/取消/保总分钟拆分；提前重新排期可在学习工作台编辑日期与状态。已确认计划内任务改变预计分钟前须取消对应计划。
@@ -117,12 +119,16 @@ Linux上只有Docker而没有Java/Maven时，可运行 `sh scripts/verify-testco
 ```powershell
 cd frontend
 npx playwright install chromium
-npm run test:e2e
+npm run test:e2e -- --project=desktop
+# 手机项目使用重新启动的隔离验收应用，或等待原登录限流窗口结束后再运行：
+npm run test:e2e -- --project=mobile
 ```
 
 完整Playwright需要**隔离验收数据库/账号**，在终端设置E2E_EMAIL，并从本地验收密码文件读取E2E_PASSWORD（不要在命令中粘贴真实密码）。它会创建验收技能、任务、复习和证据，不要对个人真实库运行。默认启动Vite并真实请求后端；覆盖桌面/手机登录、手动图谱、路线计时、练习附件、三技能计划/任务调整/复测、刷新持久化和系统状态。产物在test-results/playwright-report（不入Git）。CI使用临时随机密码文件/独立数据库；未推送并执行前不能声称远端CI已通过。
 
-验证Compose构建后的页面时，先在同一终端设置 `$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:8088'` 再运行 `npm run test:e2e`。此模式直接访问Nginx和生产构建产物，不启动Vite；CI也使用此模式。恢复开发模式可移除该环境变量。
+验证Compose构建后的页面时，先在同一终端设置 `$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:8088'` 再运行 `npm run test:e2e -- --project=desktop`。此模式直接访问Nginx和生产构建产物，不启动Vite；完整桌面/手机回归使用下方隔离脚本。恢复开发模式可移除该环境变量。
+
+默认全旅程在两个浏览器项目合计会超过单实例“5分钟10次登录”限额，不能为回归调高正式限流。Compose隔离验收可在根目录运行 `./scripts/Verify-Browser.ps1 -EnvFile .runtime/compose-acceptance.env -ProjectName scarlet-nexus-p0-acceptance -NodeHome .tools/node-v24.22.3-win-x64 -OutputRoot .runtime/browser-results`：须先设置隔离的E2E_EMAIL/E2E_PASSWORD并启动该验收Compose；脚本在每个项目前只重建命名项目的backend/web并等待Healthy，保留数据库/附件卷，输出仅允许.runtime子目录。新环境请替换为自己的隔离验收配置，不对真实学习库运行。CI通过桌面/手机matrix各自独立应用执行，远端CI尚未运行。
 
 本机默认Node25不在当前Vitest支持范围内；可在项目根目录终端执行 `$env:PATH = (Resolve-Path './.tools/node-v24.22.3-win-x64').Path + ';' + $env:PATH`，再运行上述npm命令。`.tools`为当前机器隔离工具，不入Git；新环境应自行安装Node24 LTS。
 

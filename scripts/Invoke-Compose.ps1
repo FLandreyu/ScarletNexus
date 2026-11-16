@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('up','down','ps','logs','restart','config','build')][string]$Action = 'up',
+    [ValidateSet('up','down','ps','logs','restart','recreate-app','config','build')][string]$Action = 'up',
     [string]$EnvFile = '.env',
     [ValidatePattern('^[a-z0-9][a-z0-9_-]*$')][string]$ProjectName = 'scarlet-nexus'
 )
@@ -13,6 +13,7 @@ $actionArguments = switch ($Action) {
     'ps' { @('ps') }
     'logs' { @('logs','--tail','100','backend') }
     'restart' { @('restart') }
+    'recreate-app' { @('up','--no-deps','--force-recreate','-d','--wait','--wait-timeout','120','backend','web') }
     'config' { @('config','--quiet') }
     'build' { @('build') }
 }

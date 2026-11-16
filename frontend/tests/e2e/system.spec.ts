@@ -10,7 +10,7 @@ test('shows actual backend and database state on desktop and mobile', async ({
   expect(response.ok()).toBeTruthy()
   expect(await response.json()).toMatchObject({
     database: 'UP',
-    schemaVersion: '10',
+    schemaVersion: '11',
     aiConfigured: false,
   })
   await page.goto('/system')
@@ -18,7 +18,7 @@ test('shows actual backend and database state on desktop and mobile', async ({
     '系统连接状态',
   )
   await expect(page.getByText('已连接', { exact: true })).toHaveCount(2)
-  await expect(page.getByText('V10', { exact: true })).toBeVisible()
+  await expect(page.getByText('V11', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '刷新状态' }).click()
   await expect(page.getByText('已连接', { exact: true })).toHaveCount(2)
   expect(
