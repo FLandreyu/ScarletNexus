@@ -11,4 +11,8 @@
 
 采用Electron45.3.3（npm官方注册表核对并锁版本）作为新增桌面壳，复用Chromium呈现现有Vue界面，避免另写业务UI。构建工具与运行时逐项锁定，Electron自身也必须纳入后续供应链扫描，P6扫描不能代表桌面产物安全。参考[Electron安全指南](https://www.electronjs.org/docs/latest/tutorial/security/)、[PostgreSQL官方Windows分发说明](https://www.postgresql.org/download/windows/)。
 
-本批不发布Release、不推送、不生产部署、不改用户.env.example/.gitignore。桌面新工程不等于D2/D3已实现，具体结果见PROGRESS。
+本批不发布Release、不推送、不生产部署、不改用户.env.example/.gitignore。阶段完成度以最新验收为准，具体结果见PROGRESS。
+
+## 2026-11-17 当前状态
+
+D1、D2 本地切片已实现并验证。D2 真实 Windows 内置运行时和 Electron 首次设置/重启、备份恢复等证据见 [DESKTOP_D2_ACCEPTANCE](DESKTOP_D2_ACCEPTANCE.md)，普通用户/干净系统/安装升级等保留边界同步记录；不把本机成功当作安装发行完成。下一步 D3，随后 D4；尚未构建或发布供普通用户下载的安装包。上方最初规划保留为阶段来源。

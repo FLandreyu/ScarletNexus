@@ -7,7 +7,11 @@
   "scripts": {
     "start": "node run.cjs",
     "test": "node --test test/*.test.cjs",
-    "test:smoke": "node test/smoke.cjs"
+    "test:smoke": "node test/smoke.cjs",
+    "test:runtime": "node test/runtime-smoke.cjs",
+    "test:managed": "node test/managed-smoke.cjs",
+    "test:lifecycle": "node test/lifecycle-smoke.cjs",
+    "check": "node --check main.cjs && node --check runtime.cjs && node --check setup-preload.cjs && node --check setup.js"
   },
   "devDependencies": {
     "electron": "45.3.3",

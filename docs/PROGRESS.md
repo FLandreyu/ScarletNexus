@@ -4,6 +4,18 @@
 
 ## 当前阶段
 
+桌面发行版 D2（2026-11-17）：内置 Temurin25/PG17.12 装配与原始归档 SHA、首次管理员窗口、独立 ACL 持久数据、随机 SCRAM 和控制/迁移/业务/备份身份、V12 独立迁移、启动锁和服务所有权核验、私有 stdin 生命周期、升级前认证加密备份已实现。完整验收与保留边界见 [DESKTOP_D2_ACCEPTANCE](DESKTOP_D2_ACCEPTANCE.md)，复现命令见 [desktop/README](../desktop/README.md)。
+
+- 最终后端 verify：31 单测 + 53 真实 PostgreSQL 集成测试通过，零跳过（`.runtime-desktop-d2-backend-confirmed.log`）；前端格式/类型/14 单测/构建通过，保留原有图表 chunk 提醒；桌面7单测与语法通过，npm audit零发现，不等于二进制扫描。
+- 原生 Windows 内置运行时实际初始化、CSRF 登录、SCRAM与越权拒绝、重启持久化、升级前库/附件加密及隔离数据库实际恢复通过（`.runtime-desktop-d2-native-final.log`）。最终装配脚本独立执行成功（`.runtime-desktop-d2-assembly-verified.log`）。
+- 真实 Electron 窗口首次设置、登录、中文技能写入、正常关闭重开数据保留、退出后本程序服务停止通过，无页面异常（`.runtime-desktop-d2-managed-confirmed.log`）。原生故障测试确认启动期 EOF 与父进程丢失均退出 Java，遗留专属 PG 核验接回后可停止（`.runtime-desktop-d2-lifecycle-confirmed.log`）；Windows signalCode 测试等待修正与失败保留见 D2 验收。
+- 当前中文项目路径上的 initdb 编码与 pg_ctl 后台管道问题已定位修正；失败日志与隔离目录保留，未删除真实数据/PG PID。备份 pending 明文的强制中断窗口、备份容量、ProgramData junction 普通用户/中文用户名与卸载验证明确留 D3。
+- GraphFlow 未提供，未执行 context/plan/index。`.env.example` / `.gitignore` 用户改动保留；未修改已执行迁移，无公开服务、Release或推送。
+- **下一步 D3**：Windows 离线安装包、桌面/开始菜单图标、卸载保留数据、普通用户和干净 Windows 验收、完整桌面业务与安装升级回归。D4 再完成制品供应链扫描与发行准备。D2 完成不表示已有可下载安装的成品；P0–P6 Web 保持关闭，P7不自动启动。
+
+以下 D1 与 P6 为历史记录。
+
+
 桌面发行版D1（2026-11-17）：用户授权开始桌面开发，按DESKTOP_PLAN/ADR-041新增独立desktop工程，固定Electron45.3.3和Playwright1.65.1及依赖锁；保留Vue/Java25/Boot4/PG业务栈，无业务/迁移/个人配置改动。完成独立窗口、单实例、Node禁用/沙箱/上下文隔离、外部导航/重定向/新窗口/权限阻断，以及随机loopback同源网关（Host/Origin/文件与运维路径隔离、API代理头清洗、SSE不缓冲、窗口退出关闭网关）。显式开发后端仅127.0.0.1，packaged模式在内置运行时交付前拒绝启动。
 
 - Node24两项集成式单测通过，覆盖远程URL/凭据拒绝、真实HTTP SPA/文件/Host/Origin隔离、Cookie/SSE传输；非业务假响应，真实业务另由原生Electron验证。CJS语法与Prettier检查、npm audit零发现通过（.runtime-desktop-d1-audit-final.json）；不等于Electron/Chromium二进制扫描通过，该项留D4。

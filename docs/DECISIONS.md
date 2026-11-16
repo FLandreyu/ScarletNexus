@@ -229,3 +229,13 @@ Windows图标/独立窗口/安装包/内置运行时及升级数据保护是用�
 D1窗口禁Node、开sandbox/contextIsolation/webSecurity，拒绝外部导航/跳转/子窗口和权限请求；只有开发模式允许显式127.0.0.1 HTTP后端，packaged模式在D2完成前拒绝启动。自有随机loopback网关负责SPA同源、Host/Origin校验、路径/运维隔离和流式API转发/代理头清洗，关闭只清理该网关，不停外部开发服务。远程API响应不获得文件系统或Node权限；不提供通用IPC。D2不得复用P0临时trust预览数据，发行版不得要求用户另装Docker或手写数据库配置。
 
 本批npm审计零发现仅对应依赖审计，不覆盖Electron/Chromium二进制；桌面产物还需单独供应链扫描。运行时、安装包、升级回滚和干净Windows验收仍为明确后续，不发布Release或自动推送。
+
+## ADR-042 — 内置 Windows 运行时、私有数据与升级保护
+
+2026-11-17 按 D2 授权保留 Java25/Boot4/PG 模块化单体，新增受桌面父进程管理的原生运行时。Temurin25.0.5+8 与 EDB PostgreSQL17.12 原始归档固定 SHA，装配器保留许可并生成文件完整性清单；发行签名与全制品扫描另验。安装资源与持久数据分离，随机 SCRAM 控制身份只供私有集群初始化，迁移/业务/备份角色复用既有正式权限 SQL，Java 业务进程不获得迁移密码。首次管理员由隔离本地窗口设置，没有默认密码；AI Key 不从宿主继承。
+
+EDB initdb 在 Windows 中文路径失败，因此只为数据库工具提供 ProgramData/ScarletNexus/paths-SID 中 ACL 保护的固定 junction，核对真实目标后使用，不移动真实数据或安装系统服务。标准用户/中文用户名/卸载不跟随链接删除数据由 D3 继续验收。私有启动锁、data_directory 核验与监听 PID 核验约束进程所有权；Java 从启动前监听私有 stdin，STOP/EOF 关闭，异常遗留 PG 下次核验后接回，不能广泛杀进程或删除 PG PID 文件。
+
+JAR 哈希/发行标识变化前，以只读身份导出库并对数据库和附件分别 AES-256-GCM 加密，最后写完整清单，失败阻止迁移；密钥保存在用户 ACL 保护配置中。此内部升级保护格式不是 SNBACK，也不等于异地备份、自动回滚或恢复 UI。强行终止可能留下受 ACL 保护的明文 pending 导出；大数据量、断电/磁盘不足、用户恢复流程留 D3，不掩盖局限。禁止自动跨 PG 主版本升级。
+
+本批完整后端84/前端14测试及原生 Windows、真实 Electron 验收记录见 DESKTOP_D2_ACCEPTANCE；D3 安装包/图标、D4 制品安全/发布不提前宣称完成。不自动推送。

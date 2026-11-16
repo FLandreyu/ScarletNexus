@@ -16,7 +16,7 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci --prefix desktop
       - run: npm test --prefix desktop
-      - run: node --check desktop/main.cjs
+      - run: npm run check --prefix desktop
   frontend:
     runs-on: ubuntu-latest
     defaults:
