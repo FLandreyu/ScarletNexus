@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+GitHub连接：按用户要求将origin配置为https://github.com/FLandreyu/ScarletNexus.git。连接器核对当前账号FLandreyu有仓库管理/推送权限；本机git fetch origin及ls-remote成功，连接时远端为空。保留当前appmod/java-upgrade-20261116030222分支及用户.env.example/.gitignore修改，未推送、未发布Release或触发远端CI。仅远端配置/记录变更，无应用测试重跑。
+
 P6第十二批：固定Ryuk源码适配官方拆分SDK，连同测试构建目标纳入正式门禁；当前应用回归通过，最终16目标扫描结果见P6_RYUK_SDK_MIGRATION。P6整体仍待收尾复核，未启动P7或生产部署。
 
 - 起点e75a6a5，先定义P6_RYUK_SDK_MIGRATION标准。固定0.14.0归档和client0.6.3/api1.57.0，提交可审查补丁、Go模块锁、源码输出SHA和MIT版权；保持ACK、标签过滤、超时/重试、清理顺序及Force语义，不禁Ryuk、不用ignore/VEX。新增patch2.8.1-r0仅用于构建；配方覆盖全部资产，最终镜像保留版权与可识别符号/元数据。ADR-039记录维护边界。
