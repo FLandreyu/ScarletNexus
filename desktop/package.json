@@ -1,0 +1,16 @@
+{
+  "name": "scarlet-nexus-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scarlet Nexus Windows desktop host",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "node run.cjs",
+    "test": "node --test test/*.test.cjs",
+    "test:smoke": "node test/smoke.cjs"
+  },
+  "devDependencies": {
+    "electron": "45.3.3",
+    "playwright": "1.65.1"
+  }
+}

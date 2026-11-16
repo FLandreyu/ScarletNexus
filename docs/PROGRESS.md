@@ -4,6 +4,16 @@
 
 ## 当前阶段
 
+桌面发行版D1（2026-11-17）：用户授权开始桌面开发，按DESKTOP_PLAN/ADR-041新增独立desktop工程，固定Electron45.3.3和Playwright1.65.1及依赖锁；保留Vue/Java25/Boot4/PG业务栈，无业务/迁移/个人配置改动。完成独立窗口、单实例、Node禁用/沙箱/上下文隔离、外部导航/重定向/新窗口/权限阻断，以及随机loopback同源网关（Host/Origin/文件与运维路径隔离、API代理头清洗、SSE不缓冲、窗口退出关闭网关）。显式开发后端仅127.0.0.1，packaged模式在内置运行时交付前拒绝启动。
+
+- Node24两项集成式单测通过，覆盖远程URL/凭据拒绝、真实HTTP SPA/文件/Host/Origin隔离、Cookie/SSE传输；非业务假响应，真实业务另由原生Electron验证。CJS语法与Prettier检查、npm audit零发现通过（.runtime-desktop-d1-audit-final.json）；不等于Electron/Chromium二进制扫描通过，该项留D4。
+- 原生Windows Electron实际窗口冒烟通过：连接原scarlet-nexus-p6-backup-role-acceptance隔离PG/V12服务，真实登录并读取成长分析，页面无JS异常，Node不可访问、sandbox/contextIsolation为true；外部导航拦截、二次启动退出且仅一个窗口、退出后网关无法连接均通过（.runtime-desktop-d1-smoke-confirmed.log）。截图.runtime/desktop-d1-analytics.png已查看，含隔离验收数据，不入Git、不冒充个人数据。开发测试脚本可复现，文档desktop/README。
+- 初轮npm安装后Electron按需下载未使用代理而失败；设置本进程ELECTRON_GET_USE_PROXY后官方校验下载成功。VS Code继承ELECTRON_RUN_AS_NODE造成首次窗口启动失败，测试子进程明确移除后通过；导航阻断测试改为不等待被阻止的导航完成，原失败日志保留。没有关闭TLS校验或删除测试。
+- 新增Windows桌面unit/语法CI作业，远端尚未运行，不宣称桌面CI/安装包/干净Windows验收通过。应用前后端未变，不重复P6整套；仅复用隔离服务做真实桌面验证，结束后停止本验收项目，PG/附件卷保留。用户.env.example/.gitignore保持，无生产/付费/Release/推送或系统服务修改；GraphFlow仍不可用，未context/plan/index。
+- **下一步D2**：内置Java25/真实PG17运行时、身份与持久数据初始化、服务进程生命周期和升级保护。D3才交付桌面图标/安装包/干净Windows验收；当前D1仍依赖显式开发后端，不是可独立下载安装的成品。P0–P6 Web验收结论保留，P7不自动启动。
+
+以下P6关闭与历史记录不代表桌面发行版已经完成。
+
 P6第十四批收尾（2026-11-17）：按总纲P6逐项关闭Web功能、部署准备和验收，**P0–P6核心Web版本开发阶段通过**；详细证据、保留局限及关闭标准见P6_CLOSEOUT。核对远端d2e67c9运行43903457274 completed/success，六作业全部通过（84后端/14前端/四组24浏览器旅程，含真实PG、恢复和TLS/SSE）；当前与该源码差异仅文档。本批新跑只读安全复核退出0、16目标、当前锁/时效一致、有效产物无高/严重，原扫描SHA/日期不改，不冒称重新扫描或重跑应用测试。
 
 此前将未授权的生产实际部署混入P6关闭门禁，与总纲“部署准备/说明”和ROADMAP“生产部署另行确认”不符；ADR-040明确按原范围关闭，不放宽功能、恢复或高/严重阈值。当前中低/未知台账、2026-11-23/30复查、生产域名/续期/旧库切换/持续告警/异地灾备保留，不等于生产就绪。桌面图标/安装包/内置运行环境尚未实现，列为用户新增独立交付范围；不自动开始P7。无业务/依赖/配方/Flyway改动，无生产/付费调用/Release，用户.env.example/.gitignore保持。GraphFlow未提供，定向核对，未context/plan/index；本地可回滚文档提交，不自动推送。

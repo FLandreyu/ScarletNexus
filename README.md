@@ -1,5 +1,7 @@
 # Scarlet Nexus
 
+Windows桌面版已开始[D1开发](desktop/README.md)：独立Electron窗口及本机网关可连接真实业务界面，已验证登录、分析、单实例和退出清理。目前仍需显式开发后端；内置Java/PostgreSQL及安装包尚未交付，不能当作可独立下载安装的成品。完整阶段见[DESKTOP_PLAN](docs/DESKTOP_PLAN.md)。
+
 **P0–P6核心Web版本已验收通过（2026-11-17）**，关闭依据和保留局限见[P6_CLOSEOUT](docs/P6_CLOSEOUT.md)。远端六项CI作业、HTTP/TLS桌面手机旅程和既定安全门禁通过。实际生产部署与Windows桌面安装包尚未完成；当前需按下述Web部署方式使用，不能下载后双击图标直接使用。
 
 当前总验收结论见[P6最终复核矩阵](docs/P6_FINAL_REVIEW.md)：本地核心流程已有实证，HTTP/TLS桌面与手机均覆盖；第十二批实际产物扫描及离线复核为0高/严重，安全扫描门禁已通过，中低/未知风险和生产前验收仍保留。可用`python3 scripts/review_security_report.py --report .runtime/YOUR_REPORT`离线复核扫描证据，P6关闭另有逐项证据，扫描通过不等于生产安全通过。
