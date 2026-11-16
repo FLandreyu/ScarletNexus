@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-P6远端CI修复（2026-11-17）：两次首次推送均因干净runner的Engine缺少Go测试夹具镜像而失败，前端通过、PG/浏览器未执行；BuildKit缓存不等于Engine已加载。verify_ryuk显式拉取锁定linux/amd64摘要后才执行全套测试，新增拉取失败关闭和执行顺序回归，标准见P6_CI_ACCEPTANCE。仅runner/测试/文档变更，不改应用/依赖/配方/Flyway；GraphFlow仍未提供，无context/plan/index。实际本地和远端结果在该验收文档更新，P6尚未完成、桌面发行版未实现。
+P6第十三批远端CI修复（2026-11-17）：两次首次推送均因干净runner的Engine缺少Go测试夹具镜像而失败；BuildKit缓存不等于Engine已加载。verify_ryuk显式拉取锁定linux/amd64摘要后才执行全套测试，新增拉取失败关闭和执行顺序回归。本地36脚本/全部Go通过（.runtime-ci-ryuk-fixture.log）；修复d2e67c9推送后，远端运行43903457274最终completed/success，前端、后端及HTTP/TLS桌面/手机六作业全通过，含84后端真实PG、14前端、四组六故事共24浏览器旅程、备份隔离恢复及TLS/SSE/资源验证。标准、原始失败与通过证据见P6_CI_ACCEPTANCE，不跳过测试或减少矩阵。仅runner/测试/文档变更，不改应用/依赖/配方/Flyway；GraphFlow仍未提供，无context/plan/index。用户.env.example/.gitignore保留；P6整体尚未完成、桌面发行版未实现。下一步收尾P6功能与风险边界，再开展桌面交付设计，不发布Release或生产部署。
 
 GitHub连接与首次推送：origin为https://github.com/FLandreyu/ScarletNexus.git，连接时远端为空。用户明确要求推送并完成本机设备授权后，以FLandreyu账号将当前已提交历史推送到远端main，首次远端HEAD为b0a2dbb；本机ls-remote核对一致。凭据通过Git Credential Manager保存，仓库本地指定GitHub用户名以避免多账号选择歧义，不写入令牌。保留本地appmod/java-upgrade-20261116030222分支及用户.env.example/.gitignore未提交修改，不上传运行数据/秘密、不发布Release。推送可触发Quality gates，其远端结果尚未核验，不把本地通过视为远端CI通过；手动安全workflow未主动触发。仅远端配置/记录变更，无应用测试重跑。
 
