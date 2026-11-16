@@ -85,12 +85,8 @@ def review(directory, now=None):
                 elif (not re.fullmatch(r'sha256:[0-9a-f]{64}', entry['image'])
                       or data.get('Metadata', {}).get('ImageID') != entry['image']):
                     raise ValueError('Effective image identity differs')
-            if name in ('effective-postgres', 'effective-ryuk'):
-                suffix = 'usr/local/bin/gosu' if name.endswith('postgres') else 'bin/ryuk'
-                versions = {p['Version'] for r in data['Results'] if r.get('Target', '').endswith(suffix)
-                            for p in r.get('Packages', []) if p['Name'] == 'stdlib'}
-                if versions != {'v1.27.4'}:
-                    raise ValueError('Rebuilt Go binary coverage differs')
+            if name in ('effective-postgres', 'effective-ryuk', 'effective-ryuk-test'):
+                security_scan.inspect_go_binary(data, name)
         if counts != entry['counts']:
             raise ValueError('Finding counters differ from raw evidence: ' + name)
     sbom = directory / 'backend-tomcat.cdx.json'

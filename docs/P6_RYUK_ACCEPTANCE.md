@@ -1,5 +1,7 @@
 # P6 Ryuk客户端SDK兼容性调查（未迁移）
 
+本文件保留第九批失败调查的原始结论。第十二批已完成后续适配与真实回归，当前状态见[P6_RYUK_SDK_MIGRATION](P6_RYUK_SDK_MIGRATION.md)，不要将下文历史失败当作当前状态。
+
 2026-11-16，先定义门禁再实现。起点6d88582，用户原.env.example/.gitignore改动保留。GraphFlow未提供，定向检查，不声称context/plan/index。
 
 ## 标准

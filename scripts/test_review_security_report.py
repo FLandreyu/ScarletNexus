@@ -46,6 +46,9 @@ class SecurityReviewTest(unittest.TestCase):
                                 'org.postgresql:postgresql']]
                 if name in ('effective-postgres', 'effective-ryuk'):
                     packages = [{'Name': 'stdlib', 'Version': 'v1.27.4'}]
+                    if name == 'effective-ryuk':
+                        packages += [{'Name': 'github.com/moby/moby/client', 'Version': 'v0.6.3'},
+                                     {'Name': 'github.com/moby/moby/api', 'Version': 'v1.57.0'}]
                     target = 'usr/local/bin/gosu' if name.endswith('postgres') else 'bin/ryuk'
                 if name == 'app-tomcat':
                     packages = [{'Name': 'org.apache.tomcat.embed:' + c['name'], 'Version': c['version']} for c in components]
@@ -54,6 +57,14 @@ class SecurityReviewTest(unittest.TestCase):
                 data = {'ArtifactName': entry['image'], 'ArtifactType': 'container_image',
                         'Metadata': {'ImageID': self.image},
                         'Results': [{'Target': target, 'Packages': packages, 'Vulnerabilities': vulnerabilities}]}
+                if name == 'effective-ryuk-test':
+                    sdk = [{'Name': 'stdlib', 'Version': 'v1.27.4'},
+                           {'Name': 'github.com/moby/moby/client', 'Version': 'v0.6.3'},
+                           {'Name': 'github.com/moby/moby/api', 'Version': 'v1.57.0'}]
+                    dependencies = [{'Name': k, 'Version': v} for k, v in security_images.verify_patch()['testModules'].items()]
+                    data['Results'] = [{'Target': 'out/ryuk', 'Packages': sdk},
+                                       {'Target': 'out/ryuk.test', 'Packages': sdk + dependencies},
+                                       {'Target': 'alpine', 'Packages': [{'Name': 'patch', 'Version': '2.8.1-r0'}]}]
                 entry['packages'], entry['counts'] = security_scan.inspect_report(data)
             path = self.write(name, data)
             entry['reportSha256'] = security_scan.sha(path)

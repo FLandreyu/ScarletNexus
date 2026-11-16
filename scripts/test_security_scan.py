@@ -4,10 +4,49 @@ from unittest.mock import patch
 from types import SimpleNamespace
 import io
 import zipfile
+import copy
 import security_scan
 
 
 class SecurityScanTest(unittest.TestCase):
+    def test_test_image_requires_both_binaries_and_fixed_test_dependencies(self):
+        packages = [{'Name': 'stdlib', 'Version': 'v1.27.4'},
+                    {'Name': 'github.com/moby/moby/client', 'Version': 'v0.6.3'},
+                    {'Name': 'github.com/moby/moby/api', 'Version': 'v1.57.0'}]
+        report = {'Results': [{'Target': suffix, 'Packages': copy.deepcopy(packages)}
+                              for suffix in ('out/ryuk', 'out/ryuk.test')]}
+        dependencies = security_scan.security_images.verify_patch()['testModules']
+        report['Results'][1]['Packages'] += [{'Name': k, 'Version': v} for k, v in dependencies.items()]
+        report['Results'].append({'Target': 'alpine', 'Packages': [{'Name': 'patch', 'Version': '2.8.1-r0'}]})
+        security_scan.inspect_go_binary(report, 'effective-ryuk-test')
+        invalid = [dict(report, Results=report['Results'][1:]), dict(report, Results=report['Results'][:2])]
+        stale = copy.deepcopy(report)
+        stale['Results'][1]['Packages'][-1]['Version'] = 'v1.18.0'
+        invalid.append(stale)
+        for changed in invalid:
+            with self.assertRaises(ValueError):
+                security_scan.inspect_go_binary(changed, 'effective-ryuk-test')
+
+    def test_missing_wrong_or_legacy_sdk_cannot_mean_clean(self):
+        packages = [{'Name': 'stdlib', 'Version': 'v1.27.4'},
+                    {'Name': 'github.com/moby/moby/client', 'Version': 'v0.6.3'},
+                    {'Name': 'github.com/moby/moby/api', 'Version': 'v1.57.0'}]
+        report = {'Results': [{'Target': 'bin/ryuk', 'Packages': packages}]}
+        security_scan.inspect_go_binary(report, 'effective-ryuk')
+        invalid = [packages[:1], packages[1:], [dict(p, Version='v0.6.2') if p['Name'].endswith('/client') else p
+                                              for p in packages]]
+        invalid += [packages + [{'Name': module, 'Version': 'v28.3.3+incompatible'}]
+                    for module in ('github.com/docker/docker', 'github.com/docker/docker/client',
+                                   'github.com/moby/moby', 'github.com/moby/moby/v2')]
+        for inventory in invalid:
+            changed = copy.deepcopy(report)
+            changed['Results'][0]['Packages'] = inventory
+            with self.subTest(packages=inventory), self.assertRaises(ValueError):
+                security_scan.inspect_go_binary(changed, 'effective-ryuk')
+        report['Results'][0]['Target'] = 'unrelated-binary'
+        with self.assertRaises(ValueError):
+            security_scan.inspect_go_binary(report, 'effective-ryuk')
+
     def tomcat_jar(self, versions):
         output = io.BytesIO()
         with zipfile.ZipFile(output, 'w') as archive:
@@ -40,7 +79,7 @@ class SecurityScanTest(unittest.TestCase):
         self.assertEqual(security_scan.inspect_report(report, backend=True), (4, {}))
 
     def test_unpatched_effective_artifact_still_blocks_and_upstream_is_preserved(self):
-        names = ['base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk',
+        names = ['base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk', 'effective-ryuk-test',
                  'app-backend', 'app-web', 'app-tomcat', 'npm-all', 'npm-production']
         targets = {name: {'gated': True, 'counts': {}} for name in names}
         targets['base-maven'] = {'gated': False, 'counts': {'HIGH': 6}}
@@ -54,7 +93,7 @@ class SecurityScanTest(unittest.TestCase):
 
     def test_effective_artifact_cannot_be_demoted_out_of_the_gate(self):
         targets = {name: {'gated': True, 'counts': {}} for name in
-                   ['base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk',
+                   ['base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk', 'effective-ryuk-test',
                     'app-backend', 'app-web', 'app-tomcat', 'npm-all', 'npm-production']}
         targets['effective-postgres']['gated'] = False
         with self.assertRaises(ValueError):

@@ -1,6 +1,6 @@
 # 安全方案
 
-P6供应链复核与补丁见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)：实际镜像/JAR/npm全范围扫描完整，当前明确阻断为Ryuk两项高等级发现，退出2；Boot4已移除原Spring两项严重告警，构建/运行工具的中低/未知项和Jackson2过渡边界仍跟踪。固定digest和生产npm零发现不代表全栈安全，不创建忽略条目。安全workflow为手动入口，扫描后仍执行只读归档复核并如实失败，不代表远端或第三方审计已通过；总矩阵见[P6_FINAL_REVIEW](P6_FINAL_REVIEW.md)。
+P6供应链复核与补丁见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)：第十二批实际16目标完整扫描及离线复核均退出0，既定有效产物门禁无高/严重；Ryuk本地拆分SDK补丁已消除原两高，仍有1项中等级。全部父层和中低/未知发现保留，Jackson2过渡与工具分支维护继续跟踪。固定digest和扫描零高不代表全栈安全，不创建忽略条目。安全workflow为手动入口，扫描后仍执行只读归档复核，任何缺失/高风险如实失败；远端及第三方审计未运行，P6整体和生产前待办见[P6_FINAL_REVIEW](P6_FINAL_REVIEW.md)。
 
 P6直接TLS配置及本地证据见[TLS_DEPLOYMENT](TLS_DEPLOYMENT.md)、[P6_TLS_ACCEPTANCE](P6_TLS_ACCEPTANCE.md)：独立overlay强制Secure Cookie，TLS1.2/1.3、短期HSTS，网关清除伪造转发头并按直连IP限登录；后端关闭代理解析、保留共享限流桶。三服务资源上限/no-new-privileges，后端只读根目录与专用临时/附件存储。仅本机隔离验收，不等于生产域名/证书、代理链、权限迁移或全栈安全审计。
 

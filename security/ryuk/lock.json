@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "upstreamVersion": "0.14.0",
+  "client": "v0.6.3",
+  "api": "v1.57.0",
+  "go": "v1.27.4",
+  "testModules": {
+    "github.com/moby/go-archive": "v0.3.0",
+    "github.com/klauspost/compress": "v1.18.7"
+  },
+  "files": {
+    "security/ryuk/go.mod": "f877432f9eec28cdbfc540629ecb91d3a4d62cd6d5bf843c1153bb6a544f7359",
+    "security/ryuk/go.sum": "aa74daefa3ce859106ca56bd54360e9006c97b61fa13eeeedbcebd5f4fd08bcc",
+    "security/ryuk/LICENSE": "c6c6340d7962d2d1239a0bd8c43d48b2a7cfe377de2fad6ad72588903cd68a0d",
+    "security/ryuk/patched.sha256": "3043c21d4b4cc3876b7380c564a597f47de535fd05d675b925ef445fd0f749fd",
+    "security/ryuk/sdk.patch": "40912e5053be6718d1bd5acaa3c127077e0d88bae5cbb33e39dceb116d142d33"
+  },
+  "patchedFiles": {
+    "fork_guards_test.go": "0c5aaf80dc5f4ad3bf26b23a3bec34d2844a01fc8cfad92aa82180e483f77d2f",
+    "interfaces.go": "af98d6f4ac34d9aafdd3465704b45d156c0663cf6cacf8f03b7949015deae871",
+    "mock_test.go": "295815cde5e2ed9fb44804f63ed7a012b87e2dc8ffd123b7ce872a162f5dd31b",
+    "reaper.go": "7a241cefc013ae9ec5d854143ff632cbc2c5c081184673eb42889400fc744739",
+    "reaper_test.go": "ee8393cfd7b4ae6d2f0a465a50609d3e96585a955c5f3f4a707e75dbb902d669",
+    "go.mod": "f877432f9eec28cdbfc540629ecb91d3a4d62cd6d5bf843c1153bb6a544f7359",
+    "go.sum": "aa74daefa3ce859106ca56bd54360e9006c97b61fa13eeeedbcebd5f4fd08bcc",
+    "LICENSE": "c6c6340d7962d2d1239a0bd8c43d48b2a7cfe377de2fad6ad72588903cd68a0d"
+  }
+}

@@ -1,14 +1,30 @@
 FROM golang:1.27.4-alpine3.24@sha256:0a5f7fe796599ff487605987432e7619ae45beeb2fba4c2ce0b907879932aebf AS go-tools
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local
+RUN apk add --no-cache patch=2.8.1-r0
 ADD --checksum=sha256:207a2045e890d3ca3326027c5f585733085960b401a49dbc00e3bb628c054cf8 https://codeload.github.com/tianon/gosu/tar.gz/refs/tags/1.20 /tmp/gosu.tar.gz
 ADD --checksum=sha256:8753af202acbfbd9c4f14b2fb85e2171c4cf053b836ccab8d78faa1a45d77fbb https://codeload.github.com/testcontainers/moby-ryuk/tar.gz/refs/tags/0.14.0 /tmp/ryuk.tar.gz
 RUN mkdir /src /out && tar -xzf /tmp/gosu.tar.gz -C /src && tar -xzf /tmp/ryuk.tar.gz -C /src
+COPY security/ryuk/ /tmp/ryuk-sdk/
+RUN cd /src/moby-ryuk-0.14.0 && patch -p1 < /tmp/ryuk-sdk/sdk.patch \
+    && cp /tmp/ryuk-sdk/go.mod /tmp/ryuk-sdk/go.sum . \
+    && sha256sum -c /tmp/ryuk-sdk/patched.sha256
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
     cd /src/gosu-1.20 && go build -mod=readonly -trimpath -buildvcs=false -ldflags='-w' -o /out/gosu . \
     && go version -m /out/gosu && /out/gosu --version && /out/gosu nobody true
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    cd /src/moby-ryuk-0.14.0 && go build -mod=readonly -trimpath -buildvcs=false -ldflags='-w' -o /out/ryuk . \
+    cd /src/moby-ryuk-0.14.0 && go mod download && sha256sum -c /tmp/ryuk-sdk/patched.sha256 \
+    && go build -mod=readonly -trimpath -buildvcs=false -ldflags='-w' -o /out/ryuk . \
     && go version -m /out/ryuk
+
+# Disposable verification target; never used as the Ryuk runtime image.
+FROM go-tools AS ryuk-test
+ARG RECIPE_SHA=unverified
+LABEL io.scarletnexus.recipe.sha256=$RECIPE_SHA io.scarletnexus.tool=ryuk-test
+WORKDIR /src/moby-ryuk-0.14.0
+RUN go mod download && sha256sum -c /tmp/ryuk-sdk/patched.sha256 \
+    && go test -mod=readonly -c -o /out/ryuk.test .
+ENV GOPROXY=off
+CMD ["go", "test", "-mod=readonly", "-count=1", "-v", "-timeout=3m", "./..."]
 
 FROM maven:3.9.16-eclipse-temurin-25@sha256:93b8a14ea2f412782e4e842651273b4d903e35cc496284f178fbbe2d67d00976 AS maven
 ARG RECIPE_SHA=unverified
@@ -38,4 +54,5 @@ ARG RECIPE_SHA=unverified
 LABEL io.scarletnexus.recipe.sha256=$RECIPE_SHA io.scarletnexus.tool=ryuk org.testcontainers.ryuk=true
 COPY --from=go-tools /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=go-tools /out/ryuk /bin/ryuk
+COPY security/ryuk/LICENSE /licenses/ryuk-LICENSE
 CMD ["/bin/ryuk"]

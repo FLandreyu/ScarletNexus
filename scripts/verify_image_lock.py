@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import security_images
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -36,13 +37,18 @@ def verify(remote=False):
         if not path.is_relative_to(ROOT) or (pin['package'] + '=' + pin['version']) not in path.read_text(encoding='utf8'):
             raise ValueError('Runtime package pin differs from its reviewed lock')
     tools = json.loads((ROOT / 'security/toolchain.lock.json').read_text(encoding='utf8'))
+    security_images.verify_patch()
     recipe = (ROOT / tools['dockerfile']).read_text(encoding='utf8')
+    for name, version in tools.get('buildPackages', {}).items():
+        if name + '=' + version not in recipe:
+            raise ValueError('Build package differs from its reviewed tool lock')
     for source in tools['sources'].values():
         if source['sha256'] not in recipe:
             raise ValueError('Tool asset checksum absent from its recipe')
     for role, consumers in tools['consumers'].items():
         for name in consumers:
-            if tools['images'][role] not in (ROOT / name).read_text(encoding='utf8'):
+            content = (ROOT / name).read_text(encoding='utf8')
+            if tools['images'][role] not in content and ("security_images.resolve('" + role + "')") not in content:
                 raise ValueError('Patched tool consumer differs from its lock: ' + name)
     return {'lockedImages': len(lock['images']), 'remoteVerified': remote,
             'verifiedRuntimePlatform': lock['verifiedPlatform']}

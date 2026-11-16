@@ -32,6 +32,8 @@ jobs:
           java-version: '25'
           cache: maven
       - run: python3 scripts/security_images.py --build
+      - name: Verify locked Ryuk source and resource isolation
+        run: python3 scripts/verify_ryuk.py
       - name: Verify with patched Maven and disposable PostgreSQL
         run: |
           mkdir -p "$HOME/.m2/repository"

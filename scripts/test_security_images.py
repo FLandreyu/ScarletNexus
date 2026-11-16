@@ -1,10 +1,28 @@
 import copy
+import tempfile
+import shutil
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 import security_images
 
 
 class SecurityImagesTest(unittest.TestCase):
+    def test_patch_tampering_is_rejected_and_changes_the_image_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            shutil.copytree(security_images.ROOT / 'security', root / 'security')
+            shutil.copytree(security_images.ROOT / 'docker', root / 'docker')
+            shutil.copyfile(security_images.ROOT / '.dockerignore', root / '.dockerignore')
+            with patch.object(security_images, 'ROOT', root):
+                security_images.verify_patch()
+                before = security_images.recipe_hash()
+                source = root / 'security/ryuk/sdk.patch'
+                source.write_bytes(source.read_bytes() + b'\n')
+                self.assertNotEqual(before, security_images.recipe_hash())
+                with self.assertRaisesRegex(ValueError, 'checksum'):
+                    security_images.verify_patch()
+
     def test_stale_wrong_role_and_wrong_platform_images_are_rejected(self):
         reviewed = {'Id': 'sha256:reviewed', 'Os': 'linux', 'Architecture': 'amd64',
                     'Config': {'Labels': {'io.scarletnexus.recipe.sha256': 'recipe',

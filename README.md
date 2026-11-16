@@ -1,10 +1,10 @@
 # Scarlet Nexus
 
-当前总验收结论见[P6最终复核矩阵](docs/P6_FINAL_REVIEW.md)：本地核心流程已有实证，最新HTTP/TLS桌面与手机均覆盖；Ryuk两项高告警仍阻止P6通过。可用`python3 scripts/review_security_report.py --report .runtime/YOUR_REPORT`离线复核扫描证据，证据一致不等于安全门禁或整个P6通过。
+当前总验收结论见[P6最终复核矩阵](docs/P6_FINAL_REVIEW.md)：本地核心流程已有实证，HTTP/TLS桌面与手机均覆盖；第十二批实际产物扫描及离线复核为0高/严重，安全扫描门禁已通过，中低/未知风险和生产前验收仍保留。可用`python3 scripts/review_security_report.py --report .runtime/YOUR_REPORT`离线复核扫描证据，扫描通过不等于整个P6或生产安全通过。
 
-P6已迁移Spring Boot4.1.2，保留Java25及严格JSON业务解析；原两项Spring严重告警在实际产物扫描中消失，仍有Ryuk两项高等级发现，**安全门禁未通过**，不能据此生产部署。迁移及真实回归见[P6_BOOT4_ACCEPTANCE](docs/P6_BOOT4_ACCEPTANCE.md)，完整来源与计数见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)，固定工具构建见[P6_TOOLCHAIN_REMEDIATION](docs/P6_TOOLCHAIN_REMEDIATION.md)。
+P6已迁移Spring Boot4.1.2，保留Java25及严格JSON业务解析；原Spring严重告警已消除，Ryuk通过固定源码上的[官方拆分SDK适配](docs/P6_RYUK_SDK_MIGRATION.md)消除原两项高告警，仍有1项中等级。该工具是可审查的本地补丁，并非上游新发行版；没有ignore/VEX或禁用清理。完整来源与计数见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)，框架迁移见[P6_BOOT4_ACCEPTANCE](docs/P6_BOOT4_ACCEPTANCE.md)。
 
-P6新增[独立数据库迁移作业](docs/P6_MIGRATION_JOB_ACCEPTANCE.md)：新库可显式合并docker-compose.migrate.yml，迁移成功退出后才启动后端；后端只持受限运行身份，不注入迁移凭据。先按[角色说明](docs/DATABASE_ROLES.md)provision新库，不对现有卷自动切换权限。Ryuk新SDK调查尚未形成可接入修复，原两项高告警继续保留。
+P6新增[独立数据库迁移作业](docs/P6_MIGRATION_JOB_ACCEPTANCE.md)：新库可显式合并docker-compose.migrate.yml，迁移成功退出后才启动后端；后端只持受限运行身份，不注入迁移凭据。先按[角色说明](docs/DATABASE_ROLES.md)provision新库，不对现有卷自动切换权限。
 
 新角色项目已支持[只读备份与受限恢复](docs/P6_BACKUP_ROLE_ACCEPTANCE.md)：backup须提供独立数据库口令文件，使用scarlet_backup的TCP认证；v2归档恢复角色与权限后以runtime启动，旧工具明确拒绝v2，新工具兼容旧v1。密码/归档不提交，默认本地legacy-admin模式不冒充最小权限。
 
@@ -129,9 +129,11 @@ mvn -B verify
 
 项目`.mvn/settings.xml`将发行版依赖解析限定到Maven Central，避免上游POM引入的快照/里程碑仓库影响干净环境构建。Docker构建使用BuildKit缓存Maven依赖，不改全局Maven配置。
 
-Linux上可运行 `sh scripts/verify-testcontainers-in-docker.sh`；它先构建并校验四个工具镜像，在受测Java25/Maven容器中执行`verify -Ptestcontainers`，正确传递自定义Unix socket供Ryuk清理资源。需要已有本地Linux Docker权限和Python3.10+；不会修改宿主机权限或停用Ryuk。直接从宿主执行该profile前，须先在根目录运行`python3 scripts/security_images.py --build`并校验镜像；默认原生PG测试不依赖这些容器。
+Linux上可运行 `sh scripts/verify-testcontainers-in-docker.sh`；它先构建并校验五个工具镜像（含Ryuk测试构建目标），在受测Java25/Maven容器中执行`verify -Ptestcontainers`，正确传递自定义Unix socket供Ryuk清理资源。需要已有本地Linux Docker权限和Python3.10+；不会修改宿主机权限或停用Ryuk。直接从宿主执行该profile前，须先在根目录运行`python3 scripts/security_images.py --build`并校验镜像；默认原生PG测试不依赖这些容器。
 
 该容器测试入口只读挂载源目录，在容器内部生成独立编译输出，结束后将JAR及Surefire/Failsafe报告导出到backend/target，避免共享Windows编译目录的文件变化影响重启故事；失败日志与退出码照常保留。
+
+`python3 scripts/verify_ryuk.py`从锁定原始归档和补丁重建独立测试目标，运行上游全部Go测试及不匹配标签资源保留检查，需要可信本地Linux Docker socket；CI在后端集成前执行。源码、模块校验和与MIT版权在security/ryuk，实际兼容边界和复现见[P6_RYUK_SDK_MIGRATION](docs/P6_RYUK_SDK_MIGRATION.md)。
 
 后端默认测试使用隔离真实PG随机端口，包含数据库宕机503、迁移约束和应用重新启动的数据保留；不是H2。每次使用新集群且自动关闭。默认测试不调用外部AI。格式修正：前端 `npm run format`；后端 `mvn spotless:apply`。
 

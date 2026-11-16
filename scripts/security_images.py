@@ -14,10 +14,29 @@ def specification():
     return json.loads(LOCK.read_text(encoding='utf8'))
 
 
+def verify_patch():
+    manifest = json.loads((ROOT / 'security/ryuk/lock.json').read_text(encoding='utf8'))
+    if manifest['schema'] != 1 or manifest['upstreamVersion'] != specification()['sources']['ryuk']['version']:
+        raise ValueError('Unsupported Ryuk patch lock')
+    expected = {'security/ryuk/' + name for name in ('sdk.patch', 'go.mod', 'go.sum', 'LICENSE', 'patched.sha256')}
+    if set(manifest['files']) != expected:
+        raise ValueError('Incomplete Ryuk patch inventory')
+    for name, checksum in manifest['files'].items():
+        if hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != checksum:
+            raise ValueError('Ryuk patch asset checksum differs: ' + name)
+    checks = ''.join(checksum + '  ' + name + '\n' for name, checksum in sorted(manifest['patchedFiles'].items()))
+    if (ROOT / 'security/ryuk/patched.sha256').read_text(encoding='utf8') != checks:
+        raise ValueError('Patched Ryuk source checksums differ')
+    return manifest
+
+
 def recipe_hash():
     spec = specification()
     digest = hashlib.sha256()
-    for name in ('security/toolchain.lock.json', 'security/images.lock.json', spec['dockerfile'], '.dockerignore'):
+    patch_lock = 'security/ryuk/lock.json'
+    patch = json.loads((ROOT / patch_lock).read_text(encoding='utf8'))
+    for name in ('security/toolchain.lock.json', 'security/images.lock.json', spec['dockerfile'], '.dockerignore',
+                 patch_lock, *sorted(patch['files'])):
         digest.update(name.encode() + b'\0' + (ROOT / name).read_bytes() + b'\0')
     return digest.hexdigest()
 
@@ -42,28 +61,34 @@ def resolve(role):
     return info['Id']
 
 
+def build_target(role, reference):
+    spec = specification()
+    network = os.environ.get('SCARLET_BUILD_NETWORK', 'default')
+    if network not in ('default', 'host'):
+        raise ValueError('Unsupported explicit build network mode')
+    network_args = [] if network == 'default' else ['--network', 'host', '--build-arg', 'HTTP_PROXY',
+                                                   '--build-arg', 'HTTPS_PROXY', '--build-arg', 'NO_PROXY']
+    subprocess.run(['docker', 'build', '--platform', spec['verifiedPlatform'],
+                    '--file', str(ROOT / spec['dockerfile']), '--target', role,
+                    '--build-arg', 'RECIPE_SHA=' + recipe_hash(), '--tag', reference, *network_args, str(ROOT)],
+                   cwd=ROOT, check=True)
+
+
 def build():
+    verify_patch()
     spec = specification()
     for role, reference in spec['images'].items():
         try:
             resolve(role)
         except ValueError:
-            network = os.environ.get('SCARLET_BUILD_NETWORK', 'default')
-            if network not in ('default', 'host'):
-                raise ValueError('Unsupported explicit build network mode')
-            network_args = [] if network == 'default' else ['--network', 'host', '--build-arg', 'HTTP_PROXY',
-                                                           '--build-arg', 'HTTPS_PROXY', '--build-arg', 'NO_PROXY']
-            subprocess.run(['docker', 'build', '--platform', spec['verifiedPlatform'],
-                            '--file', str(ROOT / spec['dockerfile']), '--target', role,
-                            '--build-arg', 'RECIPE_SHA=' + recipe_hash(), '--tag', reference, *network_args, str(ROOT)],
-                           cwd=ROOT, check=True)
+            build_target(role, reference)
         print(json.dumps({'role': role, 'image': resolve(role)}), flush=True)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--build', action='store_true')
-    parser.add_argument('--role', choices=['maven', 'node', 'postgres', 'ryuk'])
+    parser.add_argument('--role', choices=['maven', 'node', 'postgres', 'ryuk', 'ryuk-test'])
     args = parser.parse_args()
     if args.build:
         build()

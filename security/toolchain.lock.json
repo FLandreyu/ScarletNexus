@@ -1,13 +1,14 @@
 {
   "schema": 1,
-  "revision": 1,
+  "revision": 2,
   "dockerfile": "docker/security.Dockerfile",
   "verifiedPlatform": "linux/amd64",
   "images": {
     "maven": "scarlet-nexus-tools/maven:3.9.16-j25-r1",
     "node": "scarlet-nexus-tools/node:24-npm11.21.2-r1",
     "postgres": "scarlet-nexus-tools/postgres:17.12-gosu1.20-r1",
-    "ryuk": "scarlet-nexus-tools/ryuk:0.14.0-go1.27.4-r1"
+    "ryuk": "scarlet-nexus-tools/ryuk:0.14.0-sdk0.6.3-go1.27.4-r2",
+    "ryuk-test": "scarlet-nexus-tools/ryuk-test:0.14.0-sdk0.6.3-r2"
   },
   "sources": {
     "gosu": {
@@ -18,7 +19,8 @@
     "ryuk": {
       "version": "0.14.0",
       "commit": "b3726afd6cc2c36628abcc08e9cabac43f587384",
-      "sha256": "8753af202acbfbd9c4f14b2fb85e2171c4cf053b836ccab8d78faa1a45d77fbb"
+      "sha256": "8753af202acbfbd9c4f14b2fb85e2171c4cf053b836ccab8d78faa1a45d77fbb",
+      "patchLock": "security/ryuk/lock.json"
     },
     "guava": {
       "version": "33.7.2-jre",
@@ -43,6 +45,12 @@
     ],
     "ryuk": [
       "backend/src/test/resources/testcontainers.properties"
+    ],
+    "ryuk-test": [
+      "scripts/verify_ryuk.py"
     ]
+  },
+  "buildPackages": {
+    "patch": "2.8.1-r0"
   }
 }

@@ -53,6 +53,35 @@ def validate_databases(database, now):
             raise ValueError('Vulnerability database too old or from the future: ' + key)
 
 
+def inspect_go_binary(data, name):
+    if name == 'effective-ryuk-test':
+        # The test-only archive/compression code is absent from the runtime binary.
+        # Inventory both built binaries and the added build package explicitly.
+        for suffix in ('out/ryuk', 'out/ryuk.test'):
+            results = [r for r in data['Results'] if r.get('Target', '').endswith(suffix)]
+            inspect_go_binary({'Results': [dict(r, Target='bin/ryuk') for r in results]}, 'effective-ryuk')
+        packages = [p for r in data['Results'] for p in r.get('Packages', [])]
+        expected = dict(security_images.verify_patch()['testModules'])
+        expected['patch'] = security_images.specification()['buildPackages']['patch']
+        for module, version in expected.items():
+            if {p['Version'] for p in packages if p['Name'] == module} != {version}:
+                raise ValueError('Ryuk test/build dependency coverage differs: ' + module)
+        return
+    suffix = 'usr/local/bin/gosu' if name == 'effective-postgres' else 'bin/ryuk'
+    packages = [p for r in data['Results'] if r.get('Target', '').endswith(suffix)
+                for p in r.get('Packages', [])]
+    if {p['Version'] for p in packages if p['Name'] == 'stdlib'} != {'v1.27.4'}:
+        raise ValueError('Rebuilt Go binary identification is incomplete: ' + name)
+    if name == 'effective-ryuk':
+        lock = security_images.verify_patch()
+        for module in ('client', 'api'):
+            if {p['Version'] for p in packages if p['Name'] == 'github.com/moby/moby/' + module} != {lock[module]}:
+                raise ValueError('Split Ryuk SDK coverage differs: ' + module)
+        if any(p['Name'].startswith('github.com/docker/docker')
+               or re.match(r'^github\.com/moby/moby(?:/v[0-9]+)?$', p['Name']) for p in packages):
+            raise ValueError('Legacy Docker daemon module returned to the Ryuk binary')
+
+
 def tomcat_sbom(image):
     # Tomcat's own JAR metadata may be absent from Trivy's Java index for a new
     # patch. Inventory the actual built fat JAR rather than declaring it clean.
@@ -75,7 +104,7 @@ def tomcat_sbom(image):
 
 
 def gate_counts(targets):
-    required = {'base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk',
+    required = {'base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk', 'effective-ryuk-test',
                 'app-backend', 'app-web', 'app-tomcat', 'npm-all', 'npm-production'}
     if not required <= targets.keys() or any(targets[name].get('gated') is not True for name in required):
         raise ValueError('Effective artifact coverage is incomplete')
@@ -145,12 +174,8 @@ def scan(project, output):
                 raise RuntimeError('Image scan failed: ' + name)
             data = json.loads(report.read_text(encoding='utf8'))
             packages, counts = inspect_report(data, backend=name == 'app-backend')
-            if name in ('effective-postgres', 'effective-ryuk'):
-                suffix = 'usr/local/bin/gosu' if name.endswith('postgres') else 'bin/ryuk'
-                versions = {p['Version'] for r in data['Results'] if r.get('Target', '').endswith(suffix)
-                            for p in r.get('Packages', []) if p['Name'] == 'stdlib'}
-                if versions != {'v1.27.4'}:
-                    raise ValueError('Rebuilt Go binary identification is incomplete: ' + name)
+            if name in ('effective-postgres', 'effective-ryuk', 'effective-ryuk-test'):
+                inspect_go_binary(data, name)
             manifest['targets'][name] = {'image': image, 'scope': scope, 'gated': gated, 'packages': packages,
                                           'counts': counts, 'reportSha256': sha(report)}
             print(json.dumps({'target': name, 'scope': scope, 'counts': counts}), flush=True)

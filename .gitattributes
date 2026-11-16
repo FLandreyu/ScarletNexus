@@ -3,3 +3,5 @@
 *.png binary
 *.jpg binary
 *.woff2 binary
+# Unified diffs preserve context prefixes before Go tabs and empty lines.
+security/ryuk/sdk.patch whitespace=-blank-at-eol,-space-before-tab,-blank-at-eof
