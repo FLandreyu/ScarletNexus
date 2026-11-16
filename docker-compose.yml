@@ -7,7 +7,8 @@ x-logging: &bounded-logging
 services:
   db:
     logging: *bounded-logging
-    image: postgres:17.12-alpine3.24@sha256:a77aa70e641402a21411b92b721c58d10f23b50ae5fdd2333efd22d166e1e5f7
+    image: scarlet-nexus-tools/postgres:17.12-gosu1.20-r1
+    pull_policy: never
     command: ['postgres', '-c', 'log_error_verbosity=terse', '-c', 'log_min_error_statement=panic']
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-scarlet_nexus}

@@ -7,6 +7,7 @@ import ssl
 import time
 import uuid
 import backup_restore as docker_tools
+import security_images
 
 
 def verify(ca_file, key_file, web_image):
@@ -20,7 +21,7 @@ def verify(ca_file, key_file, web_image):
             'run', '-d', '--network', network, '--network-alias', 'backend',
             '--name', name + '-fixture', '--memory', '256m', '--cpus', '1', '--pids-limit', '128',
             '--mount', f'type=bind,src={root / "backend/src/test/java/dev/scarletnexus/TlsStreamFixture.java"},dst=/fixture/dev/scarletnexus/TlsStreamFixture.java,readonly',
-            '--entrypoint', 'java', 'maven:3.9.16-eclipse-temurin-25@sha256:93b8a14ea2f412782e4e842651273b4d903e35cc496284f178fbbe2d67d00976',
+            '--entrypoint', 'java', security_images.resolve('maven'),
             '/fixture/dev/scarletnexus/TlsStreamFixture.java').decode().strip()
         containers.append(fixture)
         gateway = docker_tools.docker(

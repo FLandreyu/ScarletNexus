@@ -28,13 +28,22 @@ def verify(remote=False):
         if remote:
             digest = subprocess.check_output(
                 ['docker', 'buildx', 'imagetools', 'inspect', reference,
-                 '--format', '{{.Manifest.Digest}}'], text=True).strip()
+                 '--format', '{{.Manifest.Digest}}'], text=True, timeout=60).strip()
             if digest != reference.split('@')[1]:
                 raise ValueError('Registry digest mismatch: ' + key)
     for pin in lock.get('runtimePackagePins', []):
         path = (ROOT / pin['consumer']).resolve()
         if not path.is_relative_to(ROOT) or (pin['package'] + '=' + pin['version']) not in path.read_text(encoding='utf8'):
             raise ValueError('Runtime package pin differs from its reviewed lock')
+    tools = json.loads((ROOT / 'security/toolchain.lock.json').read_text(encoding='utf8'))
+    recipe = (ROOT / tools['dockerfile']).read_text(encoding='utf8')
+    for source in tools['sources'].values():
+        if source['sha256'] not in recipe:
+            raise ValueError('Tool asset checksum absent from its recipe')
+    for role, consumers in tools['consumers'].items():
+        for name in consumers:
+            if tools['images'][role] not in (ROOT / name).read_text(encoding='utf8'):
+                raise ValueError('Patched tool consumer differs from its lock: ' + name)
     return {'lockedImages': len(lock['images']), 'remoteVerified': remote,
             'verifiedRuntimePlatform': lock['verifiedPlatform']}
 

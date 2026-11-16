@@ -4,6 +4,27 @@ import security_scan
 
 
 class SecurityScanTest(unittest.TestCase):
+    def test_unpatched_effective_artifact_still_blocks_and_upstream_is_preserved(self):
+        names = ['base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk',
+                 'app-backend', 'app-web', 'app-tomcat', 'npm-all', 'npm-production']
+        targets = {name: {'gated': True, 'counts': {}} for name in names}
+        targets['base-maven'] = {'gated': False, 'counts': {'HIGH': 6}}
+        targets['effective-maven']['counts'] = {'HIGH': 1}
+        self.assertEqual(security_scan.gate_counts(targets), (7, 1))
+        targets['effective-maven']['counts'] = {}
+        self.assertEqual(security_scan.gate_counts(targets), (6, 0))
+        del targets['effective-maven']
+        with self.assertRaises(ValueError):
+            security_scan.gate_counts(targets)
+
+    def test_effective_artifact_cannot_be_demoted_out_of_the_gate(self):
+        targets = {name: {'gated': True, 'counts': {}} for name in
+                   ['base-go', 'effective-maven', 'effective-node', 'effective-postgres', 'effective-ryuk',
+                    'app-backend', 'app-web', 'app-tomcat', 'npm-all', 'npm-production']}
+        targets['effective-postgres']['gated'] = False
+        with self.assertRaises(ValueError):
+            security_scan.gate_counts(targets)
+
     def test_empty_or_package_free_reports_cannot_mean_clean(self):
         for report in ({}, {'ArtifactType': 'container_image', 'Results': []},
                        {'ArtifactType': 'container_image', 'Results': [{'Packages': []}]}):

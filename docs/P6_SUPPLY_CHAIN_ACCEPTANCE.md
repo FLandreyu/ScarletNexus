@@ -13,6 +13,8 @@
 
 ## 实际结果
 
+以下记录第六批验收；第七批工具修补、82项完整后端回归及最新4项高/严重门禁结果见[P6_TOOLCHAIN_REMEDIATION](P6_TOOLCHAIN_REMEDIATION.md)。历史失败不改写，整体P6仍未通过。
+
 实施与功能回归已完成，**漏洞门禁仍未通过**；不将独立迁移作业、生产配置或整个P6标记为完成。详细版本、来源、发现与处置台账见[SUPPLY_CHAIN_REVIEW](SUPPLY_CHAIN_REVIEW.md)。
 
 | 范围/命令 | 实际结果 |

@@ -4,7 +4,22 @@
 
 ## 当前阶段
 
-P6第六批：兼容安全补丁、镜像固定与可复现扫描已实施；功能回归通过，**高/严重漏洞门禁未通过，P6尚未完成**。中断期间用户追加的Java25升级已保留并补充真实容器验证。
+P6第七批：构建、测试、数据库启动工具重建修补已验证；**当前实际产物仍有4次高/严重发现，安全门禁未通过，P6尚未完成**。Java25保留，Boot4仅形成待确认提案。
+
+- 先定义P6_TOOLCHAIN_REMEDIATION验收标准。六个官方父镜像digest与gosu1.20/Ryuk0.14.0源码、Guava33.7.2-jre/npm11.21.2资产摘要固定；Go1.27.4重建启动/清理二进制、保留符号与构建信息。Maven精确升级apt/OpenSSL/brotli及Guava，Node仅镜像内修补npm；实际PG17.12数据库引擎不变，无Flyway或业务代码变更。
+- 增加四个本地工具目标、recipe指纹/平台/用途核对、缺失失败且无旧版回退；构建、Testcontainers、Compose、SSE、安全workflow统一消费。Compose数据库pull_policy=never，根.dockerignore排除环境文件、缓存/附件；README补充Python/预构建要求。默认本地原生PG与宿主工具不改；CI前端/浏览器宿主环境不冒称已修补。ADR-034记录有效产物门禁语义，远端CI未运行。
+- `security_images.py --build`四目标成功（.runtime-p6-tools-build-r2.log）；首轮Go下载因网络失败，显式本轮host构建网络/代理后成功，默认仍default。`verify_image_lock.py --remote`六索引/消费者/精确包与资产检查通过（.runtime-p6-tools-lock-remote.log）；首次漏传代理的registry超时已保留，远程请求新增60秒上限，不安装服务或改全局网络。
+- 修补Maven/Java25实际`verify -Ptestcontainers`全量**31单元+51真实PG17.12集成=82项通过**，0失败/错误/跳过，4分48秒（.runtime-p6-tools-backend.log）。格式/编译/打包通过，Ryuk正常清理；本轮未重跑Windows原生PG。修补Node临时容器源目录只读，从lockfile安装后格式/类型/14单元/生产构建通过（.runtime-p6-tools-frontend.log），既有图表chunk及弃用提示保留。
+- 复用scarlet-nexus-p6-security-acceptance独立验收两卷重建启动，V12/PG17.12/JRE25.0.5+8；真实TLS桌面6项29.5秒、手机6项32.8秒全旅程通过（.runtime-p6-tools-browser.log），无API mock/JS异常/横向溢出。未重复默认HTTP12项；用户学习卷未触碰。
+- Linux TLS信任正反/错误主机名/明文拒绝/Secure Cookie/CSRF/退出/伪造头限流通过，资源限制、monitor UP、4引用/4附件无缺失损坏孤立；延迟SSE首段0.038秒、终段2.538秒，代理头清洗通过（.runtime-p6-tools-runtime-r2.log），未调用真实模型。Windows探测未返回后只终止本轮已核对进程，未宣称Windows探测通过。
+- 新配对加密备份/隔离恢复**54表、6附件逐项匹配**，应用就绪、认证读取及6图成功；恢复资源自动清理，源卷不覆盖（.runtime-p6-tools-restore.log）。Linux Python/OpenSSL13项通过，含有效目标不可移出门禁、旧配方/平台/用途/缺失镜像拒绝等验证；Python编译、CI YAML与Git diff检查通过。
+- `.runtime/security-tools-final`全量v2扫描完整：Maven/Node/PG实际修补镜像零高/严重，Go二进制必须识别stdlib1.27.4；实际门禁**4次发现（Spring2严重、Ryuk2高）**，包含所有父层基线的报告合计45次。旧95是旧集合总数，不能直接与4对比；npm生产0、全依赖5 moderate，中低/未知保留。扫描没有ignore/VEX/未修项过滤；当前门禁未通过，详见SUPPLY_CHAIN_REVIEW。
+- 收尾对相同实际镜像完整复核为`.runtime/security-tools-confirmed`，13项脚本测试/编译/YAML通过，扫描complete=true且明确捕获退出2、仍4次门禁发现（.runtime-p6-tools-final-checks.log）。没有用PowerShell包装层的状态替代扫描器真实退出码。
+- Ryuk二进制符号证据确认含Docker client、不含daemon实现；Engine29.9.3高于公告修复版29.5.1。这是限定使用条件分析，不抑制两项高告警（verify_ryuk_scope.py，证据见runtime日志）。Spring Boot4.1.2/MyBatis4.0.1/springdoc3.2.0提案已写BOOT4_MIGRATION_PLAN，按AGENTS重大框架变更先确认，当前仍Boot3.5.16。
+- 收尾仅停止本轮独立Compose与临时测试容器，保留数据库/附件卷和私有证据；用户.env.example/.gitignore改动不入提交。无推送/生产部署/付费调用/系统服务安装，GraphFlow仍未提供，定向检查，未context/plan/index。
+- **下一步**：取得框架迁移确认后，在独立提交实施Boot4并重跑完整门禁；同时复核Ryuk上游SDK/公告归属，中低/未知继续分类。独立迁移作业/备份权限和生产最终门禁仍待推进，不因工具修补提前结束P6。
+
+P6第六批（以下为历史记录）：兼容安全补丁、镜像固定与可复现扫描已实施；当时功能回归通过，漏洞门禁未通过。中断期间用户追加的Java25升级已保留并补充真实容器验证。
 
 - 先定义P6_SUPPLY_CHAIN_ACCEPTANCE；按ADR-032保留Java25，在Boot3.5.16内显式覆盖Jackson2.21.8/Tomcat10.1.62/JDBC42.7.14。官方Nginx1.30.6/PG17.12、前端libxslt1.1.43-r4，六份构建/运行/测试镜像固定官方多架构索引并逐项registry核对，消费者/包约束检查通过；只实测linux/amd64，无已执行Flyway修改，未升级原验收/学习卷。
 - Trivy0.76.2归档/checksum/二进制SHA-256校验；新增校验安装、镜像锁检查和全量扫描工具、手动安全workflow。实际JAR识别Jackson/JDBC，Java DB未识别新Tomcat的首轮覆盖失败后，从最终JAR提取三包版本/hash补充CycloneDX扫描0发现。显式空ignore、保留未修项/所有严重度，拒绝缺覆盖、过期/未来数据库，4项失败关闭单测加入后Linux Python/OpenSSL共9项通过。

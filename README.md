@@ -1,6 +1,6 @@
 # Scarlet Nexus
 
-P6供应链复核新增固定镜像清单、校验安装的扫描器和实际JAR/镜像扫描；Jackson/Tomcat/JDBC与Nginx/PG安全版本已调整。**扫描仍有高/严重发现，安全门禁未通过**，不能据此生产部署；来源、计数与后续处置见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)。
+P6供应链复核已固定官方基础镜像与工具源码摘要，并重建Maven、Node、PostgreSQL启动工具及Ryuk；实际产物仍有4项高/严重发现，**安全门禁未通过**，不能据此生产部署。来源、计数与后续处置见[SUPPLY_CHAIN_REVIEW](docs/SUPPLY_CHAIN_REVIEW.md)，工具构建见[P6_TOOLCHAIN_REMEDIATION](docs/P6_TOOLCHAIN_REMEDIATION.md)。
 
 P6新增独立HTTPS与资源配置：显式合并`docker-compose.tls.yml`，证书/私钥必填、仅loopback HTTPS，Secure Cookie、登录入口限流、三服务资源上限与后端只读根目录。默认HTTP不变，配置和隔离验证见[TLS_DEPLOYMENT](docs/TLS_DEPLOYMENT.md)；不代表生产部署或P6整体验收。
 
@@ -30,7 +30,7 @@ AI生成默认关闭，无Key也可完成P3学习闭环。P2已按授权完成�
 
 ## 启动方式 A：Docker 本地持久环境
 
-前置：Docker Engine/Desktop 已运行，Docker Compose v2+，Git；首次构建需要网络。无需宿主机 Java / Node / PostgreSQL。仅监听本机127.0.0.1，不是生产配置。
+前置：Docker Engine/Desktop 已运行，Docker Compose v2+、Git、Python3.10+；首次构建需要网络。受测平台为Linux/amd64，无需宿主机 Java / Node / PostgreSQL。仅监听本机127.0.0.1，不是生产配置。
 
 ```powershell
 Copy-Item .env.example .env
@@ -38,12 +38,13 @@ Copy-Item .env.example .env
 ./scripts/Set-LocalAdmin.ps1 -Email 'you@example.com'
 # 根据脚本提示设置.env中的ADMIN_EMAIL和ADMIN_PASSWORD_FILE；密码通过本地安全提示输入
 docker compose config --quiet
+python scripts/security_images.py --build
 docker compose up --build -d
 docker compose ps
 Invoke-RestMethod http://127.0.0.1:8088/api/v1/system/status
 ```
 
-打开 http://127.0.0.1:8088 ，使用自己配置的邮箱/密码登录。首次构建需要下载依赖和镜像；/system显示数据库已连接、迁移V9。已有用户不会因重启或更换密码文件被重置。初始化后可取消ADMIN_EMAIL/ADMIN_PASSWORD_FILE环境变量；当前不提供密码重置接口，不能靠修改引导文件重置。数据库密码同样来自持久卷中的角色，不能只改.env就完成轮换。
+打开 http://127.0.0.1:8088 ，使用自己配置的邮箱/密码登录。首次构建需要下载依赖和镜像；/system显示数据库已连接、迁移V12。已有用户不会因重启或更换密码文件被重置。初始化后可取消ADMIN_EMAIL/ADMIN_PASSWORD_FILE环境变量；当前不提供密码重置接口，不能靠修改引导文件重置。数据库密码同样来自持久卷中的角色，不能只改.env就完成轮换。
 
 技能详情中的“草案与版本历史”可创建图谱副本，编辑节点/关系、合并拆分、撤销重做、保存、校验并审核发布。共享修改须显式选择联合范围、重新预览并确认；目录变化保守返回冲突，不自动合并。
 
@@ -117,12 +118,12 @@ npm test
 npm run build
 cd ../backend
 mvn -B verify
-# 或 mvn -B verify -Ptestcontainers
+# Linux容器测试推荐回到项目根目录运行下述专用脚本
 ```
 
 项目`.mvn/settings.xml`将发行版依赖解析限定到Maven Central，避免上游POM引入的快照/里程碑仓库影响干净环境构建。Docker构建使用BuildKit缓存Maven依赖，不改全局Maven配置。
 
-Linux上只有Docker而没有Java/Maven时，可运行 `sh scripts/verify-testcontainers-in-docker.sh`；它在Java25/Maven容器中执行同一套真实测试，正确传递自定义Unix socket供Ryuk清理资源。需要已有本地Linux Docker权限；不会修改宿主机权限或停用Ryuk。
+Linux上可运行 `sh scripts/verify-testcontainers-in-docker.sh`；它先构建并校验四个工具镜像，在受测Java25/Maven容器中执行`verify -Ptestcontainers`，正确传递自定义Unix socket供Ryuk清理资源。需要已有本地Linux Docker权限和Python3.10+；不会修改宿主机权限或停用Ryuk。直接从宿主执行该profile前，须先在根目录运行`python3 scripts/security_images.py --build`并校验镜像；默认原生PG测试不依赖这些容器。
 
 后端默认测试使用隔离真实PG随机端口，包含数据库宕机503、迁移约束和应用重新启动的数据保留；不是H2。每次使用新集群且自动关闭。默认测试不调用外部AI。格式修正：前端 `npm run format`；后端 `mvn spotless:apply`。
 

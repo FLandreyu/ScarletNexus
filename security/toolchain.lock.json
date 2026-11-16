@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "revision": 1,
+  "dockerfile": "docker/security.Dockerfile",
+  "verifiedPlatform": "linux/amd64",
+  "images": {
+    "maven": "scarlet-nexus-tools/maven:3.9.16-j25-r1",
+    "node": "scarlet-nexus-tools/node:24-npm11.21.2-r1",
+    "postgres": "scarlet-nexus-tools/postgres:17.12-gosu1.20-r1",
+    "ryuk": "scarlet-nexus-tools/ryuk:0.14.0-go1.27.4-r1"
+  },
+  "sources": {
+    "gosu": {
+      "version": "1.20",
+      "commit": "29b939aa5bd4dc588af765b8248f6e39150d2565",
+      "sha256": "207a2045e890d3ca3326027c5f585733085960b401a49dbc00e3bb628c054cf8"
+    },
+    "ryuk": {
+      "version": "0.14.0",
+      "commit": "b3726afd6cc2c36628abcc08e9cabac43f587384",
+      "sha256": "8753af202acbfbd9c4f14b2fb85e2171c4cf053b836ccab8d78faa1a45d77fbb"
+    },
+    "guava": {
+      "version": "33.7.2-jre",
+      "sha256": "b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c"
+    },
+    "npm": {
+      "version": "11.21.2",
+      "sha256": "8ad8563b81e71b90ef405b140bccf3ba9b5e7884ab210bd49ee4e2f4bc6f61f5",
+      "integrity": "sha512-7HPApk+AflMUavSseL1Pm6CnYqMIHk53x+KmuhqmTDqPkjPMgxIpTPcTqsE91EKNw4gFBJV9fnXiSdGm1DXq9A=="
+    }
+  },
+  "consumers": {
+    "maven": [
+      "backend/Dockerfile"
+    ],
+    "node": [
+      "frontend/Dockerfile"
+    ],
+    "postgres": [
+      "docker-compose.yml",
+      "backend/src/test/java/dev/scarletnexus/TestImages.java"
+    ],
+    "ryuk": [
+      "backend/src/test/resources/testcontainers.properties"
+    ]
+  }
+}

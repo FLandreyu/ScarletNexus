@@ -47,7 +47,7 @@ class IdentityCatalogIT {
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry registry) throws Exception {
     if ("container".equals(System.getProperty("test.database"))) {
-      container = new PostgreSQLContainer<>(TestImages.POSTGRES);
+      container = TestImages.postgres();
       container.start();
       jdbcUrl = container.getJdbcUrl();
       username = container.getUsername();

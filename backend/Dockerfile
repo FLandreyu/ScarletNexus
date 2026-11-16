@@ -1,4 +1,4 @@
-FROM maven:3.9.16-eclipse-temurin-25@sha256:93b8a14ea2f412782e4e842651273b4d903e35cc496284f178fbbe2d67d00976 AS build
+FROM scarlet-nexus-tools/maven:3.9.16-j25-r1 AS build
 WORKDIR /build
 COPY pom.xml .
 COPY .mvn ./.mvn

@@ -1,0 +1,14 @@
+.git
+.runtime*
+.tools
+.env*
+.github/modernize
+**/node_modules
+**/target
+**/dist
+**/test-results
+**/playwright-report
+attachments
+backups
+**/__pycache__
+*.log

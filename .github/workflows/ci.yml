@@ -31,8 +31,11 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - run: mvn -B verify -Ptestcontainers
-        working-directory: backend
+      - run: python3 scripts/security_images.py --build
+      - name: Verify with patched Maven and disposable PostgreSQL
+        run: |
+          mkdir -p "$HOME/.m2/repository"
+          MAVEN_REPOSITORY="$HOME/.m2/repository" sh scripts/verify-testcontainers-in-docker.sh
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -87,6 +90,7 @@ jobs:
             echo "NODE_EXTRA_CA_CERTS=$PWD/.runtime/tls/cert.pem"
             echo "E2E_TLS_SPKI=$pin"
           } >> "$GITHUB_ENV"
+      - run: python3 scripts/security_images.py --build
       - run: docker compose config --quiet
       - run: docker compose up --build -d --wait --wait-timeout 240
       - name: Check gateway and restart persistence

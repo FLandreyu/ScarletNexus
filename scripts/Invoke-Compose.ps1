@@ -32,6 +32,10 @@ if ($composePaths.Count -eq 0) { throw 'Provide at least one Compose file.' }
 $nativeDocker = Get-Command docker -CommandType Application -ErrorAction SilentlyContinue
 $ErrorActionPreference = 'Continue'
 if ($nativeDocker) {
+    if ($Action -in @('up','build')) {
+        & python (Join-Path $PSScriptRoot 'security_images.py') --build
+        if ($LASTEXITCODE -ne 0) { throw 'Patched tool image build failed.' }
+    }
     $fileArguments = @($composePaths | ForEach-Object { '-f'; $_ })
     & $nativeDocker.Source compose --project-directory $projectRoot --env-file $envPath -p $ProjectName @fileArguments @actionArguments
     $result = $LASTEXITCODE
@@ -41,11 +45,15 @@ if ($nativeDocker) {
     $linuxEnv = Convert-WslPath $envPath
     & wsl.exe -d Ubuntu --cd /tmp -- test -S "$runtime/docker.sock"
     if ($LASTEXITCODE -ne 0) { throw 'Start an available Docker engine first. See docs/OPERATIONS.md for the existing isolated WSL runtime.' }
-    $wslArguments = @('-d','Ubuntu','--cd','/tmp','--','env',
+    $wslEnvironment = @('-d','Ubuntu','--cd','/tmp','--','env',
         "DOCKER_HOST=unix://$runtime/docker.sock", "DOCKER_CONFIG=$runtime/config",
         "PATH=$runtime/bin`:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-        'HTTP_PROXY=http://127.0.0.1:17877','HTTPS_PROXY=http://127.0.0.1:17877','NO_PROXY=localhost,127.0.0.1',
-        "$runtime/bin/docker",'compose','--project-directory',$linuxRoot,'--env-file',$linuxEnv,'-p',$ProjectName) +
+        'HTTP_PROXY=http://127.0.0.1:17877','HTTPS_PROXY=http://127.0.0.1:17877','NO_PROXY=localhost,127.0.0.1')
+    if ($Action -in @('up','build')) {
+        & wsl.exe @wslEnvironment python3 "$linuxRoot/scripts/security_images.py" --build
+        if ($LASTEXITCODE -ne 0) { throw 'Patched tool image build failed.' }
+    }
+    $wslArguments = $wslEnvironment + @("$runtime/bin/docker",'compose','--project-directory',$linuxRoot,'--env-file',$linuxEnv,'-p',$ProjectName) +
         @($composePaths | ForEach-Object { '-f'; Convert-WslPath $_ }) + $actionArguments
     & wsl.exe @wslArguments
     $result = $LASTEXITCODE

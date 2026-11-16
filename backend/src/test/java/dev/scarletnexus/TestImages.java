@@ -1,13 +1,17 @@
 package dev.scarletnexus;
 
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-/** Official immutable PostgreSQL index, shared by all disposable integration runtimes. */
+/** Locally rebuilt PostgreSQL; the caller must verify its reviewed recipe before testing. */
 final class TestImages {
   static final DockerImageName POSTGRES =
-      DockerImageName.parse(
-              "postgres:17.12-alpine3.24@sha256:a77aa70e641402a21411b92b721c58d10f23b50ae5fdd2333efd22d166e1e5f7")
+      DockerImageName.parse("scarlet-nexus-tools/postgres:17.12-gosu1.20-r1")
           .asCompatibleSubstituteFor("postgres");
 
   private TestImages() {}
+
+  static PostgreSQLContainer<?> postgres() {
+    return new PostgreSQLContainer<>(POSTGRES).withImagePullPolicy(image -> false);
+  }
 }

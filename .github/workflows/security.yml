@@ -24,6 +24,7 @@ jobs:
           PY
       - run: python3 scripts/verify_image_lock.py --remote
       - run: python3 scripts/install_security_scanner.py
+      - run: python3 scripts/security_images.py --build
       - run: docker compose -p scarlet-security-ci up --build -d --wait --wait-timeout 240
       - name: Retain all findings and enforce the high severity gate
         run: python3 scripts/security_scan.py --project scarlet-security-ci --output .runtime/security-ci
