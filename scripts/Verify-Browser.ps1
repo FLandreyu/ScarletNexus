@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory=$true)][ValidatePattern('^[a-z0-9][a-z0-9_-]*(acceptance|test|ci)[a-z0-9_-]*$')][string]$ProjectName,
     [string]$BaseUrl = 'http://127.0.0.1:8088',
     [string]$NodeHome,
-    [string]$OutputRoot = '.runtime/browser-results'
+    [string]$OutputRoot = '.runtime/browser-results',
+    [string[]]$ComposeFiles = @('docker-compose.yml'),
+    [ValidateSet('playwright.config.ts','playwright.tls.config.ts')][string]$PlaywrightConfig = 'playwright.config.ts'
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -29,12 +31,12 @@ try {
     foreach ($browserProject in @('desktop','mobile')) {
         # Each project gets a fresh application process; PostgreSQL and attachment volumes stay in place.
         # This exercises the default login limit instead of changing production security for a test suite.
-        & (Join-Path $PSScriptRoot 'Invoke-Compose.ps1') -Action recreate-app -EnvFile $EnvFile -ProjectName $ProjectName
+        & (Join-Path $PSScriptRoot 'Invoke-Compose.ps1') -Action recreate-app -EnvFile $EnvFile -ProjectName $ProjectName -ComposeFiles $ComposeFiles
         Push-Location (Join-Path $projectRoot 'frontend')
         try {
             $testOutput = Join-Path $artifactRoot $browserProject
             $ErrorActionPreference = 'Continue'
-            & npm.cmd run test:e2e -- "--project=$browserProject" --output $testOutput
+            & npm.cmd run test:e2e -- "--project=$browserProject" --config $PlaywrightConfig --output $testOutput
             $testExit = $LASTEXITCODE
             $ErrorActionPreference = 'Stop'
             if ($testExit -ne 0) { throw "Browser project $browserProject failed ($testExit)." }

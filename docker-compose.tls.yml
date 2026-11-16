@@ -1,0 +1,49 @@
+# Compose >= 2.24.4; local review of a direct TLS termination boundary.
+# Merge AFTER docker-compose.yml. This does not publish a production service.
+services:
+  db:
+    cpus: 1.0
+    mem_limit: 512m
+    pids_limit: 128
+    security_opt: ['no-new-privileges:true']
+  backend:
+    cpus: 2.0
+    mem_limit: 1024m
+    pids_limit: 256
+    security_opt: ['no-new-privileges:true']
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+    environment:
+      SESSION_COOKIE_SECURE: 'true'
+      SERVER_FORWARD_HEADERS_STRATEGY: none
+      JAVA_TOOL_OPTIONS: '-XX:MaxRAMPercentage=60 -XX:ActiveProcessorCount=2'
+  web:
+    cpus: 0.5
+    mem_limit: 128m
+    pids_limit: 64
+    security_opt: ['no-new-privileges:true']
+    environment:
+      NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE: '1'
+    ports: !override
+      - '127.0.0.1:${HTTPS_PORT:-8443}:443'
+    volumes:
+      - type: bind
+        source: ./frontend/nginx.tls.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${TLS_CERT_FILE:?Set TLS_CERT_FILE to a PEM full certificate chain}
+        target: /etc/nginx/tls/fullchain.pem
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${TLS_KEY_FILE:?Set TLS_KEY_FILE to a private PEM key file}
+        target: /etc/nginx/tls/privkey.pem
+        read_only: true
+        bind:
+          create_host_path: false

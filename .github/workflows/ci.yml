@@ -45,6 +45,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [desktop, mobile]
+        transport: [http, tls]
     env:
       POSTGRES_PASSWORD: ci-disposable-database-only
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:8088
@@ -68,15 +69,33 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as output:
               output.write('E2E_PASSWORD=' + password + '\n')
           PY
+      - name: Prepare disposable TLS trust
+        if: matrix.transport == 'tls'
+        run: |
+          umask 077
+          mkdir -p .runtime/tls
+          openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj /CN=localhost \
+            -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1' \
+            -keyout .runtime/tls/key.pem -out .runtime/tls/cert.pem
+          pin=$(openssl x509 -in .runtime/tls/cert.pem -pubkey -noout | openssl pkey -pubin -outform DER | openssl dgst -sha256 -binary | openssl base64 -A)
+          {
+            echo 'COMPOSE_FILE=docker-compose.yml:docker-compose.tls.yml'
+            echo 'TLS_CERT_FILE=./.runtime/tls/cert.pem'
+            echo 'TLS_KEY_FILE=./.runtime/tls/key.pem'
+            echo 'PLAYWRIGHT_BASE_URL=https://localhost:8443'
+            echo "CURL_CA_BUNDLE=$PWD/.runtime/tls/cert.pem"
+            echo "NODE_EXTRA_CA_CERTS=$PWD/.runtime/tls/cert.pem"
+            echo "E2E_TLS_SPKI=$pin"
+          } >> "$GITHUB_ENV"
       - run: docker compose config --quiet
       - run: docker compose up --build -d --wait --wait-timeout 240
       - name: Check gateway and restart persistence
         run: |
-          curl --fail http://127.0.0.1:8088/ | grep 'Scarlet Nexus'
-          curl --fail http://127.0.0.1:8088/api/v1/system/status | grep '"schemaVersion":"12"'
+          curl --fail "$PLAYWRIGHT_BASE_URL/" | grep 'Scarlet Nexus'
+          curl --fail "$PLAYWRIGHT_BASE_URL/api/v1/system/status" | grep '"schemaVersion":"12"'
           docker compose restart backend
           for attempt in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:8088/api/v1/system/status > /tmp/status.json; then break; fi
+            if curl --fail --silent "$PLAYWRIGHT_BASE_URL/api/v1/system/status" > /tmp/status.json; then break; fi
             sleep 2
           done
           grep '"database":"UP"' /tmp/status.json
@@ -84,9 +103,18 @@ jobs:
         working-directory: frontend
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
-      - run: npm run test:e2e -- --project=${{ matrix.browser }}
+      - run: npm run test:e2e -- --project=${{ matrix.browser }} --config=${{ matrix.transport == 'tls' && 'playwright.tls.config.ts' || 'playwright.config.ts' }}
         working-directory: frontend
+      - name: TLS security, gateway stream and resources
+        if: matrix.transport == 'tls'
+        run: |
+          python3 scripts/verify_tls.py --base-url "$PLAYWRIGHT_BASE_URL" --ca-file .runtime/tls/cert.pem --email "$E2E_EMAIL" --password-file .runtime/dev-secrets/admin.password
+          python3 scripts/verify_tls_runtime.py --project scarlet-nexus
+          python3 scripts/operations.py monitor --project scarlet-nexus
+          python3 scripts/operations.py attachments --project scarlet-nexus
+          python3 scripts/verify_tls_stream.py --ca-file .runtime/tls/cert.pem --key-file .runtime/tls/key.pem --web-image "$(docker compose images -q web)"
       - name: Encrypted backup and isolated restore drill
+        if: matrix.transport == 'http'
         run: |
           python3 -m unittest discover -s scripts -p 'test_*.py' -v
           python3 scripts/operations.py monitor --project scarlet-nexus
@@ -104,7 +132,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: browser-and-compose-${{ matrix.browser }}
+          name: browser-and-compose-${{ matrix.transport }}-${{ matrix.browser }}
           path: |
             frontend/test-results/
             frontend/playwright-report/

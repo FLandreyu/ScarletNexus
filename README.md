@@ -1,5 +1,7 @@
 # Scarlet Nexus
 
+P6新增独立HTTPS与资源配置：显式合并`docker-compose.tls.yml`，证书/私钥必填、仅loopback HTTPS，Secure Cookie、登录入口限流、三服务资源上限与后端只读根目录。默认HTTP不变，配置和隔离验证见[TLS_DEPLOYMENT](docs/TLS_DEPLOYMENT.md)；不代表生产部署或P6整体验收。
+
 P6数据库角色方案：新空库可采用独立Flyway连接与受限运行角色，见[DATABASE_ROLES](docs/DATABASE_ROLES.md)。现有库未自动更换角色，默认本地配置保留；双连接不等于长期进程不持有迁移权限，生产优先使用独立迁移作业。P6整体验收仍未完成。
 
 P6运维检查：`scripts/operations.py`支持本机Docker健康探测和只读附件审计，Compose已加入有界日志轮转；命令、真实验收和未完成的生产门禁见[OPERATIONS_CHECKS](docs/OPERATIONS_CHECKS.md)。没有自动删除附件、安装告警服务或生产部署。

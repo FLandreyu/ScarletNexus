@@ -1,5 +1,7 @@
 # 本地运维与生产准备边界
 
+可选直接HTTPS与容器资源限制见[TLS_DEPLOYMENT](TLS_DEPLOYMENT.md)。合并TLS overlay只替换为loopback HTTPS，证书路径必填，不安装信任或申请证书；默认下述HTTP配置不变。生产域名/续期、依赖镜像风险及完整P6门禁仍待完成。
+
 日常启动见 README。本地 Compose 仅 loopback，持久卷 `postgres-data`；无自动数据清理。数据库连接密码必填于忽略的 .env，修改密码不会自动更新已有卷中的角色密码，需独立安全迁移，不能删卷绕过。
 
 健康：`/actuator/health/liveness` 检查进程，`readiness` 包含数据库；`/api/v1/system/status` 检查 MyBatis/Flyway 查询。日志看 requestId，排错不要公开 `.env` 或完整连接配置。后端启动必须 Flyway 成功，不自动 baseline 或忽略校验失败。

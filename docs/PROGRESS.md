@@ -4,7 +4,17 @@
 
 ## 当前阶段
 
-P6第四批：独立迁移与运行角色开发/验收中，整体P6尚未完成。
+P6第五批：独立HTTPS、安全Cookie与资源约束已完成本批本地验收；整体P6尚未完成。
+
+- 先定义P6_TLS_ACCEPTANCE。本批新增显式docker-compose.tls.yml：Compose !override仅保留loopback HTTPS，证书链/私钥路径必填、只读挂载，TLS1.2/1.3、HSTS/CSP、Secure Cookie；关闭应用代理解析，网关清洗转发头、按直连IP限登录。后端共享来源10次/5分钟桶保留，不冒称多用户/多级代理支持。三服务CPU/内存/PID/no-new-privileges，后端cap_drop/只读根/64MiB受限tmpfs；解释与生产边界见TLS_DEPLOYMENT、ADR-031。
+- Windows Java21 Verify.ps1最终格式/编译/31单元+51真实PG17.11集成=82通过，0失败/错误/跳过，3分05秒（.runtime-p6-tls-verify.log）；Node24格式/类型/14单元/生产构建通过，既有图表体积提示保留。本批只新增网关测试源，无数据库迁移/业务Java改动，未重复Linux Testcontainers全套；最终测试源另经spotless/test-compile通过。
+- 隔离Compose实际TLS构建与V12就绪；Python证书/主机名正反验证、明文拒绝、安全Cookie、真实登录/CSRF/退出、伪造头限流通过（.runtime-p6-tls-security-final.log）。Docker inspect确认资源/端口/只读配置，monitor UP，最终16附件引用/16文件无异常（.runtime-p6-tls-runtime-final.log）。独立内部SSE测试网络无发布端口，首段0.079秒/终段2.580秒、头清洗通过（.runtime-p6-tls-stream-final.log），不代表真实模型质量。
+- TLS真实Nginx完整桌面6项43.9秒+手机6项44.0秒通过，无API mock/JS异常/横向溢出，练习/附件上传下载/未登录拒绝/学习恢复/计划复习/数据管理覆盖；已查看桌面/手机练习证据完整截图（.runtime-p6-tls-browser.log）。恢复默认HTTP配置后系统桌面/手机2项5.4秒及非Secure开发Cookie通过，未重复默认12项（.runtime-p6-tls-http-browser.log）。
+- Linux Python3/OpenSSL 5项通过（.runtime-p6-tls-python.log）；Windows首次执行既有备份用例因缺openssl有2项环境错误，转支持环境复跑，未跳过冒充成功。Python编译、PowerShell语法、CI YAML解析通过；CI增加HTTP/TLS×两浏览器矩阵与TLS/资源/运维检查，远端未运行。
+- 收尾Compose down，命名项目ps -a为空，两个数据卷保留；临时SSE容器/网络清理。GraphFlow仍未提供，按规则定向检查，未context/plan/index；原.env.example改动保持且不纳入提交。无生产部署/公网服务/系统服务安装/证书信任安装/付费调用/推送，私有证书和样例仅在忽略目录。
+- **下一步P6**：依赖与容器镜像风险复核/digest固定及处置记录、独立迁移作业编排/备份权限与生产运行说明，整合最终门禁。真实域名/受信任证书续期、现有库权限切换、公网部署/外部告警等实际生产操作另行确认；当前本机TLS与角色方案不等于生产安全审计。
+
+P6第四批：独立迁移与运行角色本批范围已验收，整体P6尚未完成。
 
 - 新库初始化脚本只接受空schema、拒绝已有同名角色；运行角色不拥有对象，无DDL/角色创建/切换迁移角色能力。V12在专用角色存在时限制业务历史DML及Flyway历史权限，V1–V11不改。
 - Spring可选Flyway独立连接，新增显式roles Compose overlay，默认本地方式兼容。Windows专用角色故事与31单元通过（.runtime-p6-roles-focused.log）；最终Linux Testcontainers为31单元+51真实PG集成=82项通过，0失败/错误/跳过（.runtime-p6-roles-testcontainers.log，6分56秒）。验证真实current_user/表owner、DDL/提权/历史写入拒绝、登录/学习/练习/证据业务。初轮Embedded PG URL内置user覆盖角色导致失败，去除URL凭据后重新实证，未把管理员连接误算受限角色。不对现有库执行角色初始化。进程同时持有迁移凭据的边界与生产独立作业建议见DATABASE_ROLES。
@@ -260,6 +270,6 @@ P0–P5已按各阶段交付范围验收；P6开发中，尚未整体验收。P5
 - 本机可按README使用临时真实PG预览；它不保留用户数据，不能作为长期使用部署。截图和日志在忽略目录，正式证据摘要进仓库。
 - 开发依赖5项中等级告警待上游兼容修复；生产依赖审计无发现不代表全栈安全审计完成。生产前重新评估Java依赖和容器漏洞。
 - GraphFlow恢复可用后执行context/plan/index，当前不能声称已索引。
-- **当前P6后续**：在第一批分析/学习快照/知识目录迁移基础上完成数据库与附件备份恢复演练、完整性与新实例读取验证、监控日志/轮转、生产配置说明和安全复核。整阶段门禁仍未通过；不得以目录JSON导入代替完整学习历史恢复。P5的AI文字建议、P4图片自动识别和供应商账单对账局限继续保留。
+- **当前P6后续**：分析/学习快照/知识目录迁移、数据库与附件配对备份/隔离恢复、监控日志/轮转、专用角色方案和本机TLS/资源均已有本地证据；接下来完成依赖/镜像风险与digest、独立迁移作业/备份权限与最终安全复核。整阶段门禁仍未通过；实际生产域名/续期、权限切换、公网部署与外部告警另行确认。P5的AI文字建议、P4图片自动识别和供应商账单对账局限继续保留。
 - 现有边界：源指纹保守覆盖整个用户目录，其他技能变化也可能要求新草案，不自动冲突合并。改变其他已发布技能必须明确联合范围、重新预览及确认。表单/JSON编辑器没有拖拽画布；来源映射保留节点与快照，不自动迁移能力证据。登录限流仍为单实例内存，节点库最多100项并提供搜索；无密码重置/多用户注册。部署是私有本地开发配置，不是生产安全验收。
 - P2与本轮P4各一次付费调用授权均已使用；不追加调用、不生产部署、不自动安装系统服务、不执行不可逆数据操作。

@@ -152,3 +152,9 @@ Jackson默认字符串转换不能仅靠ALLOW_COERCION_OF_SCALARS关闭，需要
 ## ADR-030 — 新库专用迁移与运行角色
 
 只在新空库初始化保留角色，拒绝已有业务表/同名角色，不自动迁移现有库权限。迁移角色拥有schema/表，运行角色仅业务DML、Flyway历史SELECT及追加事实INSERT/SELECT；V12角色存在时收紧权限，旧迁移不改。Spring允许独立Flyway凭据，未设置时回退实际数据源属性。JDBC URL不得内嵌user/password覆盖角色；测试必须断言current_user和表owner，不能用配置文本证明隔离。长期进程持有迁移凭据仍有DDL风险，生产优先独立迁移作业；既有库切换与共享集群角色归属须另行审核。
+
+## ADR-031 — 显式直接TLS边界与资源基线
+
+保持默认本地HTTP，独立TLS overlay用Compose !override替换入口为loopback HTTPS；证书/私钥必填且只读，不自动申请证书或公开服务。Nginx直接终止TLS1.2/1.3并加短期HSTS，强制Secure Cookie；不信任客户端代理头，后端显式关闭转发解析。网关按连接IP限制登录，保留后端共享来源桶，明确单用户、多代理/多用户限流边界，不为验收调高安全阈值。
+
+三服务设置CPU/内存/PID与no-new-privileges，后端只读根目录/受限tmpfs/附件卷，限制堆比例；功能验收不替代容量评估。测试证书不装入OS信任库，Python验证真实CA/主机名与负向信任；浏览器显式限定本轮公钥，API使用额外CA。独立内部Docker测试网络以测试源SSE测首段延迟及代理头清洗，不调用模型或写学习数据；CI覆盖两种入口。生产角色迁移、TLS实际域名/续期、依赖镜像风险与完整P6门禁继续独立记录。

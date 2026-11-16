@@ -1,7 +1,8 @@
 param(
     [ValidateSet('up','down','ps','logs','restart','recreate-app','config','build')][string]$Action = 'up',
     [string]$EnvFile = '.env',
-    [ValidatePattern('^[a-z0-9][a-z0-9_-]*$')][string]$ProjectName = 'scarlet-nexus'
+    [ValidatePattern('^[a-z0-9][a-z0-9_-]*$')][string]$ProjectName = 'scarlet-nexus',
+    [string[]]$ComposeFiles = @('docker-compose.yml')
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -21,10 +22,18 @@ function Convert-WslPath([string]$Path) {
     if ($Path -notmatch '^([A-Za-z]):[\\/](.*)$') { throw 'The local WSL fallback requires an absolute Windows drive path.' }
     return '/mnt/' + $Matches[1].ToLowerInvariant() + '/' + $Matches[2].Replace('\','/')
 }
+$composePaths = @($ComposeFiles | ForEach-Object {
+    $candidate = [IO.Path]::GetFullPath((Join-Path $projectRoot $_))
+    if (-not $candidate.StartsWith($projectRoot + [IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) -or
+        -not (Test-Path -LiteralPath $candidate -PathType Leaf)) { throw 'ComposeFiles must name existing files inside this workspace.' }
+    $candidate
+})
+if ($composePaths.Count -eq 0) { throw 'Provide at least one Compose file.' }
 $nativeDocker = Get-Command docker -CommandType Application -ErrorAction SilentlyContinue
 $ErrorActionPreference = 'Continue'
 if ($nativeDocker) {
-    & $nativeDocker.Source compose --project-directory $projectRoot --env-file $envPath -p $ProjectName @actionArguments
+    $fileArguments = @($composePaths | ForEach-Object { '-f'; $_ })
+    & $nativeDocker.Source compose --project-directory $projectRoot --env-file $envPath -p $ProjectName @fileArguments @actionArguments
     $result = $LASTEXITCODE
 } else {
     $runtime = '/root/.cache/scarlet-nexus-p0-runtime'
@@ -36,7 +45,8 @@ if ($nativeDocker) {
         "DOCKER_HOST=unix://$runtime/docker.sock", "DOCKER_CONFIG=$runtime/config",
         "PATH=$runtime/bin`:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
         'HTTP_PROXY=http://127.0.0.1:17877','HTTPS_PROXY=http://127.0.0.1:17877','NO_PROXY=localhost,127.0.0.1',
-        "$runtime/bin/docker",'compose','--project-directory',$linuxRoot,'--env-file',$linuxEnv,'-p',$ProjectName) + $actionArguments
+        "$runtime/bin/docker",'compose','--project-directory',$linuxRoot,'--env-file',$linuxEnv,'-p',$ProjectName) +
+        @($composePaths | ForEach-Object { '-f'; Convert-WslPath $_ }) + $actionArguments
     & wsl.exe @wslArguments
     $result = $LASTEXITCODE
 }
