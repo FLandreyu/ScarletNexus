@@ -211,7 +211,7 @@ onMounted(() =>
     <section class="learning-section">
       <h2>完整备份与恢复</h2>
       <p>
-        完整恢复需要PostgreSQL备份与私有附件共同校验。完整备份恢复工具尚未提供，请不要将上述JSON当作完整备份；此页面只支持新增知识目录。
+        完整备份与隔离恢复由部署维护者按运维文档使用加密备份工具执行，需要PostgreSQL与私有附件共同校验。上述JSON不等于完整备份；此页面只支持新增知识目录。
       </p>
     </section>
   </section>

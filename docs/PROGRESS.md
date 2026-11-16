@@ -4,6 +4,13 @@
 
 ## 当前阶段
 
+P6第二批：加密备份与隔离恢复已验收，详见[BACKUP_RESTORE](BACKUP_RESTORE.md)，整体P6仍未完成。
+
+- 本轮新增scripts/backup_restore.py：命名项目停写后配对pg_dump/附件、全表与文件清单、数据库附件引用校验、加密和密文认证；恢复只生成新目标，不覆盖源库/卷，无模型调用或新迁移。
+- 最终Docker演练54张public表、10个附件全部匹配；新实例Flyway/readiness、原账户登录、学习快照、10张鉴权图片读取和checksum通过（.runtime-p6-backup-verified.log）。首轮内部网络无端口映射导致探测失败，改为Linux宿主直接访问内部桥地址后通过。
+- 3项Python/OpenSSL格式安全测试通过；Windows Java21 mvn verify为31单元+50真实PG集成=81项通过，0失败/错误/跳过（.runtime-p6-backup-backend.log）。前端格式/类型/14单元/构建通过，既有图表体积告警保留。CI新增恢复演练，远端未运行。
+- 密文/口令/样例仅在忽略目录，原.env.example修改保留。GraphFlow仍未提供，未context/plan/index。下一步监控、脱敏日志轮转、孤立附件只读审计与生产TLS/权限/资源/依赖风险复核，P6不提前标为完成。
+
 P0–P5已按各阶段交付范围验收；P6开发中，尚未整体验收。P5每日规则计划/确认/调整/复习闭环通过，AI文字建议未接入。P4的一次真实导师样例不代表全面教学质量或严格单问保证。
 
 ## 本轮：P6第一批分析与JSON迁移（2026-11-16，进行中）

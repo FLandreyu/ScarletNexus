@@ -18,4 +18,4 @@ WSL显式`--cd /tmp`避免本机Unicode当前目录导致的WSL启动E_UNEXPECTE
 
 在Linux Docker中运行`sh scripts/verify-testcontainers-in-docker.sh`可复用受测入口；非默认socket通过DOCKER_HOST传入，MAVEN_REPOSITORY可选缓存目录。它向测试容器挂载socket（仅限受信任测试），保持Ryuk启用，不用于运行不可信代码。停止验收Compose用其`down`且保留卷；不要清理整个Docker数据目录或其他项目。
 
-恢复演练计划：先备份数据库与附件清单 → 新隔离数据库恢复 → 校验 schema、数量、外键、UUID、文件checksum → 应用读路径验收 → 记录结果。未演练前不得声称备份可恢复。P0 未包含真实学习数据，不创建定时备份任务。
+P6第二批已完成真实加密备份与隔离恢复：54张表/10个附件校验一致，新实例登录、学习快照与10张鉴权图片读取通过。命令、口令保管、停写窗口和生产边界见[BACKUP_RESTORE](BACKUP_RESTORE.md)。定时备份、监控告警与生产恢复方案仍待后续；不自动部署或清理源数据。
