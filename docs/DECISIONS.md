@@ -191,3 +191,9 @@ Trivy固定官方归档/二进制摘要，扫描所有锁定基础镜像、实�
 迁移服务和后端必须显式共用同一项目镜像；扫描检查已退出0的作业与后端image ID一致、运行环境无迁移凭据，否则失败。避免两个build产生不同元数据镜像后只扫描其中一个。Testcontainers runner改为只读源快照、容器内部编译，导出JAR与测试报告，避免共享Windows target中的类文件瞬时缺失影响应用重启故事；原失败日志保留，原因未证实，不归咎于编辑器。
 
 Ryuk新SDK兼容试验仅在.runtime，旧模块公告无兼容修复版，拆分SDK需要维护清理分支且依赖解析未通过；不将未验证候选接入生产/测试，不做ignore/VEX。继续保留2高与官方源码记录，P6整体门禁仍未通过。
+
+## ADR-037 — 只读备份身份与角色感知恢复格式
+
+沿用现有新空库provision流程，增加scarlet_backup及迁移角色默认表/序列SELECT、schema USAGE/数据库CONNECT；无DML/DDL/特权或角色成员关系，不修改V1–V12，也不自动为已存在库授权。分离角色备份强制外部私有数据库口令文件，固定scarlet_backup，不回退管理员。短生命周期客户端使用源PG相同内容ID、共享其网络、只读根/私有0600 pgpass，连非loopback地址并验证无口令被拒绝，避免socket或127.0.0.1 trust掩盖口令错误。预检身份、所有权/成员关系/能力/完整SELECT及无DML在停服务前执行，失败不生成输出。
+
+角色感知备份清单升级v2，要求tcp-password/scarlet_backup/separate-v1；旧工具必须按格式拒绝，不能静默降级为管理员恢复。加密信封SNBACK1保持原算法，新工具仍支持旧v1 legacy-admin。只读备份身份与隔离恢复bootstrap身份分别记录，不存角色密码。新恢复仅创建新资源，重新provision角色/随机密码、pg_restore以迁移角色拥有对象，再应用原V12权限、独立迁移validate；Web禁Flyway并使用runtime。验证所有权、只读角色全表摘要、运行角色DDL/历史写入拒绝与真实pg_stat_activity，再做登录/快照/私有图片读取。该方案不替代Docker宿主/卷权限控制，也不把旧默认管理员模式宣称为最小权限。

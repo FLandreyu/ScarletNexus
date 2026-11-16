@@ -4,6 +4,8 @@ P6已迁移Spring Boot4.1.2，保留Java25及严格JSON业务解析；原两项S
 
 P6新增[独立数据库迁移作业](docs/P6_MIGRATION_JOB_ACCEPTANCE.md)：新库可显式合并docker-compose.migrate.yml，迁移成功退出后才启动后端；后端只持受限运行身份，不注入迁移凭据。先按[角色说明](docs/DATABASE_ROLES.md)provision新库，不对现有卷自动切换权限。Ryuk新SDK调查尚未形成可接入修复，原两项高告警继续保留。
 
+新角色项目已支持[只读备份与受限恢复](docs/P6_BACKUP_ROLE_ACCEPTANCE.md)：backup须提供独立数据库口令文件，使用scarlet_backup的TCP认证；v2归档恢复角色与权限后以runtime启动，旧工具明确拒绝v2，新工具兼容旧v1。密码/归档不提交，默认本地legacy-admin模式不冒充最小权限。
+
 P6新增独立HTTPS与资源配置：显式合并`docker-compose.tls.yml`，证书/私钥必填、仅loopback HTTPS，Secure Cookie、登录入口限流、三服务资源上限与后端只读根目录。默认HTTP不变，配置和隔离验证见[TLS_DEPLOYMENT](docs/TLS_DEPLOYMENT.md)；不代表生产部署或P6整体验收。
 
 P6数据库角色方案：新空库可采用独立Flyway连接与受限运行角色，见[DATABASE_ROLES](docs/DATABASE_ROLES.md)。现有库未自动更换角色，默认本地配置保留；双连接不等于长期进程不持有迁移权限，生产优先使用独立迁移作业。P6整体验收仍未完成。

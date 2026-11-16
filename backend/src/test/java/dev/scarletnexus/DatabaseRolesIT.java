@@ -22,6 +22,7 @@ class DatabaseRolesIT {
   private void exerciseRoles(boolean independentJob) throws Exception {
     String runtimePassword = UUID.randomUUID().toString(),
         migrationPassword = UUID.randomUUID().toString();
+    String backupPassword = UUID.randomUUID().toString();
     var settings = new HashMap<String, String>();
     settings.put("spring.datasource.username", "scarlet_runtime");
     settings.put("spring.datasource.password", runtimePassword);
@@ -46,6 +47,7 @@ class DatabaseRolesIT {
                 statement.execute("ALTER ROLE scarlet_runtime PASSWORD '" + runtimePassword + "'");
                 statement.execute(
                     "ALTER ROLE scarlet_migrator PASSWORD '" + migrationPassword + "'");
+                statement.execute("ALTER ROLE scarlet_backup PASSWORD '" + backupPassword + "'");
               }
               if (independentJob) {
                 String cleanUrl = url.split("\\?")[0];
@@ -72,6 +74,58 @@ class DatabaseRolesIT {
         assertThat(runtime.app.getBeansOfType(org.flywaydb.core.Flyway.class)).isEmpty();
         assertThat(runtime.app.getEnvironment().getProperty("spring.flyway.password"))
             .isEqualTo(runtimePassword);
+      }
+      String cleanUrl = settings.get("spring.datasource.url");
+      try (var connection =
+              DriverManager.getConnection(cleanUrl, "scarlet_backup", backupPassword);
+          var statement = connection.createStatement()) {
+        try (var result =
+            statement.executeQuery(
+                "SELECT current_user, count(*) OVER () FROM pg_tables WHERE schemaname='public'")) {
+          assertThat(result.next()).isTrue();
+          assertThat(result.getString(1)).isEqualTo("scarlet_backup");
+        }
+        for (String forbidden :
+            List.of(
+                "DELETE FROM users WHERE false",
+                "UPDATE users SET email=email WHERE false",
+                "CREATE TABLE public.backup_forbidden(id int)",
+                "SET ROLE scarlet_migrator",
+                "SET ROLE scarlet_runtime",
+                "SELECT pg_read_file('/etc/passwd')",
+                "COPY (SELECT 1) TO PROGRAM 'true'",
+                "CREATE ROLE backup_forbidden LOGIN")) {
+          assertThatThrownBy(() -> statement.execute(forbidden))
+              .isInstanceOfSatisfying(
+                  SQLException.class,
+                  failure -> assertThat(failure.getSQLState()).isEqualTo("42501"));
+        }
+      }
+      try (var connection =
+              DriverManager.getConnection(cleanUrl, "scarlet_migrator", migrationPassword);
+          var statement = connection.createStatement()) {
+        statement.execute("CREATE TABLE public.backup_permission_probe(id int)");
+        statement.execute("CREATE SEQUENCE public.backup_sequence_probe");
+        try (var backupConnection =
+                DriverManager.getConnection(cleanUrl, "scarlet_backup", backupPassword);
+            var backupStatement = backupConnection.createStatement()) {
+          backupStatement
+              .executeQuery("SELECT count(*) FROM public.backup_permission_probe")
+              .close();
+          backupStatement
+              .executeQuery("SELECT last_value FROM public.backup_sequence_probe")
+              .close();
+          assertThatThrownBy(
+                  () ->
+                      backupStatement.executeQuery(
+                          "SELECT nextval('public.backup_sequence_probe')"))
+              .isInstanceOfSatisfying(
+                  SQLException.class,
+                  failure -> assertThat(failure.getSQLState()).isEqualTo("42501"));
+        } finally {
+          statement.execute("DROP TABLE public.backup_permission_probe");
+          statement.execute("DROP SEQUENCE public.backup_sequence_probe");
+        }
       }
       var db = runtime.app.getBean(JdbcTemplate.class);
       assertThat(db.queryForObject("SELECT current_user", String.class))

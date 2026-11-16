@@ -4,7 +4,21 @@
 
 ## 当前阶段
 
-P6第九批：独立迁移作业已实现并验收；Ryuk新SDK兼容性调查未形成可合入修复，**仍保留2高，安全门禁未通过，P6尚未完成**。Java25/Boot4保持，无生产部署。
+P6第十批：备份专用只读身份、v2角色感知备份与受限恢复已验收；**仍保留Ryuk2高，安全门禁未通过，P6尚未完成**。Java25/Boot4保持，无生产部署。
+
+- 先定义P6_BACKUP_ROLE_ACCEPTANCE，沿用新空库provision约定增加scarlet_backup（无特权/成员关系，CONNECT/USAGE、迁移角色未来表/序列SELECT）；不改V1–V12或业务schema，不给旧卷/个人库授权。JDBC真实验证DML/DDL/改角色/读服务器文件/执行程序拒绝42501，未来表/序列SELECT可用而nextval拒绝；Web无备份或迁移密码。
+- 分离角色项目backup强制`--database-password-file`，和加密口令文件分离，不回退管理员。用源PG同一镜像的短期客户端、只读根/无cap/私有0600 pgpass，通过非loopback地址TCP验证无口令不能登录，检查current_user、角色能力/成员关系/所有权和完整SELECT/无DML。预检先于停止Web，缺/错口令及过量/不足权限四种真实情况均拒绝、源进程StartedAt不变、无输出文件或密码披露（.runtime-backup-role-preflight.log / .runtime-backup-role-final-v2.log）。
+- 新角色备份清单升v2，固定readonly/tcp/separate-v1语义；旧工具按格式拒绝，不能静默忽略角色元数据而管理员恢复。新工具保留旧v1 legacy-admin；信封SNBACK1/加密算法不变，角色密码不归档，清单区分备份与恢复bootstrap身份，ADR-037记录安全边界。
+- 最终实际v2备份54表/2附件，scarlet_backup/tcp-password；认证/隔离恢复全表/文件匹配，角色以新随机密码重建，pg_restore以migrator拥有所有表、恢复原V12权限、独立迁移validate后Web用runtime且禁Flyway。只读身份复算摘要、runtime DDL/历史写入拒绝、实际pg_stat_activity连接身份、登录/学习快照/2私有图片均通过，backup_checks_exit=0（.runtime-backup-role-final-v2.log）。没有把管理员恢复当受限恢复。
+- 新工具实际恢复旧Boot4 v1备份54表/8附件并认证读8图，明确legacy/管理员模式；取ae02964旧读取器验证拒绝新v2且仍能认证旧v1，没有创建恢复资源（.runtime-backup-role-reader-compat.log）。初期内部v1角色草案不交付，最终只认v2。
+- 隔离Maven/Java25全量`verify -Ptestcontainers`：**31单元+53真实PG17.12集成=84项通过**，0失败/错误/跳过，格式/编译/打包通过，2分50秒（.runtime-backup-role-backend.log）。Windows原生PG未重跑。受测Node格式/类型/14单元/构建通过（.runtime-backup-role-frontend.log），原chunk/弃用提示保留，无新依赖。
+- 新scarlet-nexus-p6-backup-role-acceptance两卷/三角色/V12启动后，TLS桌面6项26.2秒、手机6项39.8秒全旅程通过，无API mock/JS异常/横向溢出（.runtime-backup-role-browser.log）。最终串行TLS正反/主机名/明文/Secure Cookie/CSRF/退出/限流、资源/monitor/附件审计与SSE/头清洗通过；首轮与浏览器重建交叠造成末尾exec137/扫描找不到Web，失败保留，不作为完整结果。私有启动脚本CRLF改LF后成功（.runtime-backup-role-compose-r2.log）。
+- Python/OpenSSL最终**22项通过**，新增缺口令不停止服务、trust拒绝/客户端清理、pgpass转义、v1防角色降级和v2必要身份字段检查；Python编译、CI YAML/静态锁/Git diff通过，远端CI未运行。最终v2代码后重跑实际备份/角色恢复、旧v1恢复与读取器兼容，不以早期测试覆盖后续修改。
+- `.runtime/security-backup-role-final`完整扫描、退出2，仍Ryuk2高/0严重、含父层合计43次；后端2中、前端1中，npm生产0/全部5 moderate，作业与后端同镜像f1341870...。没有ignore/VEX或过滤未修项，中低/未知保留。最终记录见P6_BACKUP_ROLE_ACCEPTANCE/SUPPLY_CHAIN_REVIEW。
+- 收尾仅本轮四服务down，ps -a空、临时客户端/恢复资源/Testcontainers清理，新PG/附件卷保留，旧卷/个人学习数据未改。用户.env.example/.gitignore不入提交，秘密/归档/样例只在忽略目录，无推送/生产部署/付费模型/全局服务或证书信任修改。GraphFlow仍未提供，定向检查，未context/plan/index；历史Java25记录仅用于定位，现状以仓库和本轮实测为准。
+- **下一步**：汇总P6最终门禁与可用/未通过项，继续跟踪Ryuk2高及中低/未知风险；旧库权限切换、真实生产域名/证书续期/部署与独立安全审计仍需另行确认，当前不标P6完成。
+
+P6第九批（以下为历史记录）：独立迁移作业已实现并验收；当时Ryuk2高与整体门禁仍未关闭。
 
 - 先定义P6_RYUK_ACCEPTANCE与P6_MIGRATION_JOB_ACCEPTANCE。官方Ryuk稳定0.14.0/main仍分别依赖旧Docker模块28.3.3/28.5.2，旧模块公告没有列出兼容修复。试验官方拆分client0.6.3/api1.57.0，接口/返回类型及旧测试build/jsonmessage路径需要适配，依赖解析发生root/api模块包歧义；未编译/测试通过，不提交候选或替换现有清理工具，不生成ignore/VEX。证据.runtime-ryuk-sdk-compile.log与官方源码核对，2026-11-23继续跟踪，详见P6_RYUK_ACCEPTANCE。
 - 转而完成已规划的独立迁移入口DatabaseMigration：同一Boot JAR直接Flyway migrate/validate，不启动Spring/Web/管理员或AI；显式scarlet_migrator与私有密码，拒绝URL查询/内嵌凭据，禁clean/baseline，失败退出1且不打印异常内容。无V1–V12改动，新角色只在新隔离库provision；不切换个人/既有库权限。

@@ -18,6 +18,83 @@ import uuid
 MAGIC = b'SNBACK1\n'
 
 
+def pgpass_escape(value):
+    return value.replace('\\', '\\\\').replace(':', '\\:')
+
+
+class BackupConnection:
+    """Short-lived, read-only client using TCP password authentication, never the local trust socket."""
+    def __init__(self, db, info, database, password_file, work):
+        self.cid = None
+        self.database = database
+        self.user = 'scarlet_backup'
+        addresses = {n['IPAddress'] for n in info['NetworkSettings']['Networks'].values() if n.get('IPAddress')}
+        if len(addresses) != 1:
+            raise ValueError('Backup requires one unambiguous private database address')
+        self.host = addresses.pop()
+        if self.host.startswith('127.'):
+            raise ValueError('Backup must not use a loopback trust rule')
+        _, value = password(password_file)
+        passfile = work / 'database.pgpass'
+        passfile.write_text(':'.join(pgpass_escape(v) for v in
+                           (self.host, '5432', database, self.user, value.decode('utf8'))) + '\n', encoding='utf8')
+        os.chmod(passfile, 0o600)
+        try:
+            self.cid = docker('run', '--rm', '-d', '--network', 'container:' + db, '--read-only', '--cap-drop', 'ALL',
+                              '--security-opt', 'no-new-privileges:true', '--pids-limit', '32', '--memory', '256m',
+                              '--user', f'{os.getuid()}:{os.getgid()}',
+                              '--mount', f'type=bind,src={passfile},dst=/run/secrets/pgpass,readonly',
+                              '-e', 'PGPASSFILE=/run/secrets/pgpass', '-e', 'PGOPTIONS=-c timezone=UTC',
+                              '--entrypoint', 'sleep', info['Image'], '1800').decode().strip()
+            probe = subprocess.run(['docker', 'exec', '-e', 'PGPASSFILE=/missing-password-file', self.cid,
+                                    *self.arguments('psql'), '-XqAt', '-c', 'SELECT 1'],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if probe.returncode == 0:
+                raise ValueError('Backup connection accepts no password; refusing trust authentication')
+            identity = self.sql("SELECT current_user").decode().strip()
+            if identity != self.user:
+                raise ValueError('Unexpected backup database identity')
+            excessive = self.sql("""SELECT
+              (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls OR rolinherit
+               FROM pg_roles WHERE rolname=current_user)
+              OR has_schema_privilege(current_user,'public','CREATE')
+              OR has_database_privilege(current_user,current_database(),'TEMP')
+              OR pg_has_role(current_user,'scarlet_migrator','MEMBER')
+              OR pg_has_role(current_user,'scarlet_runtime','MEMBER')
+              OR EXISTS(SELECT 1 FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=current_user))
+              OR EXISTS(SELECT 1 FROM pg_database WHERE datname=current_database() AND datdba=(SELECT oid FROM pg_roles WHERE rolname=current_user))
+              OR EXISTS(SELECT 1 FROM pg_namespace WHERE nspname='public' AND nspowner=(SELECT oid FROM pg_roles WHERE rolname=current_user))
+              OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                         WHERE n.nspname='public' AND c.relowner=(SELECT oid FROM pg_roles WHERE rolname=current_user))
+              OR EXISTS(SELECT 1 FROM pg_tables WHERE schemaname='public' AND
+                   (NOT has_table_privilege(current_user,quote_ident(schemaname)||'.'||quote_ident(tablename),'SELECT')
+                    OR has_table_privilege(current_user,quote_ident(schemaname)||'.'||quote_ident(tablename),
+                                          'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')))
+              OR EXISTS(SELECT 1 FROM pg_sequences WHERE schemaname='public' AND
+                   (NOT has_sequence_privilege(current_user,quote_ident(schemaname)||'.'||quote_ident(sequencename),'SELECT')
+                    OR has_sequence_privilege(current_user,quote_ident(schemaname)||'.'||quote_ident(sequencename),'USAGE,UPDATE')))
+              """).decode().strip()
+            if excessive != 'f':
+                raise ValueError('Backup role lacks read coverage or has excessive privileges')
+        except BaseException:
+            self.close()
+            raise
+
+    def arguments(self, executable):
+        return [executable, '-h', self.host, '-p', '5432', '-U', self.user, '-d', self.database, '--no-password']
+
+    def sql(self, statement, output=None):
+        return docker('exec', self.cid, *self.arguments('psql'), '-XqAt', '-v', 'ON_ERROR_STOP=1', '-c', statement, output=output)
+
+    def dump(self, output):
+        return docker('exec', self.cid, *self.arguments('pg_dump'), '-Fc', '--no-owner', '--no-acl', output=output)
+
+    def close(self):
+        if self.cid:
+            docker('rm', '-f', self.cid)
+            self.cid = None
+
+
 def run(args, *, data=None, output=None):
     result = subprocess.run(args, input=data, stdout=output or subprocess.PIPE,
                             stderr=subprocess.PIPE, check=False)
@@ -42,24 +119,26 @@ def source(project, service):
     return ids[0]
 
 
-def sql(cid, user, database, statement, output=None):
+def sql(cid, user, database, statement, output=None, connection=None):
+    if connection:
+        return connection.sql(statement, output=output)
     return docker('exec', '-e', 'PGOPTIONS=-c timezone=UTC', cid, 'psql', '-X', '-qAt',
                   '-v', 'ON_ERROR_STOP=1', '-U', user, '-d', database, '-c', statement, output=output)
 
 
-def database_manifest(cid, user, database):
+def database_manifest(cid, user, database, connection=None):
     names = sql(cid, user, database,
-                "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename").decode().splitlines()
+                "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename", connection=connection).decode().splitlines()
     result = {}
     for name in names:
         if not name.replace('_', '').isalnum():
             raise ValueError('Unexpected table name')
         with tempfile.TemporaryFile() as content:
             sql(cid, user, database,
-                f'COPY (SELECT to_jsonb(t)::text FROM public."{name}" t ORDER BY to_jsonb(t)::text) TO STDOUT', output=content)
+                f'COPY (SELECT to_jsonb(t)::text FROM public."{name}" t ORDER BY to_jsonb(t)::text) TO STDOUT', output=content, connection=connection)
             content.seek(0)
             digest = hashlib.file_digest(content, 'sha256').hexdigest()
-        result[name] = {'rows': int(sql(cid, user, database, f'SELECT count(*) FROM public."{name}"')),
+        result[name] = {'rows': int(sql(cid, user, database, f'SELECT count(*) FROM public."{name}"', connection=connection)),
                         'sha256': digest}
     return result
 
@@ -95,8 +174,8 @@ def password(path):
     return p, value
 
 
-def check_references(cid, user, database, files):
-    rows = sql(cid, user, database, "SELECT json_build_object('key',storage_key,'sha256',checksum,'size',size_bytes)::text FROM attachments WHERE status IN ('READY','ARCHIVED')").decode().splitlines()
+def check_references(cid, user, database, files, connection=None):
+    rows = sql(cid, user, database, "SELECT json_build_object('key',storage_key,'sha256',checksum,'size',size_bytes)::text FROM attachments WHERE status IN ('READY','ARCHIVED')", connection=connection).decode().splitlines()
     for row in rows:
         reference = json.loads(row)
         if files.get(reference['key']) != {'size': reference['size'], 'sha256': reference['sha256']}:
@@ -127,6 +206,19 @@ def seal(raw, target, secret_file, secret, work):
             out.write(chunk)
 
 
+def validate_backup_format(manifest):
+    if manifest.get('format') == 'scarlet-nexus-full-backup/v1':
+        if manifest.get('databaseRoles', 'legacy') != 'legacy':
+            raise ValueError('Separated roles require backup format v2; refusing privilege downgrade')
+    elif manifest.get('format') == 'scarlet-nexus-full-backup/v2':
+        if (manifest.get('databaseRoles') != 'separate-v1'
+                or manifest.get('backupUser') != 'scarlet_backup'
+                or manifest.get('backupAuthentication') != 'tcp-password'):
+            raise ValueError('Backup v2 requires explicit read-only identity and role restoration')
+    else:
+        raise ValueError('Unsupported backup format')
+
+
 def unseal(source_file, secret_file, secret, work):
     cipher = work / 'cipher.bin'
     with open(source_file, 'rb') as incoming, open(cipher, 'xb') as out:
@@ -153,8 +245,7 @@ def unseal(source_file, secret_file, secret, work):
                 while chunk := src.read(1024 * 1024):
                     dst.write(chunk)
     manifest = json.loads((work / 'manifest.json').read_text())
-    if manifest['format'] != 'scarlet-nexus-full-backup/v1':
-        raise ValueError('Unsupported backup format')
+    validate_backup_format(manifest)
     for name in ('database.dump', 'attachments.tar'):
         if sha(work / name) != manifest['files'][name]:
             raise ValueError('Backup checksum mismatch')
@@ -170,40 +261,54 @@ def backup(args, work, secret_file, secret):
     user, database = env['POSTGRES_USER'], env['POSTGRES_DB']
     volume = next(m['Name'] for m in app_info['Mounts']
                   if m['Destination'] == '/var/lib/scarlet/attachments' and m['Type'] == 'volume')
+    app_env = dict(item.split('=', 1) for item in app_info['Config']['Env'])
+    separated = app_env.get('DATABASE_USERNAME') == 'scarlet_runtime'
+    credential = getattr(args, 'database_password_file', None)
+    if separated and not credential:
+        raise ValueError('A separated-role backup requires --database-password-file; no administrator fallback')
+    connection = BackupConnection(db, db_info, database, credential, work) if credential else None
     stopped = []
     try:
         for cid in (web, app):
             docker('stop', '--time', '60', cid)
             stopped.append(cid)
-        running = sql(db, user, database, "SELECT (SELECT count(*) FROM ai_generation_jobs WHERE state='RUNNING') + (SELECT count(*) FROM tutor_turns WHERE state='RUNNING')")
+        running = sql(db, user, database, "SELECT (SELECT count(*) FROM ai_generation_jobs WHERE state='RUNNING') + (SELECT count(*) FROM tutor_turns WHERE state='RUNNING')", connection=connection)
         if int(running):
             raise ValueError('Resolve interrupted AI runs before creating a full backup')
-        if int(sql(db, user, database, "SELECT count(*) FROM learning_sessions WHERE state='RUNNING'")):
+        if int(sql(db, user, database, "SELECT count(*) FROM learning_sessions WHERE state='RUNNING'", connection=connection)):
             raise ValueError('Pause or finish active learning timers before backup')
         with open(work / 'database.dump', 'xb') as out:
-            docker('exec', db, 'pg_dump', '-U', user, '-d', database, '-Fc', '--no-owner', '--no-acl', output=out)
+            if connection: connection.dump(out)
+            else: docker('exec', db, 'pg_dump', '-U', user, '-d', database, '-Fc', '--no-owner', '--no-acl', output=out)
         with open(work / 'attachments.tar', 'xb') as out:
             docker('run', '--rm', '--network', 'none', '--mount', f'type=volume,src={volume},dst=/files,readonly',
                    db_info['Image'], 'tar', '-cf', '-', '-C', '/files', '.', output=out)
-        manifest = {'format': 'scarlet-nexus-full-backup/v1',
+        manifest = {'format': 'scarlet-nexus-full-backup/v2' if separated else 'scarlet-nexus-full-backup/v1',
                     'createdAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
                     'postgresImage': db_info['Image'], 'backendImage': app_info['Image'],
                     'database': database, 'user': user,
-                    'tables': database_manifest(db, user, database),
+                    'backupUser': connection.user if connection else user,
+                    'backupAuthentication': 'tcp-password' if connection else 'legacy-admin',
+                    'databaseRoles': 'separate-v1' if separated else 'legacy',
+                    'tables': database_manifest(db, user, database, connection=connection),
                     'attachments': attachment_manifest(work / 'attachments.tar'),
                     'files': {n: sha(work / n) for n in ('database.dump', 'attachments.tar')}}
-        check_references(db, user, database, manifest['attachments'])
+        check_references(db, user, database, manifest['attachments'], connection=connection)
         (work / 'manifest.json').write_text(json.dumps(manifest), encoding='utf8')
         with tarfile.open(work / 'payload.tar', 'w') as archive:
             for name in ('database.dump', 'attachments.tar', 'manifest.json'):
                 archive.add(work / name, arcname=name, recursive=False)
         seal(work / 'payload.tar', args.output, secret_file, secret, work)
         print(json.dumps({'backup': str(args.output), 'tables': len(manifest['tables']),
-                          'attachments': len(manifest['attachments']), 'sha256': sha(args.output)}))
+                          'attachments': len(manifest['attachments']), 'backupUser': manifest['backupUser'],
+                          'backupAuthentication': manifest['backupAuthentication'], 'sha256': sha(args.output)}))
     finally:
         # Restore exactly the services stopped here, even after dump/encryption failure.
-        for cid in reversed(stopped):
-            docker('start', cid)
+        try:
+            for cid in reversed(stopped):
+                docker('start', cid)
+        finally:
+            if connection: connection.close()
 
 
 def restore(args, work, secret_file, secret):
@@ -213,6 +318,10 @@ def restore(args, work, secret_file, secret):
                           'attachments': len(manifest['attachments'])}))
         return
     backend_image = getattr(args, 'backend_image', None) or manifest['backendImage']
+    role_layout = manifest.get('databaseRoles', 'legacy')
+    if role_layout not in ('legacy', 'separate-v1'):
+        raise ValueError('Unsupported restore role layout')
+    separated = role_layout == 'separate-v1'
     if not re.fullmatch(r'sha256:[0-9a-f]{64}', backend_image):
         raise ValueError('Restore application must use a local immutable image ID')
     subprocess.run(['docker', 'image', 'inspect', backend_image], check=True,
@@ -243,12 +352,27 @@ def restore(args, work, secret_file, secret):
             time.sleep(1)
         else:
             raise RuntimeError('Restored database did not become ready')
+        runtime_password = secrets.token_urlsafe(40)
+        migration_password = secrets.token_urlsafe(40)
+        backup_password = secrets.token_urlsafe(40)
+        if separated:
+            provision = (Path(__file__).resolve().parent / 'provision-database-roles.sql').read_bytes()
+            provision += (f"\nALTER ROLE scarlet_runtime PASSWORD '{runtime_password}';\n"
+                          f"ALTER ROLE scarlet_migrator PASSWORD '{migration_password}';\n"
+                          f"ALTER ROLE scarlet_backup PASSWORD '{backup_password}';\n").encode()
+            docker('exec', '-i', db, 'psql', '-Xq', '-v', 'ON_ERROR_STOP=1',
+                   '-U', manifest['user'], '-d', manifest['database'], data=provision)
         with open(work / 'database.dump', 'rb') as incoming:
-            result = subprocess.run(['docker','exec','-i',db,'pg_restore','--exit-on-error','--no-owner','--no-acl','-U',manifest['user'],'-d',manifest['database']], stdin=incoming, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            command = ['docker','exec','-i',db,'pg_restore','--exit-on-error','--no-owner','--no-acl','-U',manifest['user'],'-d',manifest['database']]
+            if separated: command += ['--role', 'scarlet_migrator']
+            result = subprocess.run(command, stdin=incoming, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
             if result.returncode:
                 raise RuntimeError('pg_restore failed; details suppressed')
         if database_manifest(db, manifest['user'], manifest['database']) != manifest['tables']:
             raise ValueError('Restored database rows/UUID/content do not match')
+        if separated and int(sql(db, manifest['user'], manifest['database'],
+                                "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tableowner<>'scarlet_migrator'")):
+            raise ValueError('Restored business objects must belong to the migration role')
         with open(work / 'attachments.tar', 'rb') as incoming:
             result = subprocess.run(['docker','run','--rm','-i','--network','none','--mount',f'type=volume,src={volumes[1]},dst=/files',manifest['postgresImage'],'tar','-xf','-','-C','/files'], stdin=incoming, stderr=subprocess.PIPE)
             if result.returncode:
@@ -259,7 +383,34 @@ def restore(args, work, secret_file, secret):
         if attachment_manifest(check) != manifest['attachments']:
             raise ValueError('Restored attachments differ')
         check_references(db, manifest['user'], manifest['database'], manifest['attachments'])
-        env.write_text(f'DATABASE_URL=jdbc:postgresql://{db}:5432/{manifest["database"]}\nDATABASE_USERNAME={manifest["user"]}\nDATABASE_PASSWORD={db_password}\nSERVER_ADDRESS=0.0.0.0\nAPI_DOCS_ENABLED=false\n')
+        if separated:
+            permissions = (Path(__file__).resolve().parent.parent / 'backend/src/main/resources/db/migration/V12__restricted_runtime_history_permissions.sql').read_bytes()
+            docker('exec', '-i', db, 'psql', '-Xq', '-v', 'ON_ERROR_STOP=1',
+                   '-U', manifest['user'], '-d', manifest['database'], data=permissions)
+            env.write_text(f'DATABASE_URL=jdbc:postgresql://{db}:5432/{manifest["database"]}\nMIGRATION_USERNAME=scarlet_migrator\nMIGRATION_PASSWORD={migration_password}\n')
+            docker('run', '--rm', '--network', network, '--env-file', str(env), '--entrypoint', 'java',
+                   backend_image, '-Dloader.main=dev.scarletnexus.database.DatabaseMigration', '-cp', '/app/app.jar',
+                   'org.springframework.boot.loader.launch.PropertiesLauncher')
+            env.write_text(f'DATABASE_URL=jdbc:postgresql://{db}:5432/{manifest["database"]}\nDATABASE_USERNAME=scarlet_runtime\nDATABASE_PASSWORD={runtime_password}\nSPRING_FLYWAY_ENABLED=false\nSERVER_ADDRESS=0.0.0.0\nAPI_DOCS_ENABLED=false\n')
+            passpath = work / 'restore-backup.password'
+            passpath.write_text(backup_password, encoding='utf8')
+            os.chmod(passpath, 0o600)
+            connection = BackupConnection(db, inspect(db), manifest['database'], passpath, work)
+            try:
+                if database_manifest(db, '', manifest['database'], connection=connection) != manifest['tables']:
+                    raise ValueError('Read-only identity cannot reproduce restored table content')
+            finally:
+                connection.close()
+            for statement in ("CREATE TABLE public.restore_forbidden(id int)",
+                              "UPDATE flyway_schema_history SET description=description WHERE false"):
+                result = subprocess.run(['docker', 'exec', db, 'psql', '-Xq', '-v', 'ON_ERROR_STOP=1',
+                                         '-v', 'VERBOSITY=sqlstate', '-U', manifest['user'], '-d', manifest['database'],
+                                         '-c', 'BEGIN; SET LOCAL ROLE scarlet_runtime; ' + statement + '; ROLLBACK;'],
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if result.returncode == 0 or b'42501' not in result.stderr:
+                    raise ValueError('Restored runtime role must reject DDL and history modification')
+        else:
+            env.write_text(f'DATABASE_URL=jdbc:postgresql://{db}:5432/{manifest["database"]}\nDATABASE_USERNAME={manifest["user"]}\nDATABASE_PASSWORD={db_password}\nSERVER_ADDRESS=0.0.0.0\nAPI_DOCS_ENABLED=false\n')
         docker('run','-d','--name',app,'--network',network,'--env-file',str(env),
                '--mount',f'type=volume,src={volumes[1]},dst=/var/lib/scarlet/attachments',backend_image)
         created_containers.append(app)
@@ -275,6 +426,13 @@ def restore(args, work, secret_file, secret):
                 pass
             time.sleep(1)
         else: raise RuntimeError('Restored application did not become ready')
+        if separated:
+            if not re.fullmatch(r'[0-9.]+', address):
+                raise ValueError('Cannot verify the restored application database connection')
+            users = sql(db, manifest['user'], manifest['database'],
+                        f"SELECT DISTINCT usename FROM pg_stat_activity WHERE datname=current_database() AND client_addr='{address}'::inet").decode().splitlines()
+            if users != ['scarlet_runtime']:
+                raise ValueError('Restored application does not exclusively connect as the runtime role')
         images_read = 0
         if args.login_password_file:
             csrf = json.load(opener.open(url + '/api/v1/auth/csrf'))
@@ -293,6 +451,8 @@ def restore(args, work, secret_file, secret):
                           'applicationReady':True,'authenticatedRead':bool(args.login_password_file),
                           'authenticatedImagesRead':images_read,
                           'backupBackendImage':manifest['backendImage'], 'testedBackendImage':backend_image,
+                          'databaseRoles':role_layout, 'applicationDatabaseUser':'scarlet_runtime' if separated else manifest['user'],
+                          'readOnlyBackupVerified':separated, 'runtimePermissionDenialsVerified':separated,
                           'tables':len(manifest['tables']),'attachments':len(manifest['attachments'])}))
     finally:
         # Names are freshly generated here; never accept a user-supplied restore target.
@@ -305,6 +465,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['backup','verify','drill'])
     parser.add_argument('--password-file', required=True)
+    parser.add_argument('--database-password-file', help='Private scarlet_backup database password; required for separated-role backup')
     parser.add_argument('--project')
     parser.add_argument('--output', type=Path)
     parser.add_argument('--input', type=Path)
@@ -312,6 +473,8 @@ def main():
     parser.add_argument('--login-password-file')
     parser.add_argument('--backend-image', help='Optional local sha256 image ID for an isolated upgrade drill')
     args = parser.parse_args()
+    if args.database_password_file and args.command != 'backup':
+        parser.error('--database-password-file only applies to backup')
     if args.backend_image and args.command != 'drill':
         parser.error('--backend-image only applies to isolated drill')
     if args.command == 'backup' and (not args.project or not args.output or args.output.exists()):
