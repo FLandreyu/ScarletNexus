@@ -1,0 +1,9 @@
+# Only for a NEW database provisioned with scripts/provision-database-roles.sql.
+# Existing volumes require a separately reviewed ownership/permission transition.
+services:
+  backend:
+    environment:
+      DATABASE_USERNAME: scarlet_runtime
+      DATABASE_PASSWORD: ${RUNTIME_PASSWORD:?Set a private runtime role password}
+      MIGRATION_USERNAME: scarlet_migrator
+      MIGRATION_PASSWORD: ${MIGRATOR_PASSWORD:?Set a separate private migration role password}

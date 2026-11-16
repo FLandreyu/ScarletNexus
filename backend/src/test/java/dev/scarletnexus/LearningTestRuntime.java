@@ -23,6 +23,15 @@ public final class LearningTestRuntime implements AutoCloseable {
   }
 
   LearningTestRuntime(int port, Map<String, String> overrides) throws Exception {
+    this(port, overrides, null);
+  }
+
+  interface DatabasePreparation {
+    void prepare(String url, String user, String password) throws Exception;
+  }
+
+  LearningTestRuntime(int port, Map<String, String> overrides, DatabasePreparation preparation)
+      throws Exception {
     passwordFile = Files.createTempFile("scarlet-learning-", ".secret");
     Files.writeString(passwordFile, password);
     attachmentsDirectory =
@@ -42,6 +51,7 @@ public final class LearningTestRuntime implements AutoCloseable {
       user = "postgres";
       pass = "";
     }
+    if (preparation != null) preparation.prepare(url, user, pass);
     var arguments =
         new ArrayList<>(
             List.of(
@@ -51,6 +61,8 @@ public final class LearningTestRuntime implements AutoCloseable {
                 "--spring.datasource.url=" + url,
                 "--spring.datasource.username=" + user,
                 "--spring.datasource.password=" + pass,
+                "--spring.flyway.user=" + user,
+                "--spring.flyway.password=" + pass,
                 "--app.bootstrap.email=" + email,
                 "--app.bootstrap.password-file=" + passwordFile,
                 "--app.ai.enabled=false",

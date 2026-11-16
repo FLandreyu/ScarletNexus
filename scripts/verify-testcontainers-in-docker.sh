@@ -17,6 +17,7 @@ fi
 docker run --rm \
   "$@" \
   -v "$workspace/backend:/workspace" \
+  -v "$workspace/scripts:/scripts:ro" \
   -v "$socket_path:/var/run/docker.sock" \
   -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$socket_path" \
   -e TESTCONTAINERS_HOST_OVERRIDE="$gateway" \

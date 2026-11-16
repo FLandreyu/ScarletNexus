@@ -1,5 +1,7 @@
 # Scarlet Nexus
 
+P6数据库角色方案：新空库可采用独立Flyway连接与受限运行角色，见[DATABASE_ROLES](docs/DATABASE_ROLES.md)。现有库未自动更换角色，默认本地配置保留；双连接不等于长期进程不持有迁移权限，生产优先使用独立迁移作业。P6整体验收仍未完成。
+
 P6运维检查：`scripts/operations.py`支持本机Docker健康探测和只读附件审计，Compose已加入有界日志轮转；命令、真实验收和未完成的生产门禁见[OPERATIONS_CHECKS](docs/OPERATIONS_CHECKS.md)。没有自动删除附件、安装告警服务或生产部署。
 
 P6第二批已完成加密备份与隔离恢复演练：数据库全部表与私有附件配对备份、新实例真实登录和图片读取，工具与边界见[BACKUP_RESTORE](docs/BACKUP_RESTORE.md)。这不代表生产部署或P6整体验收完成。

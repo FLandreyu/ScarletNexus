@@ -4,6 +4,13 @@
 
 ## 当前阶段
 
+P6第四批：独立迁移与运行角色开发/验收中，整体P6尚未完成。
+
+- 新库初始化脚本只接受空schema、拒绝已有同名角色；运行角色不拥有对象，无DDL/角色创建/切换迁移角色能力。V12在专用角色存在时限制业务历史DML及Flyway历史权限，V1–V11不改。
+- Spring可选Flyway独立连接，新增显式roles Compose overlay，默认本地方式兼容。Windows专用角色故事与31单元通过（.runtime-p6-roles-focused.log）；最终Linux Testcontainers为31单元+51真实PG集成=82项通过，0失败/错误/跳过（.runtime-p6-roles-testcontainers.log，6分56秒）。验证真实current_user/表owner、DDL/提权/历史写入拒绝、登录/学习/练习/证据业务。初轮Embedded PG URL内置user覆盖角色导致失败，去除URL凭据后重新实证，未把管理员连接误算受限角色。不对现有库执行角色初始化。进程同时持有迁移凭据的边界与生产独立作业建议见DATABASE_ROLES。
+- 前端格式/类型/14单元/构建通过；现有独立Compose升级V12、三服务Healthy，默认方式桌面6项38秒+手机6项43.2秒全部通过（.runtime-p6-roles-browser.log）。角色overlay拒绝缺少密码配置、显式验证值可解析（.runtime-p6-role-overlay.log），未用该overlay对现有库启动。收尾Compose down保留两个数据卷，新增角色仅存在于已自动关闭的隔离PG测试实例。
+- GraphFlow仍未提供，定向检查；原.env.example修改保留，不生产部署/推送/购买服务。
+
 P6第三批推进监控、日志与只读附件审计，整体仍未验收。详见OPERATIONS_CHECKS。
 
 - 新增operations.py：Docker状态与内部liveness/readiness/网关HTTP探测，健康0、异常2；只读扫描附件并分类缺失/损坏/孤立文件，私有清单独占保存，无删除动作，明确非一致性快照。

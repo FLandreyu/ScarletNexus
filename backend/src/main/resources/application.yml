@@ -10,6 +10,8 @@ spring:
       connection-timeout: 2000
       maximum-pool-size: 5
   flyway:
+    user: ${MIGRATION_USERNAME:${spring.datasource.username}}
+    password: ${MIGRATION_PASSWORD:${spring.datasource.password}}
     clean-disabled: true
     baseline-on-migrate: false
     validate-on-migrate: true

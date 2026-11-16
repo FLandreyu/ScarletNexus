@@ -392,7 +392,7 @@ public class TransferService {
         json.createObjectNode()
             .put("format", "scarlet-nexus-learning-snapshot/v1")
             .put("exportedAt", Instant.now().toString())
-            .put("schemaVersion", "11");
+            .put("schemaVersion", "12");
     result.put("scope", "当前用户业务快照；不是可直接恢复的数据库/附件备份，不含身份凭据、密钥、审计事件和文件二进制。");
     var tables = result.putObject("tables");
     for (String table : SNAPSHOT_TABLES) {

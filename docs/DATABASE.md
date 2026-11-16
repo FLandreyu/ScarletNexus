@@ -1,5 +1,7 @@
 # 数据库设计与迁移
 
+V12支持可选scarlet_runtime角色：业务DML、Flyway历史仅SELECT、追加型历史撤销UPDATE/DELETE。脚本provision-database-roles.sql仅对新空库创建迁移/运行角色，初始化与既有库权限切换不是自动迁移的一部分；V1–V11不修改。迁移角色拥有对象，运行角色无DDL/提权；具体边界与实证见DATABASE_ROLES，生产角色切换仍需单独方案。
+
 V11新增catalog_imports：owner复合唯一、源目录JSON/hash、DRAFT/CONFIRMED、revision、幂等键、原→新UUID映射和确认时刻。预览与确认皆审计；触发器禁止修改源文档/hash、删除记录或改写确认结果。确认只新建手动知识目录，并保留共享节点映射，不迁移学习事实/能力或自动发布版本。V1–V10不修改。分析只查询既有表，不添加冗余统计事实源。
 
 V10新增13表：review_schedules/review_events/review_cycle_tasks、plan_drafts/plan_draft_limits/plan_draft_items、daily_plans/daily_plan_limits/daily_plan_items/daily_plan_days/plan_confirmation_keys、task_adjustments/task_splits。安排/草案/日指针有revision，用户行锁与事务串行化确认、复测与任务调整。V1–V9不修改。
