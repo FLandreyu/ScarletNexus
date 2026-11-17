@@ -4,6 +4,14 @@
 
 ## 当前阶段
 
+D3空VM已搭建（2026-11-17）：用户明确先搭空测试机，暂不安装Windows。发现并复用非默认位置 `D:/VMware` Workstation17.6.4（程序签名Valid/原有服务运行），替代原VirtualBox建议；未安装新驱动或改变宿主WSL/Hyper-V/VBS。VM在 `D:/VMs/ScarletNexus-D3-Clean`，4核/8GiB/100GiB动态盘、EFI/Secure Boot配置、默认断网与禁用宿主共享，桌面已有 `ScarletNexus D3 VM` 快捷方式。详见 [空VM搭建记录](DESKTOP_EMPTY_VM_SETUP.md)。
+
+- 配置查询、VMDK头容量与磁盘链检查通过；真实start返回0/PowerState on，日志记录ULM/WHP、EFI和No Media；随后关闭，运行VM为0。仅证明空VM启动，不证明Windows或应用可用。
+- 无Windows系统ISO/客体账户/安装验收；正式vTPM2.0及其所需加密尚未配置，待镜像/许可确定后完成，不绕过TPM。桌面控制native pipe不可用，截图未成功，不声称视觉验收；私有报告 `.runtime/desktop-empty-vm/verification.json`。
+- D3干净客体及真实故障门禁仍NOT_RUN，D4未开始。仅改文档和本机空VM，无业务代码变更，未重复业务测试；GraphFlow未提供，定向检查，保留用户.env.example/.gitignore，不推送。
+
+以下为此前只准备方案/测试介质时的记录。
+
 D3 环境准备（2026-11-17）：用户确认没有现成VM/第二台电脑，授权先准备方案。本机CIM确认为Windows11家庭中文版（CoreCountrySpecific），微软不支持Home Sandbox；已写 [测试环境方案](DESKTOP_TEST_ENVIRONMENT.md) 与 [客体验收表](DESKTOP_GUEST_CHECKLIST.md)，建议VirtualBox7.2.22基础包+合法Windows11 x64客体，4核/8GiB/100GiB动态盘放D，普通中文空格账户、离线、只读ISO、快照与独立故障小盘。不安装Guest Additions来掩盖依赖，不自动关闭WSL/Hyper-V/VBS。
 
 - 只读Host审计实际执行：`.runtime/desktop-clean-windows-host.json`，记录约32GB内存、HypervisorPresent=true及C/D容量、工具/运行库/连接情况。部分CPU能力false不作为BIOS关闭证据；令牌组/提权记录不替代完整客体身份基线。报告一直是ENVIRONMENT_OBSERVATION_ONLY，业务/安装NOT_RUN。
