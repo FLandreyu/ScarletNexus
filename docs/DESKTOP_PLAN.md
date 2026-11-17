@@ -20,3 +20,5 @@ D1、D2 本地切片已实现并验证；D2证据见 [DESKTOP_D2_ACCEPTANCE](DES
 D3第二批 d3.3 已补流式备份、512MiB内存实测、真实失败V13回滚和已安装程序六条手动旅程；证据见 DESKTOP_D3_RECOVERY_ACCEPTANCE。剩余干净系统/普通账户/中文用户名/断网与真实故障门禁保持；不因本机旅程通过而关闭D3。
 
 D3第三批d3.4已提供只恢复到新库的桌面维护入口、原生PG/密钥与权限/图片一致性验证和恢复操作说明，详见 DESKTOP_D3_RESTORE_ACCEPTANCE、DESKTOP_RECOVERY。干净环境与真实故障剩余门禁不变，D3未关闭。
+
+用户无现成测试VM，已按授权完成宿主只读诊断、独立VM方案和只读测试ISO准备，见 DESKTOP_TEST_ENVIRONMENT、DESKTOP_GUEST_CHECKLIST。Home不支持Sandbox，未改为付费升级或绕过安装；实际VM/驱动/系统安装未执行，门禁仍NOT_RUN。

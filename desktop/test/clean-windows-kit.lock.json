@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "installers": [
+    {
+      "version": "0.1.0-d3.3",
+      "path": ".runtime/desktop-d3-stream-preview/ScarletNexus-0.1.0-d3.3-windows-x64-setup.exe",
+      "sha256": "fd5d82dde4aed2854afca42925913428f0130369eee63db8a217ef802985dac8"
+    },
+    {
+      "version": "0.1.0-d3.4",
+      "path": ".runtime/desktop-d3-restore-preview/ScarletNexus-0.1.0-d3.4-windows-x64-setup.exe",
+      "sha256": "01932a1d2151ab34c4edaa7f8150b689dce319f124b10bf1465d1c6c0703d7d8"
+    }
+  ]
+}

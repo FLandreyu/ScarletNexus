@@ -4,6 +4,16 @@
 
 ## 当前阶段
 
+D3 环境准备（2026-11-17）：用户确认没有现成VM/第二台电脑，授权先准备方案。本机CIM确认为Windows11家庭中文版（CoreCountrySpecific），微软不支持Home Sandbox；已写 [测试环境方案](DESKTOP_TEST_ENVIRONMENT.md) 与 [客体验收表](DESKTOP_GUEST_CHECKLIST.md)，建议VirtualBox7.2.22基础包+合法Windows11 x64客体，4核/8GiB/100GiB动态盘放D，普通中文空格账户、离线、只读ISO、快照与独立故障小盘。不安装Guest Additions来掩盖依赖，不自动关闭WSL/Hyper-V/VBS。
+
+- 只读Host审计实际执行：`.runtime/desktop-clean-windows-host.json`，记录约32GB内存、HypervisorPresent=true及C/D容量、工具/运行库/连接情况。部分CPU能力false不作为BIOS关闭证据；令牌组/提权记录不替代完整客体身份基线。报告一直是ENVIRONMENT_OBSERVATION_ONLY，业务/安装NOT_RUN。
+- 已生成离线介质 `.runtime/desktop-clean-windows-kit-ready/ScarletNexus-D3-offline-test.iso`，624117760字节，SHA256 `4e4fda3f18fa16a35ec60e156333b1c0fe9e3a31723e0446b30a312b8dfdb835`。只含两个既有SHA锁定d3.3/d3.4安装包、只读审计脚本、方案/恢复/验收文本、manifest与SHA表，共8文件，无学习库/密钥/测试账号/系统镜像。状态NOT_RUN。
+- PowerShell语法、Host真实只读执行、拒绝覆盖介质/报告和拒绝输出越界通过。IMAPI生成ISO后，专用只读ISO9660/Joliet解析器逐文件SHA比较通过，未挂载/执行安装器；验证JSON在同目录verification.json。缓存7za不支持该ISO解析而误识别内嵌7z数据，未据此判通过，改为检查CD001/Joliet目录和全部文件字节。
+- 业务/前后端代码未变，未重复应用测试；本批只有方案、诊断与介质验证，不关闭D3。未下载/安装VirtualBox或Windows镜像、创建VM/账户、改系统功能或重启。GraphFlow无工具，定向检查；保留用户.env.example/.gitignore，不推送/发布。下一步实际安装虚拟化驱动与准备授权OS镜像需进入明确实施范围。
+
+以下d3.4及之前为已完成本机批次记录，不能替代干净客体门禁。
+
+
 桌面发行版 D3 第三批（2026-11-17）：d3.4新增已安装EXE恢复入口，只向空的新库恢复，源库/备份不覆盖。包含沙箱进度窗口、密文快照预验证、单事务恢复、原授权复核、旧会话清理及READY图片引用校验。步骤见 [桌面恢复说明](DESKTOP_RECOVERY.md)，证据见 [D3第三批](DESKTOP_D3_RESTORE_ACCEPTANCE.md)。D3保持进行中，D4未开始。
 
 - 新预览 `.runtime/desktop-d3-restore-preview/ScarletNexus-0.1.0-d3.4-windows-x64-setup.exe`，312021752字节，SHA256 `01932a1d2151ab34c4edaa7f8150b689dce319f124b10bf1465d1c6c0703d7d8`，未签名/未发布；白名单13文件，无测试密钥或用户数据。
