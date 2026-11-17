@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+TPM/加密配置已核对（2026-11-17）：用户完成VMware设置，VMX检测到vtpm.present=true、encryption.keySafe及encryption.data，EFI/Secure Boot和已校验系统ISO路径仍在；仅记录存在性，不输出加密材料。加密后的原生Power/Chipset查询要求stdin密码，未请求或传入密码，不能声称原生运行配置查询通过。已通过现有VMware程序请求打开此VM，需用户在本机解锁并启动，再确认进入Windows安装界面。尚未验证安装/客体业务，不关闭D3；证据 `.runtime/desktop-empty-vm/tpm-handoff.json`。未改加密VMX，无密钥入Git；GraphFlow不可用，业务未变不重复测试。
+
 Windows ISO已校验并接入空VM（2026-11-17）：用户已下载到 `D:/Downloads/Windows11_Client_x64_zh-cn_26300_9457.iso`，9112440832字节，SHA256 `b795b52d598bf8fdea5975844731f4a50c5713876cefc513884354272b023af0`，与当前微软下载页“简体中文64-bit”完全一致。VM关机/配置SHA检查通过后，仅改虚拟光驱来源与开机连接设置，未挂载宿主或运行setup，未复制9GB镜像；网卡仍默认断开。
 
 - 原VMX备份和新证据在 `.runtime/desktop-empty-vm/before-os-iso.vmx`、`iso-verification.json`；原verification.json的配置SHA是此前历史快照，新配置SHA见新报告。原生Disk查询确认ISO路径与startConnected=true，运行VM为0。

@@ -24,6 +24,8 @@
 
 ## 装Windows前的下一步
 
+最新状态（2026-11-17）：用户报告已完成加密/添加TPM。已只读确认VMX中vtpm.present=true、encryption.keySafe及encryption.data，Secure Boot和系统ISO设置保留；不展示或复制加密材料，不编辑加密后的VMX。原生配置查询因无法从stdin读取密码而拒绝，未提供密码，配置存在不代替客体TPM/Windows安装成功。已调用现有VMware程序打开该VM（仅确认启动请求已发出，未视觉确认窗口）。用户需在本机解锁、开启测试机，若出现光盘启动提示在虚拟机窗口按任意键，再报告Windows安装界面。证据 `.runtime/desktop-empty-vm/tpm-handoff.json`；运行/安装/业务仍待确认，不要求聊天发送密码。
+
 最新实施（2026-11-17）：用户下载的 `D:/Downloads/Windows11_Client_x64_zh-cn_26300_9457.iso` 为9112440832字节，实际SHA256 `b795b52d598bf8fdea5975844731f4a50c5713876cefc513884354272b023af0`，与微软官方页当日简体中文64-bit值相同。已在VM关机且原配置SHA未变时备份VMX，仅把虚拟光驱来源换成该ISO并设置开机连接；不复制大文件，不在宿主挂载/运行setup。原生Disk查询确认路径/startConnected，运行VM为0。证据见 `.runtime/desktop-empty-vm/iso-verification.json`，旧VMX在同目录before-os-iso.vmx；旧verification.json的SHA保留为历史，不再代表最新配置。
 
 下一项交接：桌面控制接口仍不可用。用户打开桌面 `ScarletNexus D3 VM` → 编辑虚拟机设置 → 选项/访问控制 → 加密（若提供“仅加密支持TPM所需文件”，选此项），自行设置并保管密码，不在聊天中发送。再到硬件 → 添加 → Trusted Platform Module/可信平台模块，保存后告知；没有对应菜单时报告当前窗口，不能推定已完成。此流程按 [Broadcom官方建议](https://knowledge.broadcom.com/external/article/315650) 使用加密及正式vTPM，不使用注册表绕过。此时尚未加密/配置TPM/安装Windows，许可仍待用户确定，不提前关闭D3。
