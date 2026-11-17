@@ -6,6 +6,14 @@ const net = require("node:net");
 const { spawn, execFile } = require("node:child_process");
 const { digestFile, encryptStream, encryptCommand } = require("./backup.cjs");
 
+const {
+  assertFreshTarget,
+  stageRestore,
+  restoreDatabase,
+  restoreAttachments,
+  verifyRestoredReferences,
+} = require("./restore.cjs");
+
 const identifier = "scarlet-nexus-desktop-data/v1";
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const hash = (data) => crypto.createHash("sha256").update(data).digest("hex");
@@ -324,6 +332,7 @@ async function startRuntime({
   bundle,
   directory,
   admin,
+  restore,
   onStatus = () => {},
   onFailure = () => {},
 }) {
@@ -331,8 +340,13 @@ async function startRuntime({
     throw new Error("This bundle requires Windows x64");
   const verified = await verifyBundle(bundle);
   const environment = cleanEnvironment(verified.root);
+  if (restore) await assertFreshTarget(restore, directory);
+  else if (await exists(path.join(directory, "restore.pending.json")))
+    throw new Error(
+      "An unfinished restore was preserved; restore into another new profile",
+    );
   const root = await prepareData(directory, environment);
-  if (!(await exists(path.join(root, "administrator.json"))))
+  if (!restore && !(await exists(path.join(root, "administrator.json"))))
     validateAdmin(admin);
   const unlock = await acquireLock(root);
   let postgresRoot = path.join(verified.root, "postgres");
@@ -348,8 +362,16 @@ async function startRuntime({
     backend,
     stopping = false,
     failure;
-  let state, credentials;
+  let state, credentials, stagedRestore;
   try {
+    if (restore) {
+      await writeJson(path.join(root, "restore.pending.json"), {
+        format: "scarlet-desktop-restore/v1",
+        status: "pending",
+      });
+      onStatus("正在校验备份与密钥");
+      stagedRestore = await stageRestore(restore, root);
+    }
     state = (await exists(configuration))
       ? await readJson(configuration)
       : { schema: 1, initialized: false };
@@ -587,6 +609,79 @@ async function startRuntime({
       state.initialized = true;
       await writeJson(configuration, state);
     }
+    if (stagedRestore) {
+      onStatus("正在恢复到新的学习库");
+      if (
+        (await sql(
+          "scarlet_nexus",
+          "SELECT count(*) FROM pg_tables WHERE schemaname='public';",
+        )) !== "0"
+      )
+        throw new Error("Restore requires an empty new database");
+      // A new cluster has broad defaults for initial migrations. Clear those
+      // before replaying the backup ACLs so narrow history grants stay narrow.
+      await sql(
+        "scarlet_nexus",
+        `
+        ALTER DEFAULT PRIVILEGES FOR ROLE scarlet_migrator IN SCHEMA public REVOKE ALL ON TABLES FROM scarlet_runtime,scarlet_backup;
+        ALTER DEFAULT PRIVILEGES FOR ROLE scarlet_migrator IN SCHEMA public REVOKE ALL ON SEQUENCES FROM scarlet_backup;
+      `,
+        "migrator",
+      );
+      await restoreDatabase(
+        pg("pg_restore"),
+        [
+          "--single-transaction",
+          "--exit-on-error",
+          "--clean",
+          "--if-exists",
+          "--no-owner",
+          "-w",
+          "-h",
+          "127.0.0.1",
+          "-p",
+          String(databasePort),
+          "-U",
+          "scarlet_migrator",
+          "-d",
+          "scarlet_nexus",
+        ],
+        dbEnvironment("migrator"),
+        stagedRestore,
+      );
+      const unsafePermissions = await sql(
+        "scarlet_nexus",
+        `
+        SELECT (has_schema_privilege('scarlet_runtime','public','CREATE')
+          OR has_table_privilege('scarlet_runtime','flyway_schema_history','INSERT,UPDATE,DELETE')
+          OR has_table_privilege('scarlet_runtime','audit_events','UPDATE,DELETE')
+          OR EXISTS(SELECT 1 FROM pg_tables WHERE schemaname='public' AND has_table_privilege('scarlet_backup',quote_ident(schemaname)||'.'||quote_ident(tablename),'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
+          OR EXISTS(SELECT 1 FROM pg_roles WHERE rolname IN ('scarlet_runtime','scarlet_migrator','scarlet_backup') AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls)))::text;
+      `,
+        "migrator",
+      );
+      if (unsafePermissions !== "false")
+        throw new Error(
+          "Restored database permissions do not meet the runtime policy",
+        );
+      await sql("scarlet_nexus", "DELETE FROM spring_session;", "migrator");
+      await restoreAttachments(stagedRestore, root);
+      const references = JSON.parse(
+        await sql(
+          "scarlet_nexus",
+          "SELECT COALESCE(json_agg(json_build_object('name',storage_key,'checksum',checksum,'bytes',size_bytes)),'[]'::json) FROM attachments WHERE status='READY';",
+          "runtime",
+        ),
+      );
+      await verifyRestoredReferences(references, stagedRestore, root);
+      const email = await sql(
+        "scarlet_nexus",
+        "SELECT email FROM users ORDER BY created_at,id LIMIT 1;",
+        "runtime",
+      );
+      validateAdmin({ email, password: "restore-validation-placeholder" });
+      await writeJson(path.join(root, "administrator.json"), { email });
+    }
     const applicationHash = verified.manifest.files["backend.jar"];
     if (
       state.applicationHash &&
@@ -753,6 +848,14 @@ async function startRuntime({
     if (pendingAdmin) await fs.unlink(adminFile);
     state = { ...state, applicationHash, release: verified.manifest.release };
     await writeJson(configuration, state);
+    if (stagedRestore) {
+      await writeJson(path.join(root, "restore.completed.json"), {
+        format: "scarlet-desktop-restore/v1",
+        status: "complete",
+        applicationHash,
+      });
+      await fs.unlink(path.join(root, "restore.pending.json"));
+    }
     return {
       origin,
       assets: path.join(verified.root, "assets"),

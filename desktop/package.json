@@ -1,6 +1,6 @@
 {
   "name": "scarlet-nexus-desktop",
-  "version": "0.1.0-d3.3",
+  "version": "0.1.0-d3.4",
   "private": true,
   "description": "Scarlet Nexus Windows desktop host",
   "main": "main.cjs",
@@ -11,13 +11,15 @@
     "test:runtime": "node test/runtime-smoke.cjs",
     "test:managed": "node test/managed-smoke.cjs",
     "test:lifecycle": "node test/lifecycle-smoke.cjs",
-    "check": "node --check main.cjs && node --check runtime.cjs && node --check setup-preload.cjs && node --check setup.js && node --check build.cjs && node --check builder.config.cjs && node --check test/installed-smoke.cjs && node --check backup.cjs && node --check test/upgrade-failure.cjs && node --check test/business-smoke.cjs",
+    "check": "node --check main.cjs && node --check runtime.cjs && node --check setup-preload.cjs && node --check setup.js && node --check build.cjs && node --check builder.config.cjs && node --check test/installed-smoke.cjs && node --check backup.cjs && node --check test/upgrade-failure.cjs && node --check test/business-smoke.cjs && node --check restore.cjs && node --check progress-preload.cjs && node --check progress.js && node --check test/restore-smoke.cjs && node --check test/restore-ui.cjs",
     "dist:win": "node build.cjs",
     "test:installed": "node test/installed-smoke.cjs",
     "test:installer": "powershell -NoProfile -File test/installer-smoke.ps1",
     "test:backup-large": "node test/backup-large.cjs",
     "test:upgrade-failure": "node test/upgrade-failure.cjs",
-    "test:business": "node test/business-smoke.cjs"
+    "test:business": "node test/business-smoke.cjs",
+    "test:restore": "node test/restore-smoke.cjs",
+    "test:restore-ui": "node test/restore-ui.cjs"
   },
   "devDependencies": {
     "electron": "45.3.3",

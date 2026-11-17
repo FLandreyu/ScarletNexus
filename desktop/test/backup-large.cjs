@@ -6,6 +6,7 @@ const assert = require("node:assert/strict");
 const { Readable, Writable } = require("node:stream");
 const { pipeline } = require("node:stream/promises");
 const { encryptStream, digestFile } = require("../backup.cjs");
+const { decryptInto } = require("../restore.cjs");
 (async () => {
   const root = path.resolve(
     __dirname,
@@ -37,31 +38,16 @@ const { encryptStream, digestFile } = require("../backup.cjs");
       target,
       key,
     );
-    const header = Buffer.alloc(36),
-      handle = await fsp.open(target);
-    try {
-      await handle.read(header, 0, 36, 0);
-    } finally {
-      await handle.close();
-    }
-    const decipher = crypto.createDecipheriv(
-      "aes-256-gcm",
-      Buffer.from(key, "base64url"),
-      header.subarray(8, 20),
-    );
-    decipher.setAuthTag(header.subarray(20, 36));
-    const plain = crypto.createHash("sha256");
-    await pipeline(
-      fs.createReadStream(target, { start: 36 }),
-      decipher,
+    const plain = await decryptInto(
+      target,
+      key,
       new Writable({
-        write(chunk, _encoding, callback) {
-          plain.update(chunk);
+        write(_chunk, _encoding, callback) {
           callback();
         },
       }),
     );
-    assert.equal(plain.digest("hex"), result.plainSha256);
+    assert.equal(plain, result.plainSha256);
     assert.equal(result.plainSha256, await digestFile(source));
     sample();
     assert.ok(

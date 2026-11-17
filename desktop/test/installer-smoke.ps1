@@ -1,4 +1,4 @@
-﻿param([Parameter(Mandatory=$true)][string]$Installer,[string]$UpgradeInstaller,[switch]$BusinessRegression)
+﻿param([Parameter(Mandatory=$true)][string]$Installer,[string]$UpgradeInstaller,[switch]$BusinessRegression,[string]$RestoreFixture)
 $ErrorActionPreference = 'Stop'
 $workspace = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $boundary = [IO.Path]::GetFullPath((Join-Path $workspace '.runtime')) + [IO.Path]::DirectorySeparatorChar
@@ -74,6 +74,12 @@ if ($BusinessRegression) {
     & node (Join-Path $PSScriptRoot 'business-smoke.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'Installed business regression failed.' }
     Write-Output 'installed_business_regression=passed'
+}
+if ($RestoreFixture) {
+    $env:DESKTOP_RESTORE_FIXTURE = (Resolve-Path -LiteralPath $RestoreFixture).Path
+    & node (Join-Path $PSScriptRoot 'restore-ui.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'Installed restore entry acceptance failed.' }
+    Write-Output 'installed_restore_entry=passed'
 }
 Uninstall-TestPackage
 if ((Get-FileHash -LiteralPath $credential -Algorithm SHA256).Hash -ne $credentialHash) { throw 'Uninstall changed persistent credentials.' }

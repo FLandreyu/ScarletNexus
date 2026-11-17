@@ -50,7 +50,7 @@ npm audit 仅检查 npm 依赖；Electron/Chromium、Java、PG 二进制及安�
 
 ## D3 离线安装包（预览）
 
-当前版本 0.1.0-d3.3，使用固定 electron-builder 26.18.0 构建 Windows x64 NSIS 完整安装包。构建工具中的 minimatch 7–10 系列有 GHSA-g3hv-75wg-m249 放大消耗风险；用范围覆盖精确固定 11.0.9，保留其他不受该条目影响的旧 API 分支，完整 npm 锁文件随源码保存。初次增量安装仍保留无效旧嵌套版本，重新生成锁并 npm ci 后才确认审计归零；不使用 audit fix --force。
+当前版本 0.1.0-d3.4，使用固定 electron-builder 26.18.0 构建 Windows x64 NSIS 完整安装包。构建工具中的 minimatch 7–10 系列有 GHSA-g3hv-75wg-m249 放大消耗风险；用范围覆盖精确固定 11.0.9，保留其他不受该条目影响的旧 API 分支，完整 npm 锁文件随源码保存。初次增量安装仍保留无效旧嵌套版本，重新生成锁并 npm ci 后才确认审计归零；不使用 audit fix --force。
 
 ```powershell
 npm ci --prefix desktop
@@ -63,7 +63,7 @@ $env:DESKTOP_DIST_DIR="$PWD/.runtime/desktop-preview-build"
 npm run dist:win --prefix desktop
 ```
 
-输出包含完整 setup.exe、SHA256SUMS.txt 和开发用 win-unpacked；没有资源网络下载型安装器，没有自动更新或发布。图标为本项目绘制的 SN 几何图形，源在 build/icon.svg，ICO 含 16–256 像素图层。构建只收录校验清单内的运行时文件和 9 个应用文件，不含测试、账户、学习记录、开发依赖或 .env。安装程序和主程序暂未签名，完整二进制安全扫描仍属 D4；这是预览产物。
+输出包含完整 setup.exe、SHA256SUMS.txt 和开发用 win-unpacked；没有资源网络下载型安装器，没有自动更新或发布。图标为本项目绘制的 SN 几何图形，源在 build/icon.svg，ICO 含 16–256 像素图层。构建只收录校验清单内的运行时文件和 13 个应用文件，不含测试、账户、学习记录、开发依赖或 .env。安装程序和主程序暂未签名，完整二进制安全扫描仍属 D4；这是预览产物。
 
 安装包以当前用户权限安装，可选目录并创建桌面/开始菜单 Scarlet Nexus 快捷方式。双击快捷方式进入首次账号设置。默认数据仍为 %APPDATA%/ScarletNexus/learning；新壳显式固定 app 名为 ScarletNexus，浏览器配置与学习目录归同一用户配置根，保持 D2 默认学习目录。Electron 原生 --user-data-dir 可选择隔离配置根，验收使用它，不提供业务页面的任意路径 IPC。正式包仍拒绝 --dev-backend/--runtime-dir/--data-dir，且禁止把安装目录用作学习目录。
 
@@ -72,7 +72,7 @@ npm run dist:win --prefix desktop
 本机隔离安装回归（会建立当前用户注册与产品快捷方式，拒绝覆盖已有安装/快捷方式）：
 
 ```powershell
-powershell -NoProfile -File desktop/test/installer-smoke.ps1 -Installer "$PWD/.runtime/desktop-preview-build/ScarletNexus-0.1.0-d3.3-windows-x64-setup.exe"
+powershell -NoProfile -File desktop/test/installer-smoke.ps1 -Installer "$PWD/.runtime/desktop-preview-build/ScarletNexus-0.1.0-d3.4-windows-x64-setup.exe"
 ```
 
 该测试使用 workspace/.runtime 中文安装和配置路径，使用真实已安装 exe，移除全局工具 PATH，验证设置/登录/技能写入、运行中安装卸载拒绝、关闭重开、同版覆盖、卸载保留密钥、重装保留账号和数据，并最终卸载测试产品。测试记录保留；它不能证明干净 Windows 或普通非管理员账户通过。D3 仍待干净系统/中文用户名/离线网络验证、跨版本升级故障/备份容量/完整业务矩阵，见 [D3 验收](../docs/DESKTOP_D3_ACCEPTANCE.md)。
@@ -103,3 +103,20 @@ npm run test:business --prefix desktop
 测试适配器直接执行 frontend/tests/e2e 中六个原有手动 spec 的原始断言，不改响应、不跳过断言；page/context 均属于真实 Electron 窗口。只适配相对 URL、测试注册/超时与截图目录，保留源码 SHA；明确设置 acceptDownloads:true，下载存入隔离 artifacts。首次省略此项时本环境未收到下载事件，保留超时日志；显式设置后真实下载目录/学习快照 JSON、导入预览与确认均通过。真实模型和移动端不在这套桌面测试里。
 
 installer-smoke.ps1 加 `-BusinessRegression` 可在覆盖安装之后运行同一套六个旅程，随后继续验证卸载/重装。详细结果和剩余干净系统门禁见 [D3 第二批验收](../docs/DESKTOP_D3_RECOVERY_ACCEPTANCE.md)。
+
+## 恢复到新的学习库
+
+从d3.4起，已安装EXE支持成对的 `--restore-backup=完整备份目录` 和 `--restore-key-file=对应database.json`，配合原生 `--user-data-dir=全新配置根`。无需系统Node/Java/PG。恢复进度窗口只接收状态，没有通用路径IPC；原库不覆盖，恢复完成仍用备份时账号密码登录。步骤和失败处理见 [桌面恢复说明](../docs/DESKTOP_RECOVERY.md)。
+
+恢复会先在新库ACL私有目录复制加密快照并验证所有文件，再以新集群迁移身份、单事务、no-owner恢复归档。清除新集群的宽默认表授权后回放原备份对象ACL，并复核历史表/迁移表/备份角色权限，避免更宽默认权限叠加。旧登录会话清除，角色口令和未来备份密钥重新生成；READY图片与恢复库引用及校验和一致才开放业务。未完成目标有 restore.pending.json，普通启动拒绝；失败现场保留。
+
+```powershell
+$env:DESKTOP_TEST_RUNTIME="$PWD/.runtime/desktop-bundle-local"
+npm run test:restore --prefix desktop
+# 上述测试最终日志会给出私有fixture路径，只用于隔离测试，不提交其中的随机账号。
+$env:DESKTOP_RESTORE_FIXTURE='完整的测试fixture路径'
+$env:DESKTOP_TEST_EXE="$PWD/.runtime/desktop-preview-build/win-unpacked/Scarlet Nexus.exe"
+npm run test:restore-ui --prefix desktop
+```
+
+installer-smoke.ps1 可加 `-RestoreFixture 路径`，覆盖安装后用真实已安装EXE恢复到独立中文配置、登录旧账号、读取旧技能和图片、关闭重开，再继续卸载重装。密钥/备份一致性不是来源签名；只用你信任的本软件备份。详见 [D3第三批验收](../docs/DESKTOP_D3_RESTORE_ACCEPTANCE.md)。

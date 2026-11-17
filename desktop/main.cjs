@@ -115,16 +115,62 @@ else {
               "Learning data must be outside the installation directory",
             );
         }
+        const restoreArgument = process.argv.find((a) =>
+          a.startsWith("--restore-backup="),
+        );
+        const keyArgument = process.argv.find((a) =>
+          a.startsWith("--restore-key-file="),
+        );
+        if (!!restoreArgument !== !!keyArgument)
+          throw new Error(
+            "Provide both --restore-backup and --restore-key-file",
+          );
+        const restore = restoreArgument
+          ? {
+              backup: path.resolve(
+                restoreArgument.slice("--restore-backup=".length),
+              ),
+              keyFile: path.resolve(
+                keyArgument.slice("--restore-key-file=".length),
+              ),
+            }
+          : undefined;
         let account;
-        try {
-          await fs.access(path.join(directory, "administrator.json"));
-        } catch {
-          account = await setupAccount();
-        }
+        if (restore) {
+          window = new BrowserWindow({
+            title: "Scarlet Nexus",
+            width: 640,
+            height: 400,
+            resizable: false,
+            webPreferences: {
+              preload: path.join(__dirname, "progress-preload.cjs"),
+              nodeIntegration: false,
+              contextIsolation: true,
+              sandbox: true,
+              webSecurity: true,
+            },
+          });
+          window.removeMenu();
+          window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+          window.webContents.on("will-navigate", (event) =>
+            event.preventDefault(),
+          );
+          window.webContents.session.setPermissionRequestHandler(
+            (_contents, _permission, callback) => callback(false),
+          );
+          window.webContents.session.setPermissionCheckHandler(() => false);
+          await window.loadFile(path.join(__dirname, "progress.html"));
+        } else
+          try {
+            await fs.access(path.join(directory, "administrator.json"));
+          } catch {
+            account = await setupAccount();
+          }
         starting = startRuntime({
           bundle,
           directory,
           admin: account,
+          restore,
           onStatus: (message) => {
             if (window && !window.isDestroyed())
               window.webContents.send("scarlet-desktop:status", message);
@@ -187,6 +233,7 @@ else {
       await window.loadURL(gateway.origin);
     })
     .catch((error) => {
+      starting = undefined;
       if (!closing) dialog.showErrorBox("Scarlet Nexus", error.message);
       app.quit();
     });

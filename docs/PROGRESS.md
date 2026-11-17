@@ -4,6 +4,18 @@
 
 ## 当前阶段
 
+桌面发行版 D3 第三批（2026-11-17）：d3.4新增已安装EXE恢复入口，只向空的新库恢复，源库/备份不覆盖。包含沙箱进度窗口、密文快照预验证、单事务恢复、原授权复核、旧会话清理及READY图片引用校验。步骤见 [桌面恢复说明](DESKTOP_RECOVERY.md)，证据见 [D3第三批](DESKTOP_D3_RESTORE_ACCEPTANCE.md)。D3保持进行中，D4未开始。
+
+- 新预览 `.runtime/desktop-d3-restore-preview/ScarletNexus-0.1.0-d3.4-windows-x64-setup.exe`，312021752字节，SHA256 `01932a1d2151ab34c4edaa7f8150b689dce319f124b10bf1465d1c6c0703d7d8`，未签名/未发布；白名单13文件，无测试密钥或用户数据。
+- 原生PG恢复成功、原密码/技能/正规PNG恢复并可重开，密钥口令全部轮换、旧会话401；DDL/历史修改仍拒绝，源密钥/密文摘要保持（`.runtime-desktop-d3-restore-native-r3.log`）。错误密钥/篡改在PG初始化前拒绝，非空/未完成目标不开放；认证有效但缺失READY图片的副本也拒绝（restore-missing日志）。
+- 真实权限复核曾拦截新库默认CRUD叠加；清除初始化默认权限再回放ACL后通过，失败现场/日志保留，不绕门禁。512MiB生产加解密全量SHA通过，观测增量RSS约69.4MiB。11项Node/语法/格式、前端格式/类型/14测试/构建通过，npm审计0；Java/Flyway/JAR未改，84后端沿用此前同字节实证，不声称新跑。
+- 已打包恢复入口通过沙箱窗口、原账号/图片与普通重开；实际安装d3.3→d3.4与六条业务及恢复入口回归见 `.runtime-desktop-d3-restore-installed.log`，收尾结果在第三批验收文档。
+- 最终已安装入口/六旅程/安装往返全部passed；重装保留数据、密钥SHA和原账号。恢复窗口显式sandbox/contextIsolation/noNode复核通过，已查看进度/恢复技能截图；最终无本程序服务或产品卸载项残留。13文件与源码一致，预览仍未签名。
+- **下一步仍为D3环境/故障门禁**：干净Windows普通账户/中文用户名/断网、真实断电/磁盘满与更多容量。没有擅自改变系统。GraphFlow不可用，定向检查；保留用户.env.example/.gitignore，无推送/发布/公开服务，不进入P7。
+
+以下第二批及之前为历史记录。
+
+
 桌面发行版 D3 第二批（2026-11-17）：d3.3 将数据库导出、附件加密和资产摘要改为流式，移除明文pending导出，保持旧格式兼容；补齐真实PG失败迁移回滚与已安装桌面六个手动旅程。详细证据与范围见 [DESKTOP_D3_RECOVERY_ACCEPTANCE](DESKTOP_D3_RECOVERY_ACCEPTANCE.md)。D3仍进行中，未进入D4。
 
 - 新本地预览 `.runtime/desktop-d3-stream-preview/ScarletNexus-0.1.0-d3.3-windows-x64-setup.exe`，312018570字节，SHA256 `fd5d82dde4aed2854afca42925913428f0130369eee63db8a217ef802985dac8`，未签名/未发布；应用白名单9文件与源码吻合，生产JAR不含测试V13。
