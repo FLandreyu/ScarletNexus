@@ -4,6 +4,13 @@
 
 ## 当前阶段
 
+Windows预览版已发布（2026-11-17 22:42:24，Asia/Shanghai）。GitHub Release为 https://github.com/FLandreyu/ScarletNexus/releases/tag/v0.1.0-d3.4 ，Release ID 448761823，draft=false/prerelease=true。main已推送发行准备提交e18fa7afee997942dc2ce45958e67f549cb8c605，附注tag v0.1.0-d3.4解析至同一提交。当前发布按用户“直接发布”授权完成，D3/D4待验项继续开放。
+
+- 6个附件已上传，GitHub服务器的完整SHA256与本地逐项相同。312021752字节安装包SHA256为01932a1d2151ab34c4edaa7f8150b689dce319f124b10bf1465d1c6c0703d7d8。其余为中文使用说明、恢复说明、SHA256SUMS、第三方许可证ZIP和包核对JSON，无账号/密钥/数据库/学习附件。
+- 公开下载回验已完成所选覆盖范围。5个小附件匿名完整下载并重算SHA256通过。安装包公开地址HEAD为200且长度正确，首尾各65536字节匿名Range请求为206并与本地字节一致，完整对象SHA采用GitHub服务器摘要。最初整包匿名重下因下载速度中止，未声称完成匿名整包下载重算。私有证据在.runtime/release-preview/public-verification.json及release.json。
+- main推送与tag各触发一轮Quality gates，44105739742和44105788038均success，每轮7个作业全部通过，覆盖桌面/前端/后端及desktop/mobile×HTTP/TLS。详情见 https://github.com/FLandreyu/ScarletNexus/actions/runs/44105739742 。本地25单测及格式/类型/构建、npm审计和3529文件清单核对结果见下方发行准备记录。
+- 安装包未签名，完整桌面二进制安全扫描、干净客体恢复/真实故障及其他清单余项仍待补齐。用户已停止人工验收，本批无需继续客体操作。收尾仅同步发布记录，既有.env.example/.gitignore改动保留，GraphFlow工具未提供。
+
 预览发行准备（2026-11-17，用户明确授权直接发布）。用户停止剩余人工验收后，按本轮授权准备GitHub pre-release v0.1.0-d3.4，D3剩余项继续开放。GitHub连接账号FLandreyu与本机GCM账号一致，仓库admin/push权限已确认，远端main可由当前提交快进。用户.env.example/.gitignore改动保留。
 
 - 本轮桌面语法/11单元、前端格式/类型/14单元/生产构建通过，图表chunk体积告警保留。桌面全依赖及前端生产依赖npm审计0项，报告在私有.runtime/release-preview。后端生产代码及JAR未改，沿用此前同SHA原生/集成验收，未声称本轮重跑后端测试。

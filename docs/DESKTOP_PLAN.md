@@ -15,6 +15,8 @@
 
 ## 2026-11-17 当前状态
 
+发布结果已确认。v0.1.0-d3.4 GitHub pre-release已公开，6附件及校验值可下载，main/tag对应发行源码，远端桌面/前后端/四组浏览器作业全部通过。公开回验范围和仍待补齐的D3/D4项目记录于PROGRESS。
+
 用户于本轮明确要求停止剩余人工验收并直接发布发行版。按此授权准备0.1.0-d3.4 GitHub预览发行版，上传既有SHA锁定安装包及使用/恢复/许可证/清单附件。发布说明保留D3未验证项和桌面二进制扫描、签名限制，D3完整阶段继续开放。此前“尚未发布”描述保留为当时记录，实际发布结果见PROGRESS和对应GitHub Release。
 
 D1、D2 本地切片已实现并验证；D2证据见 [DESKTOP_D2_ACCEPTANCE](DESKTOP_D2_ACCEPTANCE.md)。D3本批已实现离线 x64 预览安装包、图标与保留数据卸载，并完成本机安装/跨版升级测试；详见 [DESKTOP_D3_ACCEPTANCE](DESKTOP_D3_ACCEPTANCE.md)。D3仍待干净 Windows 普通用户/断网、完整业务与故障恢复门禁，不提前标记完成。D4未开始，未发布 GitHub Release。上方规划保留为阶段来源。
