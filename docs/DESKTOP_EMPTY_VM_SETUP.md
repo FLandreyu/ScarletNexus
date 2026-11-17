@@ -24,6 +24,8 @@
 
 ## 装Windows前的下一步
 
+安装器磁盘识别问题（2026-11-17）：用户截图已显示安装位置页，但列表为空。VMX当前为LSI Logic（lsilogic）SCSI盘，文件存在，VMware固件日志识别100GiB容量；优先怀疑安装器驱动兼容，未验证根因。处理交接：关闭此安装中的测试机，在VMware设置中仅移除“硬盘(SCSI)”设备（保留磁盘文件），添加硬盘→SATA→使用现有虚拟磁盘，选 `D:/VMs/ScarletNexus-D3-Clean/ScarletNexus-D3-Clean.vmdk`；若提示格式转换，保留现有格式。不得删除VMDK、选物理磁盘或新建另一块盘。重新ISO启动后检查是否出现100GB未分配空间，再决定安装。尚未执行此调整或验证识别恢复，不改加密VMX，不把安装器已启动当Windows安装完成。
+
 最新状态（2026-11-17）：用户报告已完成加密/添加TPM。已只读确认VMX中vtpm.present=true、encryption.keySafe及encryption.data，Secure Boot和系统ISO设置保留；不展示或复制加密材料，不编辑加密后的VMX。原生配置查询因无法从stdin读取密码而拒绝，未提供密码，配置存在不代替客体TPM/Windows安装成功。已调用现有VMware程序打开该VM（仅确认启动请求已发出，未视觉确认窗口）。用户需在本机解锁、开启测试机，若出现光盘启动提示在虚拟机窗口按任意键，再报告Windows安装界面。证据 `.runtime/desktop-empty-vm/tpm-handoff.json`；运行/安装/业务仍待确认，不要求聊天发送密码。
 
 最新实施（2026-11-17）：用户下载的 `D:/Downloads/Windows11_Client_x64_zh-cn_26300_9457.iso` 为9112440832字节，实际SHA256 `b795b52d598bf8fdea5975844731f4a50c5713876cefc513884354272b023af0`，与微软官方页当日简体中文64-bit值相同。已在VM关机且原配置SHA未变时备份VMX，仅把虚拟光驱来源换成该ISO并设置开机连接；不复制大文件，不在宿主挂载/运行setup。原生Disk查询确认路径/startConnected，运行VM为0。证据见 `.runtime/desktop-empty-vm/iso-verification.json`，旧VMX在同目录before-os-iso.vmx；旧verification.json的SHA保留为历史，不再代表最新配置。

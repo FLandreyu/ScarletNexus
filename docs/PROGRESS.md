@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+Windows安装器磁盘识别排查（2026-11-17）：用户截图证实已通过ISO进入Windows安装器，但安装位置列表为空。只读核对系统盘仍存在，VMX为scsi0.virtualDev=lsilogic/scsi0:0.present=true，vmware.log识别容量209715200个512字节扇区（100GiB）；尚无磁盘丢失证据。优先怀疑旧式LSI Logic驱动兼容，交接用户关机后仅从VM移除硬盘设备、保留VMDK，再以SATA/使用现有虚拟磁盘重新接入同一VMDK；不新建盘、不删除文件、不改宿主盘。尚未实际修改或验证恢复识别，不将推测记作已确认根因。加密VM不可直接编辑，当前桌面控制不可用；D3仍未完成，GraphFlow未提供，无业务代码改动/业务测试重跑。
+
 TPM/加密配置已核对（2026-11-17）：用户完成VMware设置，VMX检测到vtpm.present=true、encryption.keySafe及encryption.data，EFI/Secure Boot和已校验系统ISO路径仍在；仅记录存在性，不输出加密材料。加密后的原生Power/Chipset查询要求stdin密码，未请求或传入密码，不能声称原生运行配置查询通过。已通过现有VMware程序请求打开此VM，需用户在本机解锁并启动，再确认进入Windows安装界面。尚未验证安装/客体业务，不关闭D3；证据 `.runtime/desktop-empty-vm/tpm-handoff.json`。未改加密VMX，无密钥入Git；GraphFlow不可用，业务未变不重复测试。
 
 Windows ISO已校验并接入空VM（2026-11-17）：用户已下载到 `D:/Downloads/Windows11_Client_x64_zh-cn_26300_9457.iso`，9112440832字节，SHA256 `b795b52d598bf8fdea5975844731f4a50c5713876cefc513884354272b023af0`，与当前微软下载页“简体中文64-bit”完全一致。VM关机/配置SHA检查通过后，仅改虚拟光驱来源与开机连接设置，未挂载宿主或运行setup，未复制9GB镜像；网卡仍默认断开。
