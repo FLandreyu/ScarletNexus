@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+软件测试介质交接更新（2026-11-17）。用户确认客体光驱中可见两个安装包。宿主复核介质内Audit-WindowsEnvironment.ps1的SHA256为fa338595e8381bcb51271114b6650492eb5f4374744ae006e87d88491f2d09bf，与介质SHA表一致。交接用户在光驱目录打开普通PowerShell，从同一客体内的CHECKLIST.txt复制已有三行环境采集命令，输出桌面ScarletNexus-Evidence/environment-before.json，核验权限、路径、全局工具/运行库和断网情况。客体报告尚未取得，S0快照仍待证据，安装与业务未执行。GraphFlow工具未提供，无业务代码变更。
+
 客体身份截图核验（2026-11-17 21:02，Asia/Shanghai）。用户提供USERPROFILE和完整whoami /groups输出，路径为 `C:/Users/芙兰`，包含BUILTIN/Users与Medium Mandatory Level，未列出Administrators的S-1-5-32-544。普通账户/中文路径已获截图证据，当前路径没有空格，G1保持部分完成，空格路径留待补测。下一步换入既有只读软件测试ISO，确认客体网卡断开，保存安装前快照并采集环境报告，之后安装d3.3。当前未验证S0/全局工具/运行库或业务结果，GraphFlow工具未提供，无业务代码变更。
 
 测试账户准备更新（2026-11-17）。用户报告已使用芙兰账户登录，宿主vmrun list确认ScarletNexus-D3-Clean正在运行。账户实际USERPROFILE及Administrators组成员状态仍需客体只读输出核验，随后采集环境和离线状态、保存S0快照。已确认离线测试介质与8文件清单仍在。尚未运行安装/业务验收，GraphFlow工具未提供，未变更业务代码。
