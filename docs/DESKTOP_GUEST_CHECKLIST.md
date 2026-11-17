@@ -1,11 +1,11 @@
 # Scarlet Nexus D3 客体验收表
 
-状态：NOT_RUN。仅用于新建、可回滚的Windows虚拟机。先读TEST-ENVIRONMENT.txt；此表填写和环境报告不能代替截图/真实结果。
+状态为进行中，G1有部分截图证据，安装和业务尚未执行。用于新建、可回滚的Windows虚拟机。先读TEST-ENVIRONMENT.txt，按实际截图和运行结果填写。
 
 | 条目 | 操作与通过标准 | 实际结果/证据 |
 | --- | --- | --- |
 | G0 来源 | 官方OS镜像SHA、实际虚拟化平台版本与来源、VM配置、S0基线快照编号 | NOT_RUN |
-| G1 身份 | 普通账户不属于Administrators；真实USERPROFILE含中文和空格 | NOT_RUN |
+| G1 身份 | 普通账户不属于Administrators；真实USERPROFILE含中文和空格 | PARTIAL。2026-11-17 21:02用户截图显示C:/Users/芙兰、BUILTIN/Users、Medium Mandatory Level，无S-1-5-32-544。普通账户和中文已确认，空格路径仍待补测 |
 | G2 干净 | 基线无Node/Java/PG/Docker/Guest Additions；记录系统自带VC运行库，禁止为了通过安装而先补运行库 | NOT_RUN |
 | G3 离线 | 客体网卡断开、无共享/剪贴板/拖放；从只读ISO复制到客体后断网安装 | NOT_RUN |
 | G4 安装 | 核对安装器SHA；标准账户安装d3.3、桌面和开始菜单快捷方式，无额外安装运行库 | NOT_RUN |
