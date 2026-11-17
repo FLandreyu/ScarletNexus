@@ -1,6 +1,6 @@
 # Scarlet Nexus Desktop
 
-D1 安全窗口与 D2 内置运行时已实现。D3 安装包、桌面快捷方式和干净 Windows 验收尚未交付；此目录目前是开发与验收入口，尚未发布 GitHub 发行版。阶段边界见 [DESKTOP_PLAN](../docs/DESKTOP_PLAN.md)，实证见 [D2 验收](../docs/DESKTOP_D2_ACCEPTANCE.md)。
+D1 安全窗口与 D2 内置运行时已实现。D3 已新增离线预览安装包和快捷方式，干净 Windows 等剩余验收尚未完成；此目录目前是开发与验收入口，尚未发布 GitHub 发行版。阶段边界见 [DESKTOP_PLAN](../docs/DESKTOP_PLAN.md)，实证见 [D2 验收](../docs/DESKTOP_D2_ACCEPTANCE.md)。
 
 ## 构建和本地启动
 
@@ -47,3 +47,34 @@ runtime 验证真实原生 PG/Flyway/认证、SCRAM、角色拒绝越权、重�
 D1 可选开发模式仍支持 --dev-backend=http://127.0.0.1:8089，仅连接显式隔离服务；关闭桌面不会停止此外部服务。其旧窗口冒烟入口为 test:smoke，环境参数见 test/smoke.cjs。启动器移除 ELECTRON_RUN_AS_NODE，防止 VS Code 环境把 Electron 当作 Node 启动。
 
 npm audit 仅检查 npm 依赖；Electron/Chromium、Java、PG 二进制及安装制品的完整供应链扫描、签名与 Release 留到 D4。
+
+## D3 离线安装包（预览）
+
+当前版本 0.1.0-d3.2，使用固定 electron-builder 26.18.0 构建 Windows x64 NSIS 完整安装包。构建工具中的 minimatch 7–10 系列有 GHSA-g3hv-75wg-m249 放大消耗风险；用范围覆盖精确固定 11.0.9，保留其他不受该条目影响的旧 API 分支，完整 npm 锁文件随源码保存。初次增量安装仍保留无效旧嵌套版本，重新生成锁并 npm ci 后才确认审计归零；不使用 audit fix --force。
+
+```powershell
+npm ci --prefix desktop
+# 如果宿主 npm 的脚本策略没有安装 Electron 二进制，显式运行固定包自带的安装器。
+# 需要本机代理时可先设置当前进程 ELECTRON_GET_USE_PROXY=1，不关闭 TLS 校验。
+node desktop/node_modules/electron/install.js
+$env:DESKTOP_RUNTIME_DIR="$PWD/.runtime/desktop-bundle-local"
+# 输出目录必须是一个尚不存在的 workspace/.runtime 子目录。
+$env:DESKTOP_DIST_DIR="$PWD/.runtime/desktop-preview-build"
+npm run dist:win --prefix desktop
+```
+
+输出包含完整 setup.exe、SHA256SUMS.txt 和开发用 win-unpacked；没有资源网络下载型安装器，没有自动更新或发布。图标为本项目绘制的 SN 几何图形，源在 build/icon.svg，ICO 含 16–256 像素图层。构建只收录校验清单内的运行时文件和 8 个应用文件，不含测试、账户、学习记录、开发依赖或 .env。安装程序和主程序暂未签名，完整二进制安全扫描仍属 D4；这是预览产物。
+
+安装包以当前用户权限安装，可选目录并创建桌面/开始菜单 Scarlet Nexus 快捷方式。双击快捷方式进入首次账号设置。默认数据仍为 %APPDATA%/ScarletNexus/learning；新壳显式固定 app 名为 ScarletNexus，浏览器配置与学习目录归同一用户配置根，保持 D2 默认学习目录。Electron 原生 --user-data-dir 可选择隔离配置根，验收使用它，不提供业务页面的任意路径 IPC。正式包仍拒绝 --dev-backend/--runtime-dir/--data-dir，且禁止把安装目录用作学习目录。
+
+关闭软件后，可在 Windows 应用列表卸载；卸载仅清理安装文件、产品快捷方式和卸载注册，不删除学习库/密钥/附件。安装、卸载发现 Scarlet Nexus 正在运行时应拒绝继续，由用户正常退出；自定义 NSIS 检查没有强杀进程分支。ProgramData 的固定数据 junction 元数据保留，不跟随它递归删除数据。重装应接回原账号，不能依赖卸载重置密码。
+
+本机隔离安装回归（会建立当前用户注册与产品快捷方式，拒绝覆盖已有安装/快捷方式）：
+
+```powershell
+powershell -NoProfile -File desktop/test/installer-smoke.ps1 -Installer "$PWD/.runtime/desktop-preview-build/ScarletNexus-0.1.0-d3.2-windows-x64-setup.exe"
+```
+
+该测试使用 workspace/.runtime 中文安装和配置路径，使用真实已安装 exe，移除全局工具 PATH，验证设置/登录/技能写入、运行中安装卸载拒绝、关闭重开、同版覆盖、卸载保留密钥、重装保留账号和数据，并最终卸载测试产品。测试记录保留；它不能证明干净 Windows 或普通非管理员账户通过。D3 仍待干净系统/中文用户名/离线网络验证、跨版本升级故障/备份容量/完整业务矩阵，见 [D3 验收](../docs/DESKTOP_D3_ACCEPTANCE.md)。
+
+如需复现跨版本升级，installer-smoke.ps1 可追加 `-UpgradeInstaller "新版本完整安装包路径"`，初始包和升级包都须在 workspace/.runtime 内；它将验证发行标识变化确实生成备份，再验证卸载/重装后账号与技能。已安装旧版本或产品快捷方式存在时，测试会拒绝覆盖；失败时保留目录和安装状态供检查，不能手动删除数据库或强杀同名进程。

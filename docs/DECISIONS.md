@@ -239,3 +239,13 @@ EDB initdb 在 Windows 中文路径失败，因此只为数据库工具提供 Pr
 JAR 哈希/发行标识变化前，以只读身份导出库并对数据库和附件分别 AES-256-GCM 加密，最后写完整清单，失败阻止迁移；密钥保存在用户 ACL 保护配置中。此内部升级保护格式不是 SNBACK，也不等于异地备份、自动回滚或恢复 UI。强行终止可能留下受 ACL 保护的明文 pending 导出；大数据量、断电/磁盘不足、用户恢复流程留 D3，不掩盖局限。禁止自动跨 PG 主版本升级。
 
 本批完整后端84/前端14测试及原生 Windows、真实 Electron 验收记录见 DESKTOP_D2_ACCEPTANCE；D3 安装包/图标、D4 制品安全/发布不提前宣称完成。不自动推送。
+
+## ADR-043 — 当前用户 NSIS 安装、配置根和保留数据卸载
+
+2026-11-17 按用户下一批授权推进 D3 的本机安装切片。采用固定 electron-builder26.18.0/锁文件构建完整 Windows x64 NSIS，使用已核验 Java/PG/JAR/Vue 和 Electron45.3.3，不引入运行时第三方 Node 依赖。构建器只复制已验证清单中的文件到新 staging，应用白名单收包；输出必须是 workspace/.runtime 内新目录，不删除旧产物、不自动发布或更新。SN 几何图标为项目自制。
+
+当前用户安装、禁止提权与系统服务，快捷方式保持稳定 appId dev.scarletnexus.desktop。app 显式命名 ScarletNexus，学习库放 Electron userData/learning，默认仍是 D2 的 AppData/ScarletNexus/learning；这样原生隔离 profile 参数可用于真实已安装应用验收，不引入通用开发路径 IPC。拒绝在安装树中保存学习库。卸载保留 AppData 与 ProgramData 数据链接，不递归跟随 junction；运行中安装/卸载拒绝，替换默认安装器可能强杀应用的检查分支。跨版本/断电/备份容量和普通用户干净系统仍独立验收。
+
+构建依赖审计初报6中风险，根源为 minimatch 7–10 的 GHSA-g3hv-75wg-m249。仅对受影响范围固定11.0.9；增量 npm install 没清除旧嵌套版本，重新生成锁并 npm ci 后 npm audit 为0，旧日志保留。脚本策略未落盘 Electron dist 时，调用固定包官方 install.js 补齐校验下载，再重建；不手工修改依赖代码或跳过校验。NSIS/7zip/Electron/Java/PG全二进制扫描与签名另属D4，不能用 npm audit 替代。
+
+本批提供未签名预览包与本机安装实证，不关闭 D3，也不提前进入 D4/Release；实际结果见 DESKTOP_D3_ACCEPTANCE。用户 .env.example/.gitignore 保持。

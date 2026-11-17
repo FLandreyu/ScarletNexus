@@ -15,4 +15,4 @@
 
 ## 2026-11-17 当前状态
 
-D1、D2 本地切片已实现并验证。D2 真实 Windows 内置运行时和 Electron 首次设置/重启、备份恢复等证据见 [DESKTOP_D2_ACCEPTANCE](DESKTOP_D2_ACCEPTANCE.md)，普通用户/干净系统/安装升级等保留边界同步记录；不把本机成功当作安装发行完成。下一步 D3，随后 D4；尚未构建或发布供普通用户下载的安装包。上方最初规划保留为阶段来源。
+D1、D2 本地切片已实现并验证；D2证据见 [DESKTOP_D2_ACCEPTANCE](DESKTOP_D2_ACCEPTANCE.md)。D3本批已实现离线 x64 预览安装包、图标与保留数据卸载，并完成本机安装/跨版升级测试；详见 [DESKTOP_D3_ACCEPTANCE](DESKTOP_D3_ACCEPTANCE.md)。D3仍待干净 Windows 普通用户/断网、完整业务与故障恢复门禁，不提前标记完成。D4未开始，未发布 GitHub Release。上方规划保留为阶段来源。

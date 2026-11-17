@@ -1,0 +1,43 @@
+const path = require("node:path");
+module.exports = ({ runtime, output }) => ({
+  appId: "dev.scarletnexus.desktop",
+  productName: "Scarlet Nexus",
+  directories: { output, buildResources: path.join(__dirname, "build") },
+  files: [
+    "main.cjs",
+    "gateway.cjs",
+    "runtime.cjs",
+    "setup-preload.cjs",
+    "setup.html",
+    "setup.css",
+    "setup.js",
+    "package.json",
+  ],
+  extraResources: [
+    { from: runtime, to: "runtime", filter: ["**/*", "!java-archive/**"] },
+  ],
+  electronDist: path.join(__dirname, "node_modules/electron/dist"),
+  asar: true,
+  npmRebuild: false,
+  publish: null,
+  win: {
+    target: [{ target: "nsis", arch: ["x64"] }],
+    icon: path.join(__dirname, "build/icon.ico"),
+    signExecutable: false,
+    artifactName: "ScarletNexus-${version}-windows-${arch}-setup.${ext}",
+  },
+  nsis: {
+    oneClick: false,
+    perMachine: false,
+    allowElevation: false,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    shortcutName: "Scarlet Nexus",
+    deleteAppDataOnUninstall: false,
+    runAfterFinish: false,
+    packElevateHelper: false,
+    installerLanguages: ["zh_CN", "en_US"],
+    include: path.join(__dirname, "build/installer.nsh"),
+  },
+});

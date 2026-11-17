@@ -4,6 +4,8 @@ const fs = require("node:fs/promises");
 const { pathToFileURL } = require("node:url");
 const { startRuntime, validateAdmin } = require("./runtime.cjs");
 const { startGateway } = require("./gateway.cjs");
+app.setName("ScarletNexus");
+app.setAppUserModelId("dev.scarletnexus.desktop");
 let window,
   gateway,
   runtime,
@@ -98,7 +100,21 @@ else {
           : path.join(process.resourcesPath, "runtime");
         const directory = storage
           ? path.resolve(storage.slice("--data-dir=".length))
-          : path.join(app.getPath("appData"), "ScarletNexus", "learning");
+          : path.join(app.getPath("userData"), "learning");
+        if (app.isPackaged) {
+          const relative = path.relative(
+            path.dirname(process.execPath),
+            directory,
+          );
+          if (
+            !relative ||
+            (!relative.startsWith(".." + path.sep) &&
+              !path.isAbsolute(relative))
+          )
+            throw new Error(
+              "Learning data must be outside the installation directory",
+            );
+        }
         let account;
         try {
           await fs.access(path.join(directory, "administrator.json"));

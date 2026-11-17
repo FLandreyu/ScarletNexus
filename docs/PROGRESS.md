@@ -4,6 +4,18 @@
 
 ## 当前阶段
 
+桌面发行版 D3 第一批（2026-11-17）：完成本机离线预览安装包切片，版本 0.1.0-d3.2。固定 electron-builder26.18.0、完整运行时、当前用户 NSIS、SN 产品图标、桌面/开始菜单快捷方式、白名单装包、卸载保留学习数据；安装前拒绝数据树和运行中的产品。**D3 仍在进行，不能标记整阶段完成**；详细门禁见 [DESKTOP_D3_ACCEPTANCE](DESKTOP_D3_ACCEPTANCE.md)，构建/测试命令见 [desktop/README](../desktop/README.md)。
+
+- 本地预览：`.runtime/desktop-d3-preview/ScarletNexus-0.1.0-d3.2-windows-x64-setup.exe`，312017988字节，SHA-256 `72285cfcca6d9603e3e7aa76b014d3d14425cfa0c4b4251b77d12631fa963758`；旁置 SHA256SUMS.txt。未签名、未发布，不把 npm 审计当全二进制扫描。
+- 实际已安装 EXE 验证：中文安装/独立配置路径、首次设置/CSRF登录/中文技能、关闭重开；移除全局工具 PATH 仍使用内置 Java/PG。已验证同版覆盖/卸载重装保留账号与技能（第一轮 `.runtime-desktop-d3-installer-roundtrip.log`）；跨版 d3.1→d3.2 保留业务并生成加密升级备份，最终完整日志见 `.runtime-desktop-d3-installer-upgrade.log`。
+- 新版安装器在清旧版之前检查数据标记祖先链，拒绝安装进学习/数据库树；运行中安装、直接等待的卸载脚本均拒绝而不关闭业务窗口。标准 NSIS 外层卸载进程会先返回，测试用 `_?=` 等待真实脚本；原误判日志保留，未发生数据删除。默认 userData 兼容 D2 路径的独立探针已通过。
+- 桌面7单测/语法/格式、前端格式/类型/14单测/构建通过；后端与迁移无修改，沿用 D2 已通过84项真实PG验证的同字节JAR，不宣称新跑后端。构建依赖6中风险定向固定修复范围到 minimatch11.0.9；重新生成锁与 npm ci 后 npm audit 为0，实际构建成功。初次架构参数误传和 Electron dist 缺失等开发失败日志保留。
+- 未提供 GraphFlow 工具，未 context/plan/index；用户 .env.example/.gitignore 保留，无生产、公开服务、推送或 Release。
+- **下一步继续 D3**：干净 Win11 x64 普通账户/中文用户名/断网无全局工具的真实验收，完整业务/附件导出恢复矩阵、跨 schema 升级失败与断电/磁盘不足/大备份恢复。宿主没有 Windows Sandbox，未擅自启用系统功能。D4 的制品扫描、签名及发行仍未开始，P7不自动进入。
+
+以下 D2 与 D1 为已完成批次记录。
+
+
 桌面发行版 D2（2026-11-17）：内置 Temurin25/PG17.12 装配与原始归档 SHA、首次管理员窗口、独立 ACL 持久数据、随机 SCRAM 和控制/迁移/业务/备份身份、V12 独立迁移、启动锁和服务所有权核验、私有 stdin 生命周期、升级前认证加密备份已实现。完整验收与保留边界见 [DESKTOP_D2_ACCEPTANCE](DESKTOP_D2_ACCEPTANCE.md)，复现命令见 [desktop/README](../desktop/README.md)。
 
 - 最终后端 verify：31 单测 + 53 真实 PostgreSQL 集成测试通过，零跳过（`.runtime-desktop-d2-backend-confirmed.log`）；前端格式/类型/14 单测/构建通过，保留原有图表 chunk 提醒；桌面7单测与语法通过，npm audit零发现，不等于二进制扫描。

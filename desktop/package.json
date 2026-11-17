@@ -1,6 +1,6 @@
 {
   "name": "scarlet-nexus-desktop",
-  "version": "0.1.0",
+  "version": "0.1.0-d3.2",
   "private": true,
   "description": "Scarlet Nexus Windows desktop host",
   "main": "main.cjs",
@@ -11,10 +11,19 @@
     "test:runtime": "node test/runtime-smoke.cjs",
     "test:managed": "node test/managed-smoke.cjs",
     "test:lifecycle": "node test/lifecycle-smoke.cjs",
-    "check": "node --check main.cjs && node --check runtime.cjs && node --check setup-preload.cjs && node --check setup.js"
+    "check": "node --check main.cjs && node --check runtime.cjs && node --check setup-preload.cjs && node --check setup.js && node --check build.cjs && node --check builder.config.cjs && node --check test/installed-smoke.cjs",
+    "dist:win": "node build.cjs",
+    "test:installed": "node test/installed-smoke.cjs",
+    "test:installer": "powershell -NoProfile -File test/installer-smoke.ps1"
   },
   "devDependencies": {
     "electron": "45.3.3",
+    "electron-builder": "26.18.0",
     "playwright": "1.65.1"
+  },
+  "author": "Scarlet Nexus contributors",
+  "license": "UNLICENSED",
+  "overrides": {
+    "minimatch@>=7.0.0 <11.0.1": "11.0.9"
   }
 }
