@@ -24,6 +24,8 @@
 
 ## 装Windows前的下一步
 
+2026-11-17镜像准备：已创建宿主目录 `D:/VMs/ISO`。官方下载链接接口返回 `ErrorSettings.SentinelReject`，随后命令启动浏览器被自动审批拒绝（blocked by policy），未下载ISO。请用户手动打开 [微软官方下载页](https://www.microsoft.com/zh-cn/software-download/windows11)，选择“下载适用于x64设备的Windows11磁盘映像(ISO)”中的多版本ISO，再选简体中文和64位下载，保存到上述目录。仅下载，不在宿主运行安装助手或ISO中的setup；后续先核对微软公布的SHA256，再配置虚拟机光驱。许可、vTPM和Windows安装状态不变。
+
 1. 用户确定官方Windows11 x64系统ISO与适用许可，或自行处理官方企业评估注册和条款；不下载改装系统或绕过许可。
 2. 在VMware受支持的流程中启用所需加密并添加正式vTPM2.0。**本批尚未配置TPM，不能称为Windows11安装就绪**；不使用实验性autoAddVTPM或绕过TPM检查。
 3. 加载系统ISO并安装到虚拟磁盘，按官方流程临时连接NAT完成系统准备。

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+Windows镜像准备更新（2026-11-17）：已创建宿主下载目录 `D:/VMs/ISO`。官方语言查询成功，但下载链接接口返回 `ErrorSettings.SentinelReject`，未下载ISO；随后命令启动浏览器被自动审批策略拒绝（blocked by policy），改由用户手动打开微软官方页，选择x64多版本ISO/简体中文，保存到该目录。不绕过请求拒绝，未取得/校验ISO，未配置vTPM或安装系统，空VM保持关机；许可仍未确定，D3门禁不变。仅改记录，无业务测试重跑；GraphFlow工具仍未提供。
+
 D3空VM已搭建（2026-11-17）：用户明确先搭空测试机，暂不安装Windows。发现并复用非默认位置 `D:/VMware` Workstation17.6.4（程序签名Valid/原有服务运行），替代原VirtualBox建议；未安装新驱动或改变宿主WSL/Hyper-V/VBS。VM在 `D:/VMs/ScarletNexus-D3-Clean`，4核/8GiB/100GiB动态盘、EFI/Secure Boot配置、默认断网与禁用宿主共享，桌面已有 `ScarletNexus D3 VM` 快捷方式。详见 [空VM搭建记录](DESKTOP_EMPTY_VM_SETUP.md)。
 
 - 配置查询、VMDK头容量与磁盘链检查通过；真实start返回0/PowerState on，日志记录ULM/WHP、EFI和No Media；随后关闭，运行VM为0。仅证明空VM启动，不证明Windows或应用可用。
