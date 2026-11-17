@@ -29,7 +29,7 @@ npm start --prefix desktop -- --runtime-dir="$PWD/.runtime/desktop-bundle-local"
 
 应用 JAR 哈希或发行标识变化时，迁移之前使用只读备份身份导出数据库，并以 AES-256-GCM 加密数据库与附件；完整清单最后写入，任何失败都会阻止迁移。该内部格式是 scarlet-desktop-upgrade-backup/v1，与 Web SNBACK 备份不同。密钥在用户 ACL 保护的 secrets/database.json，恢复需要保留密钥；当前没有恢复 UI、异地备份或自动回滚。禁止自动跨 PostgreSQL 主版本升级。
 
-备份过程暂存的原始 dump 在正常路径和异常捕获后删除；父进程被强行终止时，未完成备份目录可能留下受私有 ACL 保护的 pending 文件，没有完成清单。大数据量内存占用、磁盘不足/断电、升级失败后的用户恢复流程仍须在 D3 验收。不要手工覆盖或删除真实用户数据目录。
+从 d3.3 开始，pg_dump 的 stdout 直接进入 AES-256-GCM 管道，附件和文件摘要也逐块处理，不再创建 database.pending.dump。每个加密文件成功后写认证标签并刷盘，导出进程必须退出0，最后才写完整清单；失败目录可能留加密片段，没有完成清单就不属于完整备份。512MiB 文件的加密/认证解密与真实 PG 恢复已验证，更多容量、真实断电/磁盘不足和用户恢复流程仍需后续验收。不要手工覆盖或删除真实用户数据目录。
 
 ## 可重复验证
 
@@ -50,7 +50,7 @@ npm audit 仅检查 npm 依赖；Electron/Chromium、Java、PG 二进制及安�
 
 ## D3 离线安装包（预览）
 
-当前版本 0.1.0-d3.2，使用固定 electron-builder 26.18.0 构建 Windows x64 NSIS 完整安装包。构建工具中的 minimatch 7–10 系列有 GHSA-g3hv-75wg-m249 放大消耗风险；用范围覆盖精确固定 11.0.9，保留其他不受该条目影响的旧 API 分支，完整 npm 锁文件随源码保存。初次增量安装仍保留无效旧嵌套版本，重新生成锁并 npm ci 后才确认审计归零；不使用 audit fix --force。
+当前版本 0.1.0-d3.3，使用固定 electron-builder 26.18.0 构建 Windows x64 NSIS 完整安装包。构建工具中的 minimatch 7–10 系列有 GHSA-g3hv-75wg-m249 放大消耗风险；用范围覆盖精确固定 11.0.9，保留其他不受该条目影响的旧 API 分支，完整 npm 锁文件随源码保存。初次增量安装仍保留无效旧嵌套版本，重新生成锁并 npm ci 后才确认审计归零；不使用 audit fix --force。
 
 ```powershell
 npm ci --prefix desktop
@@ -63,7 +63,7 @@ $env:DESKTOP_DIST_DIR="$PWD/.runtime/desktop-preview-build"
 npm run dist:win --prefix desktop
 ```
 
-输出包含完整 setup.exe、SHA256SUMS.txt 和开发用 win-unpacked；没有资源网络下载型安装器，没有自动更新或发布。图标为本项目绘制的 SN 几何图形，源在 build/icon.svg，ICO 含 16–256 像素图层。构建只收录校验清单内的运行时文件和 8 个应用文件，不含测试、账户、学习记录、开发依赖或 .env。安装程序和主程序暂未签名，完整二进制安全扫描仍属 D4；这是预览产物。
+输出包含完整 setup.exe、SHA256SUMS.txt 和开发用 win-unpacked；没有资源网络下载型安装器，没有自动更新或发布。图标为本项目绘制的 SN 几何图形，源在 build/icon.svg，ICO 含 16–256 像素图层。构建只收录校验清单内的运行时文件和 9 个应用文件，不含测试、账户、学习记录、开发依赖或 .env。安装程序和主程序暂未签名，完整二进制安全扫描仍属 D4；这是预览产物。
 
 安装包以当前用户权限安装，可选目录并创建桌面/开始菜单 Scarlet Nexus 快捷方式。双击快捷方式进入首次账号设置。默认数据仍为 %APPDATA%/ScarletNexus/learning；新壳显式固定 app 名为 ScarletNexus，浏览器配置与学习目录归同一用户配置根，保持 D2 默认学习目录。Electron 原生 --user-data-dir 可选择隔离配置根，验收使用它，不提供业务页面的任意路径 IPC。正式包仍拒绝 --dev-backend/--runtime-dir/--data-dir，且禁止把安装目录用作学习目录。
 
@@ -72,9 +72,34 @@ npm run dist:win --prefix desktop
 本机隔离安装回归（会建立当前用户注册与产品快捷方式，拒绝覆盖已有安装/快捷方式）：
 
 ```powershell
-powershell -NoProfile -File desktop/test/installer-smoke.ps1 -Installer "$PWD/.runtime/desktop-preview-build/ScarletNexus-0.1.0-d3.2-windows-x64-setup.exe"
+powershell -NoProfile -File desktop/test/installer-smoke.ps1 -Installer "$PWD/.runtime/desktop-preview-build/ScarletNexus-0.1.0-d3.3-windows-x64-setup.exe"
 ```
 
 该测试使用 workspace/.runtime 中文安装和配置路径，使用真实已安装 exe，移除全局工具 PATH，验证设置/登录/技能写入、运行中安装卸载拒绝、关闭重开、同版覆盖、卸载保留密钥、重装保留账号和数据，并最终卸载测试产品。测试记录保留；它不能证明干净 Windows 或普通非管理员账户通过。D3 仍待干净系统/中文用户名/离线网络验证、跨版本升级故障/备份容量/完整业务矩阵，见 [D3 验收](../docs/DESKTOP_D3_ACCEPTANCE.md)。
 
 如需复现跨版本升级，installer-smoke.ps1 可追加 `-UpgradeInstaller "新版本完整安装包路径"`，初始包和升级包都须在 workspace/.runtime 内；它将验证发行标识变化确实生成备份，再验证卸载/重装后账号与技能。已安装旧版本或产品快捷方式存在时，测试会拒绝覆盖；失败时保留目录和安装状态供检查，不能手动删除数据库或强杀同名进程。
+
+## D3 流式保护与业务回归
+
+无需新增运行时依赖。backup.cjs 使用 Node 标准流 API，保持既有 SNDUENC1/v1 包络兼容；旧版加密备份不会被改写。资产清单校验同样改为流式摘要。启动器的备份导出进程仅获得 scarlet_backup 身份，失败只结束自己的子进程并阻止迁移。
+
+```powershell
+npm test --prefix desktop
+npm run test:backup-large --prefix desktop
+$env:DESKTOP_TEST_RUNTIME="$PWD/.runtime/desktop-bundle-local"
+npm run test:upgrade-failure --prefix desktop
+npm run test:runtime --prefix desktop
+```
+
+large 测试保留512MiB随机块重复文件和加密文件，观察独立进程 RSS，并以流式认证解密验证全部字节。upgrade-failure 在新的 .runtime 目录中仅为测试候选 JAR 增加失败 V13，生产 JAR/迁移不变；验证真实导出权限失败阻断迁移，及真正执行的 V13 回滚后 V12 原账号/技能/附件仍可打开。它不是磁盘满或断电实测。
+
+已打包/安装程序的业务回归需要开发机已安装 frontend 的固定 TypeScript 和 Playwright 依赖；这些不会进入安装包：
+
+```powershell
+$env:DESKTOP_TEST_EXE="$PWD/.runtime/desktop-preview-build/win-unpacked/Scarlet Nexus.exe"
+npm run test:business --prefix desktop
+```
+
+测试适配器直接执行 frontend/tests/e2e 中六个原有手动 spec 的原始断言，不改响应、不跳过断言；page/context 均属于真实 Electron 窗口。只适配相对 URL、测试注册/超时与截图目录，保留源码 SHA；明确设置 acceptDownloads:true，下载存入隔离 artifacts。首次省略此项时本环境未收到下载事件，保留超时日志；显式设置后真实下载目录/学习快照 JSON、导入预览与确认均通过。真实模型和移动端不在这套桌面测试里。
+
+installer-smoke.ps1 加 `-BusinessRegression` 可在覆盖安装之后运行同一套六个旅程，随后继续验证卸载/重装。详细结果和剩余干净系统门禁见 [D3 第二批验收](../docs/DESKTOP_D3_RECOVERY_ACCEPTANCE.md)。

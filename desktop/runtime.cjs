@@ -4,6 +4,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const net = require("node:net");
 const { spawn, execFile } = require("node:child_process");
+const { digestFile, encryptStream, encryptCommand } = require("./backup.cjs");
 
 const identifier = "scarlet-nexus-desktop-data/v1";
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -145,7 +146,7 @@ async function verifyBundle(directory) {
     if (
       !file.startsWith(root + path.sep) ||
       (await fs.lstat(path.join(root, name))).isSymbolicLink() ||
-      hash(await fs.readFile(file)) !== checksum
+      (await digestFile(file)) !== checksum
     )
       throw new Error("Desktop runtime integrity check failed: " + name);
   }
@@ -307,16 +308,11 @@ async function copyAttachments(source, destination, key) {
         await fs.mkdir(path.join(destination, name));
         await copy(path.join(folder, entry.name), name);
       } else if (entry.isFile()) {
-        const data = await fs.readFile(path.join(source, name));
-        const encrypted = encryptBackup(data, key);
-        await fs.writeFile(path.join(destination, name + ".enc"), encrypted, {
-          flag: "wx",
-          mode: 0o600,
-        });
-        checksums[name.replaceAll(path.sep, "/")] = {
-          plainSha256: hash(data),
-          cipherSha256: hash(encrypted),
-        };
+        checksums[name.replaceAll(path.sep, "/")] = await encryptStream(
+          syncFs.createReadStream(path.join(source, name)),
+          path.join(destination, name + ".enc"),
+          key,
+        );
       } else throw new Error("Unsupported attachment entry");
     }
   }
@@ -600,38 +596,26 @@ async function startRuntime({
       onStatus("正在创建升级前备份");
       const backup = path.join(root, "backups", crypto.randomUUID());
       await fs.mkdir(backup);
-      const dump = path.join(backup, "database.pending.dump");
-      let databasePlainSha256, databaseCipherSha256;
-      try {
-        await command(
-          pg("pg_dump"),
-          [
-            "-h",
-            "127.0.0.1",
-            "-p",
-            String(databasePort),
-            "-U",
-            "scarlet_backup",
-            "-d",
-            "scarlet_nexus",
-            "-w",
-            "-Fc",
-            "-f",
-            dump,
-          ],
-          { env: dbEnvironment("backup") },
-        );
-        const data = await fs.readFile(dump);
-        const encrypted = encryptBackup(data, credentials.encryption);
-        databasePlainSha256 = hash(data);
-        databaseCipherSha256 = hash(encrypted);
-        await fs.writeFile(path.join(backup, "database.dump.enc"), encrypted, {
-          flag: "wx",
-          mode: 0o600,
-        });
-      } finally {
-        if (await exists(dump)) await fs.unlink(dump);
-      }
+      const database = await encryptCommand(
+        pg("pg_dump"),
+        [
+          "-h",
+          "127.0.0.1",
+          "-p",
+          String(databasePort),
+          "-U",
+          "scarlet_backup",
+          "-d",
+          "scarlet_nexus",
+          "-w",
+          "-Fc",
+        ],
+        {
+          env: dbEnvironment("backup"),
+          destination: path.join(backup, "database.dump.enc"),
+          key: credentials.encryption,
+        },
+      );
       const attachments = await copyAttachments(
         path.join(root, "attachments"),
         path.join(backup, "attachments"),
@@ -641,8 +625,8 @@ async function startRuntime({
         format: "scarlet-desktop-upgrade-backup/v1",
         fromApplicationHash: state.applicationHash,
         toApplicationHash: applicationHash,
-        databasePlainSha256,
-        databaseCipherSha256,
+        databasePlainSha256: database.plainSha256,
+        databaseCipherSha256: database.cipherSha256,
         attachments,
         encrypted: true,
         cipher: "AES-256-GCM",

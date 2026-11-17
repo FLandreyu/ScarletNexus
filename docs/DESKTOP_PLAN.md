@@ -16,3 +16,5 @@
 ## 2026-11-17 当前状态
 
 D1、D2 本地切片已实现并验证；D2证据见 [DESKTOP_D2_ACCEPTANCE](DESKTOP_D2_ACCEPTANCE.md)。D3本批已实现离线 x64 预览安装包、图标与保留数据卸载，并完成本机安装/跨版升级测试；详见 [DESKTOP_D3_ACCEPTANCE](DESKTOP_D3_ACCEPTANCE.md)。D3仍待干净 Windows 普通用户/断网、完整业务与故障恢复门禁，不提前标记完成。D4未开始，未发布 GitHub Release。上方规划保留为阶段来源。
+
+D3第二批 d3.3 已补流式备份、512MiB内存实测、真实失败V13回滚和已安装程序六条手动旅程；证据见 DESKTOP_D3_RECOVERY_ACCEPTANCE。剩余干净系统/普通账户/中文用户名/断网与真实故障门禁保持；不因本机旅程通过而关闭D3。

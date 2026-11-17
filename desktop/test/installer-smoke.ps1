@@ -1,4 +1,4 @@
-﻿param([Parameter(Mandatory=$true)][string]$Installer,[string]$UpgradeInstaller)
+﻿param([Parameter(Mandatory=$true)][string]$Installer,[string]$UpgradeInstaller,[switch]$BusinessRegression)
 $ErrorActionPreference = 'Stop'
 $workspace = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $boundary = [IO.Path]::GetFullPath((Join-Path $workspace '.runtime')) + [IO.Path]::DirectorySeparatorChar
@@ -69,6 +69,11 @@ if ($upgrade) {
     $backups = @(Get-ChildItem -LiteralPath (Join-Path $profile 'learning/backups') -Filter manifest.json -Recurse -File)
     if (-not $backups.Count) { throw 'Cross-version upgrade did not produce its protected backup.' }
     Write-Output 'cross_version_upgrade_backup=true'
+}
+if ($BusinessRegression) {
+    & node (Join-Path $PSScriptRoot 'business-smoke.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'Installed business regression failed.' }
+    Write-Output 'installed_business_regression=passed'
 }
 Uninstall-TestPackage
 if ((Get-FileHash -LiteralPath $credential -Algorithm SHA256).Hash -ne $credentialHash) { throw 'Uninstall changed persistent credentials.' }

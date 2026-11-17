@@ -7,6 +7,7 @@ module.exports = ({ runtime, output }) => ({
     "main.cjs",
     "gateway.cjs",
     "runtime.cjs",
+    "backup.cjs",
     "setup-preload.cjs",
     "setup.html",
     "setup.css",

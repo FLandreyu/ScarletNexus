@@ -1,5 +1,7 @@
 # D3 Windows 安装版验收
 
+本页保留d3.2第一批实证；d3.3流式备份与新失败/业务回归见 [D3第二批](DESKTOP_D3_RECOVERY_ACCEPTANCE.md)。
+
 2026-11-17，从 04c2078 继续，用户授权下一批。GraphFlow 未暴露工具，采用定向检查；保留用户 .env.example/.gitignore。不推送、不发布、不购买证书。
 
 ## 实现前验收标准

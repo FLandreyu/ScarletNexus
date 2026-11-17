@@ -1,6 +1,6 @@
 {
   "name": "scarlet-nexus-desktop",
-  "version": "0.1.0-d3.2",
+  "version": "0.1.0-d3.3",
   "private": true,
   "description": "Scarlet Nexus Windows desktop host",
   "main": "main.cjs",
@@ -11,10 +11,13 @@
     "test:runtime": "node test/runtime-smoke.cjs",
     "test:managed": "node test/managed-smoke.cjs",
     "test:lifecycle": "node test/lifecycle-smoke.cjs",
-    "check": "node --check main.cjs && node --check runtime.cjs && node --check setup-preload.cjs && node --check setup.js && node --check build.cjs && node --check builder.config.cjs && node --check test/installed-smoke.cjs",
+    "check": "node --check main.cjs && node --check runtime.cjs && node --check setup-preload.cjs && node --check setup.js && node --check build.cjs && node --check builder.config.cjs && node --check test/installed-smoke.cjs && node --check backup.cjs && node --check test/upgrade-failure.cjs && node --check test/business-smoke.cjs",
     "dist:win": "node build.cjs",
     "test:installed": "node test/installed-smoke.cjs",
-    "test:installer": "powershell -NoProfile -File test/installer-smoke.ps1"
+    "test:installer": "powershell -NoProfile -File test/installer-smoke.ps1",
+    "test:backup-large": "node test/backup-large.cjs",
+    "test:upgrade-failure": "node test/upgrade-failure.cjs",
+    "test:business": "node test/business-smoke.cjs"
   },
   "devDependencies": {
     "electron": "45.3.3",

@@ -4,6 +4,18 @@
 
 ## 当前阶段
 
+桌面发行版 D3 第二批（2026-11-17）：d3.3 将数据库导出、附件加密和资产摘要改为流式，移除明文pending导出，保持旧格式兼容；补齐真实PG失败迁移回滚与已安装桌面六个手动旅程。详细证据与范围见 [DESKTOP_D3_RECOVERY_ACCEPTANCE](DESKTOP_D3_RECOVERY_ACCEPTANCE.md)。D3仍进行中，未进入D4。
+
+- 新本地预览 `.runtime/desktop-d3-stream-preview/ScarletNexus-0.1.0-d3.3-windows-x64-setup.exe`，312018570字节，SHA256 `fd5d82dde4aed2854afca42925913428f0130369eee63db8a217ef802985dac8`，未签名/未发布；应用白名单9文件与源码吻合，生产JAR不含测试V13。
+- 9项Node测试、语法/格式、前端格式/类型/14测试/构建通过，npm审计0；512MiB认证加密解密全字节SHA一致，观测增量峰值RSS约74.2MiB。真实PG新实现备份实际恢复到隔离库通过（`.runtime-desktop-d3-stream-native.log`）。生产Java/Flyway未改，84后端沿用D2同字节JAR实证，不声称重跑。
+- 原生PG备份权限失败阻断迁移；测试候选V13确实执行后RAISE失败、事务回滚，state/原技能/附件保持，旧V12原账号重新登录通过（`.runtime-desktop-d3-upgrade-failure.log`）。测试Jar只存在私有.runtime，未改正式迁移。
+- 实际安装d3.2→d3.3产生流式升级备份，并在已安装新EXE跑原始六条手动业务旅程全部通过，含私有图片、计划复习、真实JSON下载和目录导入（`.runtime-desktop-d3-stream-installed.log`）。下载首轮未接管导致超时已保留，明确设置acceptDownloads后原断言通过。
+- 最终安装回归退出0，installed_business_regression/installer_roundtrip均passed；卸载后重装保留原账号/技能和密钥SHA，最终只清理产品安装/快捷方式/注册，隔离数据保留。已查看目录确认导入截图，无本次Java/PG/产品服务残留。
+- **下一步仍为D3剩余门禁**：干净Windows普通账户/中文用户名/断网、断电/磁盘满、更多容量和用户恢复说明。宿主无可用Sandbox/常用虚拟化工具，未擅自修改系统。GraphFlow未暴露，定向检查；用户.env.example/.gitignore保留，无推送/Release/公开部署，P7不自动进入。
+
+以下第一批、D2与D1为历史记录。
+
+
 桌面发行版 D3 第一批（2026-11-17）：完成本机离线预览安装包切片，版本 0.1.0-d3.2。固定 electron-builder26.18.0、完整运行时、当前用户 NSIS、SN 产品图标、桌面/开始菜单快捷方式、白名单装包、卸载保留学习数据；安装前拒绝数据树和运行中的产品。**D3 仍在进行，不能标记整阶段完成**；详细门禁见 [DESKTOP_D3_ACCEPTANCE](DESKTOP_D3_ACCEPTANCE.md)，构建/测试命令见 [desktop/README](../desktop/README.md)。
 
 - 本地预览：`.runtime/desktop-d3-preview/ScarletNexus-0.1.0-d3.2-windows-x64-setup.exe`，312017988字节，SHA-256 `72285cfcca6d9603e3e7aa76b014d3d14425cfa0c4b4251b77d12631fa963758`；旁置 SHA256SUMS.txt。未签名、未发布，不把 npm 审计当全二进制扫描。
