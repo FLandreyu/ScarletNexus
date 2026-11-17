@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+客体首次运行取得截图证据（2026-11-17 21:19–21:24，Asia/Shanghai）。用户按d3.3安装流程提供首次设置窗口、创建学习空间后的登录页、登录后系统状态页，桌面可见Scarlet Nexus快捷方式。状态页显示后端已连接、PostgreSQL已连接、迁移V12、生成未启用。结合此前普通中文账户与离线环境报告，已取得该环境下初始化/登录/服务连接的人工证据。安装器实际版本和管理员提示、开始菜单快捷方式尚未单独截图核验。下一步新增测试技能并正常关闭/重开验证原账户与数据保留，随后完整业务、升级恢复和空格路径补测。D3继续进行，GraphFlow未提供，无业务代码改动。
+
 客体安装前环境已取得截图（2026-11-17 21:14–21:15，Asia/Shanghai）。报告时间13:12:07Z，Win11家庭版/Core/x64/10.0.26300，8GiB/4逻辑核。administratorGroupPresent=false、elevated=false、中文路径=true、空格=false。java/javac/node/npm/psql/postgres/docker均detected=false，脚本匹配的运行库/客体包列表为空，upAdapterCount=0且allAdaptersDisconnected=true。记录仅覆盖脚本检测范围，中文路径已覆盖，空格路径保留补测。
 
 宿主另核对VM配置禁共享文件夹/复制/粘贴/拖放，vmsd记录1个S0-before-install快照（ScarletNexus-D3-Clean-Snapshot1.vmsn）。d3.3安装器介质SHA表仍为fd5d82dde4aed2854afca42925913428f0130369eee63db8a217ef802985dac8。下一步标准账户从只读光驱复制d3.3到客体桌面，按默认设置安装，验证产品快捷方式、首次设置和真实服务启动。安装/业务尚未执行，D3继续进行，GraphFlow未提供，无业务代码变更。
