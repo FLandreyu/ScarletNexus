@@ -24,6 +24,10 @@
 
 ## 装Windows前的下一步
 
+最新实施（2026-11-17）：用户下载的 `D:/Downloads/Windows11_Client_x64_zh-cn_26300_9457.iso` 为9112440832字节，实际SHA256 `b795b52d598bf8fdea5975844731f4a50c5713876cefc513884354272b023af0`，与微软官方页当日简体中文64-bit值相同。已在VM关机且原配置SHA未变时备份VMX，仅把虚拟光驱来源换成该ISO并设置开机连接；不复制大文件，不在宿主挂载/运行setup。原生Disk查询确认路径/startConnected，运行VM为0。证据见 `.runtime/desktop-empty-vm/iso-verification.json`，旧VMX在同目录before-os-iso.vmx；旧verification.json的SHA保留为历史，不再代表最新配置。
+
+下一项交接：桌面控制接口仍不可用。用户打开桌面 `ScarletNexus D3 VM` → 编辑虚拟机设置 → 选项/访问控制 → 加密（若提供“仅加密支持TPM所需文件”，选此项），自行设置并保管密码，不在聊天中发送。再到硬件 → 添加 → Trusted Platform Module/可信平台模块，保存后告知；没有对应菜单时报告当前窗口，不能推定已完成。此流程按 [Broadcom官方建议](https://knowledge.broadcom.com/external/article/315650) 使用加密及正式vTPM，不使用注册表绕过。此时尚未加密/配置TPM/安装Windows，许可仍待用户确定，不提前关闭D3。
+
 2026-11-17镜像准备：已创建宿主目录 `D:/VMs/ISO`。官方下载链接接口返回 `ErrorSettings.SentinelReject`，随后命令启动浏览器被自动审批拒绝（blocked by policy），未下载ISO。请用户手动打开 [微软官方下载页](https://www.microsoft.com/zh-cn/software-download/windows11)，选择“下载适用于x64设备的Windows11磁盘映像(ISO)”中的多版本ISO，再选简体中文和64位下载，保存到上述目录。仅下载，不在宿主运行安装助手或ISO中的setup；后续先核对微软公布的SHA256，再配置虚拟机光驱。许可、vTPM和Windows安装状态不变。
 
 1. 用户确定官方Windows11 x64系统ISO与适用许可，或自行处理官方企业评估注册和条款；不下载改装系统或绕过许可。

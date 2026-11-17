@@ -4,6 +4,11 @@
 
 ## 当前阶段
 
+Windows ISO已校验并接入空VM（2026-11-17）：用户已下载到 `D:/Downloads/Windows11_Client_x64_zh-cn_26300_9457.iso`，9112440832字节，SHA256 `b795b52d598bf8fdea5975844731f4a50c5713876cefc513884354272b023af0`，与当前微软下载页“简体中文64-bit”完全一致。VM关机/配置SHA检查通过后，仅改虚拟光驱来源与开机连接设置，未挂载宿主或运行setup，未复制9GB镜像；网卡仍默认断开。
+
+- 原VMX备份和新证据在 `.runtime/desktop-empty-vm/before-os-iso.vmx`、`iso-verification.json`；原verification.json的配置SHA是此前历史快照，新配置SHA见新报告。原生Disk查询确认ISO路径与startConnected=true，运行VM为0。
+- 桌面控制native pipe仍不可用，需用户在VMware选项/访问控制中按受支持流程启用加密，再添加Trusted Platform Module；尚未加密/添加vTPM/安装Windows或创建账户。ISO下载不代表额外Windows许可已具备，未购买或激活。D3客体/真实故障仍NOT_RUN，D4未开始；GraphFlow未提供，业务未变，不重复业务测试。
+
 Windows镜像准备更新（2026-11-17）：已创建宿主下载目录 `D:/VMs/ISO`。官方语言查询成功，但下载链接接口返回 `ErrorSettings.SentinelReject`，未下载ISO；随后命令启动浏览器被自动审批策略拒绝（blocked by policy），改由用户手动打开微软官方页，选择x64多版本ISO/简体中文，保存到该目录。不绕过请求拒绝，未取得/校验ISO，未配置vTPM或安装系统，空VM保持关机；许可仍未确定，D3门禁不变。仅改记录，无业务测试重跑；GraphFlow工具仍未提供。
 
 D3空VM已搭建（2026-11-17）：用户明确先搭空测试机，暂不安装Windows。发现并复用非默认位置 `D:/VMware` Workstation17.6.4（程序签名Valid/原有服务运行），替代原VirtualBox建议；未安装新驱动或改变宿主WSL/Hyper-V/VBS。VM在 `D:/VMs/ScarletNexus-D3-Clean`，4核/8GiB/100GiB动态盘、EFI/Secure Boot配置、默认断网与禁用宿主共享，桌面已有 `ScarletNexus D3 VM` 快捷方式。详见 [空VM搭建记录](DESKTOP_EMPTY_VM_SETUP.md)。
