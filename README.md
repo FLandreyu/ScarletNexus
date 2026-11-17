@@ -1,6 +1,8 @@
 # Scarlet Nexus
 
-Windows桌面版已完成D1/D2，并提供D3本机[离线预览安装包与图标](desktop/README.md)：内置Java/PostgreSQL，首次设置账号，学习记录持久保存，卸载保留数据。本机安装/升级、流式备份、失败迁移回滚、恢复到新库与六条桌面手动旅程已有实证；干净Windows普通用户与真实故障矩阵仍待验收，预览包未签名、尚未发布GitHub发行版。阶段见[DESKTOP_PLAN](docs/DESKTOP_PLAN.md)。
+Windows桌面预览版 **0.1.0-d3.4** 提供离线安装包，安装后从桌面 Scarlet Nexus 图标使用。内置Java/PostgreSQL，支持首次设置账号、持久学习数据和升级加密备份。下载、SHA256与已知限制见 [GitHub预览发行版](https://github.com/FLandreyu/ScarletNexus/releases/tag/v0.1.0-d3.4)。
+
+本版安装包尚未代码签名，完整桌面二进制供应链扫描、干净客体恢复和真实故障矩阵仍待完成。普通中文账户已取得安装、登录、手动业务和升级后图片回读证据，D3完整验收继续进行。详细范围见 [发行说明](docs/releases/v0.1.0-d3.4.md) 和 [桌面计划](docs/DESKTOP_PLAN.md)。
 
 **P0–P6核心Web版本已验收通过（2026-11-17）**，关闭依据和保留局限见[P6_CLOSEOUT](docs/P6_CLOSEOUT.md)。远端六项CI作业、HTTP/TLS桌面手机旅程和既定安全门禁通过。实际生产部署与Windows桌面D3完整验收尚未完成；本机可试用预览安装包，正式Web使用按下述部署说明。
 

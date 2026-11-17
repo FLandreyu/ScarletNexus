@@ -4,6 +4,12 @@
 
 ## 当前阶段
 
+预览发行准备（2026-11-17，用户明确授权直接发布）。用户停止剩余人工验收后，按本轮授权准备GitHub pre-release v0.1.0-d3.4，D3剩余项继续开放。GitHub连接账号FLandreyu与本机GCM账号一致，仓库admin/push权限已确认，远端main可由当前提交快进。用户.env.example/.gitignore改动保留。
+
+- 本轮桌面语法/11单元、前端格式/类型/14单元/生产构建通过，图表chunk体积告警保留。桌面全依赖及前端生产依赖npm审计0项，报告在私有.runtime/release-preview。后端生产代码及JAR未改，沿用此前同SHA原生/集成验收，未声称本轮重跑后端测试。
+- 安装器312021752字节，SHA256为01932a1d2151ab34c4edaa7f8150b689dce319f124b10bf1465d1c6c0703d7d8，版本0.1.0-d3.4、未签名。ASAR精确13文件，12个应用文件与源码逐字节一致、package版本一致，3529个运行时文件经verifyBundle校验。生产JAR SHA为3e160d55a5715c047457dcf411dddcda8130ae8af338bee7fd2a58bbf57fdb6b，未发现Fake类或测试V13迁移。
+- 发行附件按白名单准备setup.exe、SHA256SUMS、中文使用/恢复说明、第三方许可证ZIP、包核对JSON共6项。完整二进制扫描/代码签名仍待完成，公开下载回验与发布结果待下方后续记录。GraphFlow工具未提供，定向检查，未执行context/plan/index。
+
 客体升级备份目录截图（2026-11-17 22:22，Asia/Shanghai）。备份编号5d08c8b5-7ee5-4773-996d-5e7d00570749，列表包含attachments、database.dump.enc（约210KB）和manifest.json，时间均22:17。已确认目录结构，清单完整性、密文认证与实际恢复仍待恢复入口执行。下一步使用介质RECOVERY.txt现有五行命令，填写本机exe、上述备份与原learning/secrets/database.json路径，恢复至GUID生成的新配置，再以原账号检查原技能/图片。密钥内容不采集、不进入截图或Git。GraphFlow未提供，已定向核对默认产品/快捷方式名称和既有恢复说明，无业务代码改动。
 
 客体升级后数据回读反馈（2026-11-17 22:17–22:19，Asia/Shanghai）。用户按d3.3→d3.4流程回传系统状态与原附图作答，后端/PG已连接、迁移V12，原内容2和手绘图仍可见。安装后的运行时版本及完整升级备份尚未单独核验，G8保持部分完成。宿主vmsd目前仍只读到S0-before-install的1个快照，S1-d33-with-fixture尚无元数据证据，不能记为已建立。下一步由客体文件资源管理器检查learning/backups下最新完整目录，再向独立新配置恢复。原库继续保留用于对照。GraphFlow工具未提供，无业务代码变更。
