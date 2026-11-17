@@ -1,13 +1,13 @@
 # Scarlet Nexus D3 客体验收表
 
-状态为进行中，G1有部分截图证据，安装和业务尚未执行。用于新建、可回滚的Windows虚拟机。先读TEST-ENVIRONMENT.txt，按实际截图和运行结果填写。
+状态为进行中，已取得身份和环境截图、安装前快照元数据，安装和业务尚未执行。用于新建、可回滚的Windows虚拟机。先读TEST-ENVIRONMENT.txt，按实际截图和运行结果填写。
 
 | 条目 | 操作与通过标准 | 实际结果/证据 |
 | --- | --- | --- |
-| G0 来源 | 官方OS镜像SHA、实际虚拟化平台版本与来源、VM配置、S0基线快照编号 | NOT_RUN |
+| G0 来源 | 官方OS镜像SHA、实际虚拟化平台版本与来源、VM配置、S0基线快照编号 | 来源与配置记录见DESKTOP_EMPTY_VM_SETUP。vmsd确认S0-before-install/Snapshot1，1个快照。尚未验证此快照实际回滚 |
 | G1 身份 | 普通账户不属于Administrators；真实USERPROFILE含中文和空格 | PARTIAL。2026-11-17 21:02用户截图显示C:/Users/芙兰、BUILTIN/Users、Medium Mandatory Level，无S-1-5-32-544。普通账户和中文已确认，空格路径仍待补测 |
-| G2 干净 | 基线无Node/Java/PG/Docker/Guest Additions；记录系统自带VC运行库，禁止为了通过安装而先补运行库 | NOT_RUN |
-| G3 离线 | 客体网卡断开、无共享/剪贴板/拖放；从只读ISO复制到客体后断网安装 | NOT_RUN |
+| G2 干净 | 基线无Node/Java/PG/Docker/Guest Additions；记录系统自带VC运行库，禁止为了通过安装而先补运行库 | 2026-11-17环境截图确认七个工具均detected=false、匹配包列表为空。限脚本检测范围，完整纯净来源仍结合安装/快照记录 |
+| G3 离线 | 客体网卡断开、无共享/剪贴板/拖放；从只读ISO复制到客体后断网安装 | 环境截图upAdapterCount=0/allAdaptersDisconnected=true，宿主配置禁共享/复制/粘贴/拖放。复制及离线安装待执行 |
 | G4 安装 | 核对安装器SHA；标准账户安装d3.3、桌面和开始菜单快捷方式，无额外安装运行库 | NOT_RUN |
 | G5 首次运行 | 点击快捷方式，设置测试账号，真实PG/V12、无默认密码/无AI Key仍可手动用 | NOT_RUN |
 | G6 业务 | 知识树/草案/版本，任务暂停继续与完成，独立作答/提示/图片，三技能计划复习，分析/JSON导出导入 | NOT_RUN |

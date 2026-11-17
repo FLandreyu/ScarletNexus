@@ -4,6 +4,10 @@
 
 ## 当前阶段
 
+客体安装前环境已取得截图（2026-11-17 21:14–21:15，Asia/Shanghai）。报告时间13:12:07Z，Win11家庭版/Core/x64/10.0.26300，8GiB/4逻辑核。administratorGroupPresent=false、elevated=false、中文路径=true、空格=false。java/javac/node/npm/psql/postgres/docker均detected=false，脚本匹配的运行库/客体包列表为空，upAdapterCount=0且allAdaptersDisconnected=true。记录仅覆盖脚本检测范围，中文路径已覆盖，空格路径保留补测。
+
+宿主另核对VM配置禁共享文件夹/复制/粘贴/拖放，vmsd记录1个S0-before-install快照（ScarletNexus-D3-Clean-Snapshot1.vmsn）。d3.3安装器介质SHA表仍为fd5d82dde4aed2854afca42925913428f0130369eee63db8a217ef802985dac8。下一步标准账户从只读光驱复制d3.3到客体桌面，按默认设置安装，验证产品快捷方式、首次设置和真实服务启动。安装/业务尚未执行，D3继续进行，GraphFlow未提供，无业务代码变更。
+
 软件测试介质交接更新（2026-11-17）。用户确认客体光驱中可见两个安装包。宿主复核介质内Audit-WindowsEnvironment.ps1的SHA256为fa338595e8381bcb51271114b6650492eb5f4374744ae006e87d88491f2d09bf，与介质SHA表一致。交接用户在光驱目录打开普通PowerShell，从同一客体内的CHECKLIST.txt复制已有三行环境采集命令，输出桌面ScarletNexus-Evidence/environment-before.json，核验权限、路径、全局工具/运行库和断网情况。客体报告尚未取得，S0快照仍待证据，安装与业务未执行。GraphFlow工具未提供，无业务代码变更。
 
 客体身份截图核验（2026-11-17 21:02，Asia/Shanghai）。用户提供USERPROFILE和完整whoami /groups输出，路径为 `C:/Users/芙兰`，包含BUILTIN/Users与Medium Mandatory Level，未列出Administrators的S-1-5-32-544。普通账户/中文路径已获截图证据，当前路径没有空格，G1保持部分完成，空格路径留待补测。下一步换入既有只读软件测试ISO，确认客体网卡断开，保存安装前快照并采集环境报告，之后安装d3.3。当前未验证S0/全局工具/运行库或业务结果，GraphFlow工具未提供，无业务代码变更。
