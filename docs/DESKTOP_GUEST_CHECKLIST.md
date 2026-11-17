@@ -4,7 +4,7 @@
 
 | 条目 | 操作与通过标准 | 实际结果/证据 |
 | --- | --- | --- |
-| G0 来源 | 官方OS镜像SHA、VirtualBox版本SHA、VM配置、S0基线快照编号 | NOT_RUN |
+| G0 来源 | 官方OS镜像SHA、实际虚拟化平台版本与来源、VM配置、S0基线快照编号 | NOT_RUN |
 | G1 身份 | 普通账户不属于Administrators；真实USERPROFILE含中文和空格 | NOT_RUN |
 | G2 干净 | 基线无Node/Java/PG/Docker/Guest Additions；记录系统自带VC运行库，禁止为了通过安装而先补运行库 | NOT_RUN |
 | G3 离线 | 客体网卡断开、无共享/剪贴板/拖放；从只读ISO复制到客体后断网安装 | NOT_RUN |
